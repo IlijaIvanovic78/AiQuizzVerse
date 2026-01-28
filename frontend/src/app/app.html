@@ -1,0 +1,80 @@
+<div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center justify-center p-8">
+  <!-- Logo and Title -->
+  <div class="text-center mb-12">
+    <h1 class="text-5xl font-bold text-white mb-4">
+      AI Quiz Verse
+    </h1>
+    <p class="text-xl text-purple-300">
+      Your intelligent quiz companion
+    </p>
+  </div>
+
+  <!-- Status Card -->
+  <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20 max-w-md w-full">
+    <h2 class="text-2xl font-semibold text-white mb-6 text-center">
+      Backend Status
+    </h2>
+
+    <!-- Loading State -->
+    @if ((apiStatus$ | async) === 'loading') {
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-purple-300">Connecting to server...</p>
+      </div>
+    }
+
+    <!-- Idle State -->
+    @if ((apiStatus$ | async) === 'idle') {
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-gray-600 flex items-center justify-center">
+          <span class="text-3xl">Waiting</span>
+        </div>
+        <p class="text-gray-400">Waiting to connect...</p>
+      </div>
+    }
+
+    <!-- Success State -->
+    @if ((apiStatus$ | async) === 'ok') {
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">
+          <span class="text-4xl text-green-400">OK</span>
+        </div>
+        <div class="text-center">
+          <p class="text-green-400 font-semibold text-lg mb-2">Connected!</p>
+          <p class="text-sm text-gray-400">
+            Server Time:
+            <span class="text-white font-mono">{{ serverTime$ | async }}</span>
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Error State -->
+    @if ((apiStatus$ | async) === 'error') {
+      <div class="flex flex-col items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+          <span class="text-4xl text-red-400">X</span>
+        </div>
+        <div class="text-center">
+          <p class="text-red-400 font-semibold text-lg mb-2">Connection Failed</p>
+          <p class="text-sm text-gray-400 mb-4">{{ error$ | async }}</p>
+          <button
+            (click)="onRetry()"
+            class="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Info Section -->
+  <div class="mt-12 text-center">
+    <p class="text-gray-400 text-sm">
+      Powered by NestJS + Angular + NgRx
+    </p>
+  </div>
+</div>
+
+<router-outlet />

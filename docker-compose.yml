@@ -1,0 +1,71 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: quizverse-db
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-quizverse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quizverse}
+      POSTGRES_DB: ${POSTGRES_DB:-quizverse}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - quizverse-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quizverse} -d ${POSTGRES_DB:-quizverse}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: quizverse-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-quizverse}:${POSTGRES_PASSWORD:-quizverse}@db:5432/${POSTGRES_DB:-quizverse}?schema=public
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - quizverse-network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: quizverse-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-4200}:4200"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - quizverse-network
+    depends_on:
+      - backend
+
+networks:
+  quizverse-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
