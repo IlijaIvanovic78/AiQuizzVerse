@@ -35,7 +35,7 @@ export interface TwoFARequiredResponse {
 
 export interface Login2FARequest {
   userId: string;
-  code: string;
+  token: string;
 }
 
 export interface Enable2FAResponse {
@@ -44,7 +44,7 @@ export interface Enable2FAResponse {
 }
 
 export interface Verify2FARequest {
-  code: string;
+  token: string;
 }
 
 export interface UsernameAvailability {

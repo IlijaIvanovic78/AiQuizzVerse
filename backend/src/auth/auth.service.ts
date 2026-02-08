@@ -199,6 +199,23 @@ export class AuthService {
     return { message: '2FA enabled successfully' };
   }
 
+  // ==================== 2FA DISABLE ====================
+  async disable2FA(userId: string): Promise<{ message: string }> {
+    const user = await this.usersService.findOne(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    if (!user.twoFaEnabled) {
+      throw new BadRequestException('2FA is not enabled');
+    }
+
+    await this.usersService.disable2FA(userId);
+
+    return { message: '2FA disabled successfully' };
+  }
+
   // ==================== 2FA VALIDATE TOKEN ====================
   async validate2FAToken(userId: string, token: string): Promise<boolean> {
     const user = await this.usersService.findOne(userId);

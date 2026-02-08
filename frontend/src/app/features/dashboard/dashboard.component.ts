@@ -9,11 +9,13 @@ import {
   selectUserXP,
   selectUserCoins,
 } from '../../store/auth/auth.selectors';
+import { FriendsSidebarComponent } from './friends-sidebar/friends-sidebar.component';
+import { ProfileComponent } from '../profile/profile.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FriendsSidebarComponent, ProfileComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -26,11 +28,17 @@ export class DashboardComponent {
   xp$;
   coins$;
 
+  activeTab = 'home';
+
   constructor() {
     this.user$ = this.store.select(selectUser);
     this.displayName$ = this.store.select(selectUserDisplayName);
     this.level$ = this.store.select(selectUserLevel);
     this.xp$ = this.store.select(selectUserXP);
     this.coins$ = this.store.select(selectUserCoins);
+  }
+
+  setActiveTab(tab: string) {
+    this.activeTab = tab;
   }
 }

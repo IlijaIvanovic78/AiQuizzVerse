@@ -60,8 +60,13 @@ export class AuthService {
   }
 
   // ==================== 2FA VERIFY ====================
-  verify2FA(code: string): Observable<User> {
-    return this.http.post<User>(`${this.apiUrl}/2fa/verify`, { code });
+  verify2FA(token: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/2fa/verify`, { token });
+  }
+
+  // ==================== 2FA DISABLE ====================
+  disable2FA(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/2fa/disable`, {});
   }
 
   // ==================== CHECK USERNAME AVAILABILITY ====================

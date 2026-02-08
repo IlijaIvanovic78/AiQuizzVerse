@@ -84,3 +84,13 @@ export const selectAuthReady = createSelector(
   selectIsAuthenticated,
   (loading, isAuthenticated) => !loading && (isAuthenticated !== undefined),
 );
+
+/**
+ * 2FA QR code data URL (base64 PNG) from enable2FA
+ */
+export const select2FAQrCodeUrl = createSelector(selectAuthState, (state) => state.twoFAQrCodeUrl);
+
+/**
+ * 2FA TOTP secret key from enable2FA
+ */
+export const select2FASecret = createSelector(selectAuthState, (state) => state.twoFASecret);

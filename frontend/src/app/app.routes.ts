@@ -34,33 +34,29 @@ export const routes: Routes = [
     ],
   },
 
-  // Dashboard (protected)
+  // Authenticated routes (wrapped in Layout)
   {
-    path: 'dashboard',
+    path: '',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
-    title: 'Dashboard - AI QuizVerse',
-  },
-
-  // Profile routes (protected)
-  {
-    path: 'profile',
-    canActivate: [authGuard],
+      import('./shared/layout/layout.component').then((m) => m.LayoutComponent),
     children: [
+      // Dashboard
       {
-        path: '2fa',
+        path: 'dashboard',
         loadComponent: () =>
-          import('./features/auth/two-fa-setup/two-fa-setup.component').then(
-            (m) => m.TwoFASetupComponent,
-          ),
-        title: '2FA Setup - AI QuizVerse',
+          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
+        title: 'Dashboard - AI QuizVerse',
       },
+
+      // Profile
       {
-        path: '',
-        redirectTo: '2fa',
-        pathMatch: 'full',
+        path: 'profile',
+        loadComponent: () =>
+          import('./features/profile/profile.component').then((m) => m.ProfileComponent),
+        title: 'My Profile - AI QuizVerse',
       },
+
     ],
   },
 

@@ -1,35 +1,36 @@
-/* Dashboard component specific styles */
+/* Dashboard component styles */
 
-/* Title glow animation */
-h1 {
-  animation: pulse-glow 2s ease-in-out infinite;
+/* Navbar item base */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-family: 'VT323', monospace;
+  font-size: 20px;
+  color: rgba(196, 181, 253, 0.6);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  text-decoration: none;
 }
 
-/* Card hover effects */
-.card-dark {
-  transition: all 0.3s ease;
+.nav-item:hover {
+  color: rgba(196, 181, 253, 0.9);
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.2);
 }
 
-.card-dark:hover {
-  transform: translateY(-2px);
+.nav-item-active {
+  color: #a78bfa !important;
+  background: rgba(124, 58, 237, 0.15) !important;
+  border-color: rgba(124, 58, 237, 0.3) !important;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.1);
 }
 
-/* Icon hover scale */
-.group:hover .group-hover\:scale-110 {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* Stats card number pulse */
-.card-dark p.font-pixel {
-  animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
+.nav-item-active svg {
+  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.4));
 }

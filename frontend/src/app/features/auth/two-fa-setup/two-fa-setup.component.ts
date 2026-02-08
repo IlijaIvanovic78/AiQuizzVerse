@@ -8,6 +8,8 @@ import {
   selectError,
   selectLoading,
   selectUser2FAEnabled,
+  select2FAQrCodeUrl,
+  select2FASecret,
 } from '../../../store/auth/auth.selectors';
 
 @Component({
@@ -26,10 +28,9 @@ export class TwoFASetupComponent implements OnInit, OnDestroy {
   loading$;
   error$;
   is2FAEnabled$;
+  qrCodeUrl$;
+  secret$;
 
-  // 2FA setup data (received from enable2FA action)
-  qrCodeUrl: string | null = null;
-  secret: string | null = null;
   setupStep: 'initial' | 'qr-display' | 'verified' = 'initial';
 
   private destroy$ = new Subject<void>();
@@ -38,12 +39,32 @@ export class TwoFASetupComponent implements OnInit, OnDestroy {
     this.loading$ = this.store.select(selectLoading);
     this.error$ = this.store.select(selectError);
     this.is2FAEnabled$ = this.store.select(selectUser2FAEnabled);
+    this.qrCodeUrl$ = this.store.select(select2FAQrCodeUrl);
+    this.secret$ = this.store.select(select2FASecret);
   }
 
   ngOnInit(): void {
     this.initForm();
     this.clearErrorOnFormChange();
-    this.listenForSetupSuccess();
+
+    // When QR code arrives from the store, show the QR display step
+    this.qrCodeUrl$
+      .pipe(
+        takeUntil(this.destroy$),
+        filter((url) => !!url),
+      )
+      .subscribe(() => {
+        this.setupStep = 'qr-display';
+      });
+
+    // When 2FA gets enabled (verify success reloads profile), go back to initial
+    this.is2FAEnabled$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((enabled) => {
+        if (enabled && this.setupStep === 'qr-display') {
+          this.setupStep = 'initial';
+        }
+      });
   }
 
   ngOnDestroy(): void {
@@ -63,23 +84,8 @@ export class TwoFASetupComponent implements OnInit, OnDestroy {
     });
   }
 
-  private listenForSetupSuccess(): void {
-    // Listen for enable2FA success to get QR code
-    // Note: In real implementation, you'd use Effects to handle this
-    // For now, we'll handle it through a service or state update
-  }
-
   onEnable2FA(): void {
-    this.setupStep = 'qr-display';
     this.store.dispatch(AuthActions.enable2FA());
-    
-    // Mock data for demonstration - in real app this comes from the effect
-    // You would listen to the enable2FASuccess action in effects and store this data
-    setTimeout(() => {
-      // This is a placeholder - actual data comes from the API response
-      this.qrCodeUrl = 'data:image/png;base64,PLACEHOLDER';
-      this.secret = 'PLACEHOLDER_SECRET_KEY';
-    }, 1000);
   }
 
   onVerify2FA(): void {
@@ -89,18 +95,24 @@ export class TwoFASetupComponent implements OnInit, OnDestroy {
     }
 
     const request = {
-      code: this.verifyForm.value.code,
+      token: this.verifyForm.value.code,
     };
 
     this.store.dispatch(AuthActions.verify2FA({ request }));
   }
 
+  onDisable2FA(): void {
+    this.store.dispatch(AuthActions.disable2FA());
+  }
+
   onCancel(): void {
     this.setupStep = 'initial';
-    this.qrCodeUrl = null;
-    this.secret = null;
     this.verifyForm.reset();
     this.store.dispatch(AuthActions.clearError());
+  }
+
+  copySecret(secret: string): void {
+    navigator.clipboard.writeText(secret);
   }
 
   // Form control getters for template

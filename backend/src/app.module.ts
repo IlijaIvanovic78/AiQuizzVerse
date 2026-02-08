@@ -6,6 +6,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
+import { ProfileModule } from './profile/profile.module';
+import { FriendshipModule } from './friendship/friendship.module';
+import { EventsModule } from './gateway/events.module';
 
 @Module({
   imports: [
@@ -16,6 +19,9 @@ import { AuthModule } from './auth/auth.module';
     PrismaModule,
     UsersModule,
     AuthModule,
+    ProfileModule,
+    FriendshipModule,
+    EventsModule,
     HealthModule,
   ],
   controllers: [AppController],

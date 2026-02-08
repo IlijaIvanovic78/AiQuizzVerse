@@ -96,7 +96,7 @@ export class LoginComponent implements OnInit, OnDestroy {
 
     const request = {
       userId,
-      code: this.twoFAForm.value.code,
+      token: this.twoFAForm.value.code,
     };
 
     this.store.dispatch(AuthActions.login2FA({ request }));

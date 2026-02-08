@@ -53,8 +53,12 @@ export const AuthActions = createActionGroup({
     'Enable 2FA Failure': props<{ error: string }>(),
 
     'Verify 2FA': props<{ request: Verify2FARequest }>(),
-    'Verify 2FA Success': props<{ user: User }>(),
+    'Verify 2FA Success': emptyProps(),
     'Verify 2FA Failure': props<{ error: string }>(),
+
+    'Disable 2FA': emptyProps(),
+    'Disable 2FA Success': emptyProps(),
+    'Disable 2FA Failure': props<{ error: string }>(),
 
     // ==================== UI ====================
     'Clear Error': emptyProps(),

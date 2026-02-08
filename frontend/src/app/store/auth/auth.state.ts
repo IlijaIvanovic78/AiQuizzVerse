@@ -23,6 +23,12 @@ export interface AuthState {
   /** User ID stored temporarily during 2FA flow */
   pending2FAUserId: string | null;
 
+  /** QR code data URL from enable2FA (base64 PNG) */
+  twoFAQrCodeUrl: string | null;
+
+  /** TOTP secret key from enable2FA (for manual entry) */
+  twoFASecret: string | null;
+
   /** Loading state for async operations (login, register, 2FA) */
   loading: boolean;
 
@@ -40,6 +46,8 @@ export const initialAuthState: AuthState = {
   isAuthenticated: false,
   is2FARequired: false,
   pending2FAUserId: null,
+  twoFAQrCodeUrl: null,
+  twoFASecret: null,
   loading: false,
   error: null,
 };

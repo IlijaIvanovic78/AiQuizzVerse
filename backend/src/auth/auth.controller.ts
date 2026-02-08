@@ -124,6 +124,18 @@ export class AuthController {
     return this.authService.verify2FA(userId, twoFactorDto.token);
   }
 
+  // ==================== DISABLE 2FA ====================
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Disable 2FA on account' })
+  @ApiResponse({ status: 200, description: '2FA disabled successfully' })
+  @ApiResponse({ status: 400, description: '2FA is not enabled' })
+  async disable2FA(@CurrentUser('userId') userId: string) {
+    return this.authService.disable2FA(userId);
+  }
+
   // ==================== CHECK USERNAME AVAILABILITY ====================
   @Get('check-username/:username')
   @ApiOperation({ summary: 'Check if username is available' })

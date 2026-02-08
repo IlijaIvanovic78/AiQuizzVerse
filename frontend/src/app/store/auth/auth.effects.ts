@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, map, switchMap, tap, of } from 'rxjs';
 import { AuthService } from '../../core/services';
+import { SocketService } from '../../services';
 import { is2FARequired } from '../../core/models';
 import { AuthActions } from './auth.actions';
 
@@ -13,6 +14,7 @@ import { AuthActions } from './auth.actions';
 export class AuthEffects {
   private actions$ = inject(Actions);
   private authService = inject(AuthService);
+  private socketService = inject(SocketService);
   private router = inject(Router);
 
   // ==================== REGISTER ====================
@@ -38,6 +40,8 @@ export class AuthEffects {
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
+          // Connect WebSocket with access token
+          this.socketService.connect(response.accessToken);
           // Navigate to dashboard
           this.router.navigate(['/dashboard']);
         }),
@@ -73,6 +77,8 @@ export class AuthEffects {
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
+          // Connect WebSocket with access token
+          this.socketService.connect(response.accessToken);
           // Navigate to dashboard
           this.router.navigate(['/dashboard']);
         }),
@@ -103,6 +109,8 @@ export class AuthEffects {
           // Store tokens in localStorage
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
+          // Connect WebSocket with access token
+          this.socketService.connect(response.accessToken);
           // Navigate to dashboard
           this.router.navigate(['/dashboard']);
         }),
@@ -128,6 +136,8 @@ export class AuthEffects {
       this.actions$.pipe(
         ofType(AuthActions.logoutSuccess),
         tap(() => {
+          // Disconnect WebSocket
+          this.socketService.disconnect();
           // Clear tokens from localStorage
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
@@ -153,6 +163,36 @@ export class AuthEffects {
     ),
   );
 
+  // Connect socket after profile loaded (handles page refresh case)
+  loadProfileSuccess$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.loadProfileSuccess),
+        tap(() => {
+          const token = localStorage.getItem('accessToken');
+          if (token && !this.socketService.isConnected()) {
+            this.socketService.connect(token);
+          }
+        }),
+      ),
+    { dispatch: false },
+  );
+
+  // Clear tokens on profile load failure (invalid/expired token)
+  loadProfileFailure$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AuthActions.loadProfileFailure),
+        tap(() => {
+          this.socketService.disconnect();
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          this.router.navigate(['/auth/login']);
+        }),
+      ),
+    { dispatch: false },
+  );
+
   // ==================== 2FA SETUP ====================
   enable2FA$ = createEffect(() =>
     this.actions$.pipe(
@@ -172,10 +212,31 @@ export class AuthEffects {
     this.actions$.pipe(
       ofType(AuthActions.verify2FA),
       switchMap(({ request }) =>
-        this.authService.verify2FA(request.code).pipe(
-          map((user) => AuthActions.verify2FASuccess({ user })),
+        this.authService.verify2FA(request.token).pipe(
+          switchMap(() => [
+            AuthActions.verify2FASuccess(),
+            AuthActions.loadProfile(), // Reload profile to get updated twoFaEnabled
+          ]),
           catchError((error) =>
             of(AuthActions.verify2FAFailure({ error: error.error?.message || 'Failed to verify 2FA' })),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // ==================== DISABLE 2FA ====================
+  disable2FA$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.disable2FA),
+      switchMap(() =>
+        this.authService.disable2FA().pipe(
+          switchMap(() => [
+            AuthActions.disable2FASuccess(),
+            AuthActions.loadProfile(), // Reload profile to get updated twoFaEnabled
+          ]),
+          catchError((error) =>
+            of(AuthActions.disable2FAFailure({ error: error.error?.message || 'Failed to disable 2FA' })),
           ),
         ),
       ),

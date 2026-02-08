@@ -102,6 +102,7 @@ export const authReducer = createReducer(
     ...state,
     accessToken,
     refreshToken,
+    isAuthenticated: true,
   })),
 
   on(AuthActions.refreshTokenFailure, (state): AuthState => ({
@@ -127,13 +128,13 @@ export const authReducer = createReducer(
   on(AuthActions.loadProfileSuccess, (state, { user }): AuthState => ({
     ...state,
     user,
+    isAuthenticated: true,
     loading: false,
     error: null,
   })),
 
   on(AuthActions.loadProfileFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
+    ...initialAuthState,
     error,
   })),
 
@@ -144,8 +145,10 @@ export const authReducer = createReducer(
     error: null,
   })),
 
-  on(AuthActions.enable2FASuccess, (state): AuthState => ({
+  on(AuthActions.enable2FASuccess, (state, { response }): AuthState => ({
     ...state,
+    twoFAQrCodeUrl: response.qrCode,
+    twoFASecret: response.secret,
     loading: false,
     error: null,
   })),
@@ -162,14 +165,34 @@ export const authReducer = createReducer(
     error: null,
   })),
 
-  on(AuthActions.verify2FASuccess, (state, { user }): AuthState => ({
+  on(AuthActions.verify2FASuccess, (state): AuthState => ({
     ...state,
-    user,
+    twoFAQrCodeUrl: null,
+    twoFASecret: null,
     loading: false,
     error: null,
   })),
 
   on(AuthActions.verify2FAFailure, (state, { error }): AuthState => ({
+    ...state,
+    loading: false,
+    error,
+  })),
+
+  // ==================== 2FA DISABLE ====================
+  on(AuthActions.disable2FA, (state): AuthState => ({
+    ...state,
+    loading: true,
+    error: null,
+  })),
+
+  on(AuthActions.disable2FASuccess, (state): AuthState => ({
+    ...state,
+    loading: false,
+    error: null,
+  })),
+
+  on(AuthActions.disable2FAFailure, (state, { error }): AuthState => ({
     ...state,
     loading: false,
     error,

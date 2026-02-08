@@ -22,6 +22,8 @@ async function bootstrap() {
     )
     .addTag('Auth', 'Authentication endpoints (register, login, 2FA, tokens)')
     .addTag('Users', 'User management')
+    .addTag('Profile', 'User profile and stats')
+    .addTag('Friends', 'Friendship system (requests, search, online status)')
     .addTag('Health', 'Health check')
     .build();
 
@@ -31,7 +33,7 @@ async function bootstrap() {
   // Get config service
   const configService = app.get(ConfigService);
 
-  // Enable CORS for frontend
+  // Enable CORS for frontend (applies to both HTTP and WebSocket)
   app.enableCors({
     origin: ['http://localhost:4200', 'http://127.0.0.1:4200'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -51,5 +53,7 @@ async function bootstrap() {
   await app.listen(port);
 
   console.log(`🚀 Application is running on: http://localhost:${port}`);
+  console.log(`📚 Swagger API Docs: http://localhost:${port}/api/docs`);
+  console.log(`🔌 WebSocket Gateway ready on port ${port}`);
 }
 bootstrap();
