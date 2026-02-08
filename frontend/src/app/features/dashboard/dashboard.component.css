@@ -1,0 +1,35 @@
+/* Dashboard component specific styles */
+
+/* Title glow animation */
+h1 {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Card hover effects */
+.card-dark {
+  transition: all 0.3s ease;
+}
+
+.card-dark:hover {
+  transform: translateY(-2px);
+}
+
+/* Icon hover scale */
+.group:hover .group-hover\:scale-110 {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Stats card number pulse */
+.card-dark p.font-pixel {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

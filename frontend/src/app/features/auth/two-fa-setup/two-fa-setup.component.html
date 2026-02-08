@@ -1,0 +1,182 @@
+<div class="card-dark max-w-2xl mx-auto">
+  <!-- Header -->
+  <div class="mb-8">
+    <h2 class="font-pixel text-2xl text-primary-400 glow-purple mb-2">
+      Two-Factor Authentication
+    </h2>
+    <p class="font-retro text-dark-300 text-sm">
+      Add an extra layer of security to your account
+    </p>
+  </div>
+
+  <!-- Error Alert -->
+  @if (error$ | async; as error) {
+    <div class="bg-red-900/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6 font-retro text-sm">
+      {{ error }}
+    </div>
+  }
+
+  <!-- Current Status -->
+  <div class="mb-8 p-4 rounded-lg" [class.bg-green-900/20]="is2FAEnabled$ | async" [class.bg-dark-800]="!(is2FAEnabled$ | async)">
+    <div class="flex items-center justify-between">
+      <div>
+        <h3 class="font-retro text-lg mb-1" [class.text-green-400]="is2FAEnabled$ | async" [class.text-dark-300]="!(is2FAEnabled$ | async)">
+          Status: {{ (is2FAEnabled$ | async) ? 'ENABLED ✓' : 'DISABLED' }}
+        </h3>
+        <p class="font-retro text-sm text-dark-400">
+          @if (is2FAEnabled$ | async) {
+            Your account is protected with 2FA
+          } @else {
+            Enable 2FA to secure your account
+          }
+        </p>
+      </div>
+      @if (!(is2FAEnabled$ | async) && setupStep === 'initial') {
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onEnable2FA()"
+          [disabled]="loading$ | async"
+        >
+          ENABLE 2FA
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Setup Flow: QR Code Display -->
+  @if (setupStep === 'qr-display') {
+    <div class="space-y-6">
+      <!-- Step Instructions -->
+      <div class="bg-dark-800 border border-primary-500/30 rounded-lg p-6">
+        <h3 class="font-pixel text-lg text-accent-400 mb-4">Setup Instructions</h3>
+        <ol class="space-y-3 font-retro text-sm text-dark-300">
+          <li class="flex">
+            <span class="text-accent-400 font-bold mr-3">1.</span>
+            <span>Download an authenticator app (Google Authenticator, Authy, etc.)</span>
+          </li>
+          <li class="flex">
+            <span class="text-accent-400 font-bold mr-3">2.</span>
+            <span>Scan the QR code below with your authenticator app</span>
+          </li>
+          <li class="flex">
+            <span class="text-accent-400 font-bold mr-3">3.</span>
+            <span>Enter the 6-digit code from the app to verify</span>
+          </li>
+        </ol>
+      </div>
+
+      <!-- QR Code -->
+      <div class="bg-white p-6 rounded-lg text-center">
+        @if (loading$ | async) {
+          <div class="flex flex-col items-center justify-center py-12">
+            <div class="spinner mb-4"></div>
+            <p class="font-retro text-dark-700">Generating QR Code...</p>
+          </div>
+        } @else if (qrCodeUrl) {
+          <img [src]="qrCodeUrl" alt="2FA QR Code" class="mx-auto max-w-[256px]" />
+        }
+      </div>
+
+      <!-- Secret Key (Manual Entry) -->
+      @if (secret && !(loading$ | async)) {
+        <div class="bg-dark-800 border border-dark-700 rounded-lg p-4">
+          <p class="font-retro text-xs text-dark-400 mb-2">Can't scan? Enter this code manually:</p>
+          <div class="flex items-center justify-between bg-dark-900 px-4 py-3 rounded border border-dark-700">
+            <code class="font-pixel text-primary-400 text-sm break-all">{{ secret }}</code>
+            <button
+              type="button"
+              class="btn-ghost text-xs ml-4 flex-shrink-0"
+            >
+              COPY
+            </button>
+          </div>
+        </div>
+      }
+
+      <!-- Verification Form -->
+      <form [formGroup]="verifyForm" (ngSubmit)="onVerify2FA()" class="space-y-4">
+        <div class="form-group">
+          <label class="form-label" for="code">Verification Code</label>
+          <input
+            id="code"
+            type="text"
+            formControlName="code"
+            class="input-field text-center text-2xl tracking-widest font-pixel"
+            [class.input-error]="code?.invalid && code?.touched"
+            placeholder="000000"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="\d{6}"
+            autocomplete="one-time-code"
+          />
+          @if (code?.invalid && code?.touched) {
+            <p class="form-error">
+              @if (code?.errors?.['required']) {
+                Code is required
+              } @else if (code?.errors?.['pattern']) {
+                Code must be 6 digits
+              }
+            </p>
+          }
+        </div>
+
+        <div class="flex gap-3">
+          <button
+            type="submit"
+            class="btn btn-primary flex-1"
+            [disabled]="(loading$ | async) || verifyForm.invalid"
+          >
+            @if (loading$ | async) {
+              <span class="spinner"></span>
+              <span>Verifying...</span>
+            } @else {
+              <span>VERIFY & ENABLE</span>
+            }
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost"
+            (click)="onCancel()"
+            [disabled]="loading$ | async"
+          >
+            CANCEL
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <!-- Already Enabled - Manage Options -->
+  @if ((is2FAEnabled$ | async) && setupStep === 'initial') {
+    <div class="bg-dark-800 border border-dark-700 rounded-lg p-6">
+      <h3 class="font-pixel text-lg text-primary-400 mb-4">Manage 2FA</h3>
+      <p class="font-retro text-sm text-dark-300 mb-6">
+        Two-factor authentication is currently active on your account. You can disable it at any time, but we recommend keeping it enabled for maximum security.
+      </p>
+      <button
+        type="button"
+        class="btn btn-ghost border-red-500 text-red-400 hover:bg-red-900/20"
+      >
+        DISABLE 2FA
+      </button>
+    </div>
+  }
+
+  <!-- Info Box -->
+  @if (setupStep === 'initial') {
+    <div class="mt-6 bg-primary-900/10 border border-primary-500/30 rounded-lg p-4">
+      <div class="flex">
+        <svg class="w-5 h-5 text-primary-400 mr-3 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+          <h4 class="font-retro font-bold text-primary-400 text-sm mb-1">Why enable 2FA?</h4>
+          <p class="font-retro text-xs text-dark-300">
+            Two-factor authentication adds an extra layer of security by requiring a code from your phone in addition to your password. Even if someone gets your password, they won't be able to access your account without the code.
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -2,4 +2,218 @@
 @tailwind components;
 @tailwind utilities;
 
-/* You can add global styles to this file, and also import other style files */
+/* ===== GLOBAL GAMIFIED STYLES ===== */
+
+@layer base {
+  body {
+    @apply font-retro bg-dark-900 text-gray-100;
+    font-size: 20px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-pixel;
+  }
+
+  h1 { @apply text-2xl md:text-3xl; }
+  h2 { @apply text-xl md:text-2xl; }
+  h3 { @apply text-lg md:text-xl; }
+}
+
+@layer components {
+  /* ===== BUTTONS ===== */
+  .btn {
+    @apply px-6 py-3 font-pixel text-sm uppercase transition-all duration-300 border-2 cursor-pointer;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-primary-700 border-primary-500 text-white;
+    @apply hover:bg-primary-600 hover:border-accent-500 hover:shadow-glow-purple;
+    @apply active:scale-95;
+  }
+
+  .btn-accent {
+    @apply btn bg-accent-500 border-accent-400 text-dark-900;
+    @apply hover:bg-accent-400 hover:border-primary-500 hover:shadow-glow-yellow;
+    @apply active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent border-gray-500 text-gray-300;
+    @apply hover:bg-gray-800 hover:border-primary-500 hover:text-primary-300;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-xs;
+  }
+
+  .btn-lg {
+    @apply px-8 py-4 text-base;
+  }
+
+  /* ===== CARDS ===== */
+  .card-dark {
+    @apply bg-dark-800/80 backdrop-blur-sm border-2 border-primary-700/50 rounded-lg p-6;
+    @apply shadow-lg transition-all duration-300;
+  }
+
+  .card-dark:hover {
+    @apply border-primary-500 shadow-glow-purple-sm;
+  }
+
+  /* ===== INPUTS ===== */
+  .input-field {
+    @apply w-full px-4 py-3 bg-dark-700 border-2 border-gray-600 rounded-lg;
+    @apply text-gray-100 font-retro text-lg;
+    @apply focus:outline-none focus:border-primary-500 focus:shadow-glow-purple-sm;
+    @apply transition-all duration-300;
+    @apply placeholder:text-gray-500;
+  }
+
+  .input-error {
+    @apply border-red-500 focus:border-red-400;
+  }
+
+  .input-success {
+    @apply border-green-500 focus:border-green-400;
+  }
+
+  /* ===== FORM ELEMENTS ===== */
+  .form-group {
+    @apply mb-4;
+  }
+
+  .form-label {
+    @apply block mb-2 font-pixel text-xs uppercase text-primary-300;
+  }
+
+  .form-error {
+    @apply mt-1 text-sm text-red-400 font-retro;
+  }
+
+  .form-hint {
+    @apply mt-1 text-sm text-gray-400 font-retro;
+  }
+
+  /* ===== LOADING SPINNER ===== */
+  .spinner {
+    @apply animate-spin rounded-full border-4 border-t-transparent;
+    @apply border-primary-500;
+  }
+
+  /* ===== BADGES ===== */
+  .badge {
+    @apply inline-block px-3 py-1 text-xs font-pixel uppercase rounded-full;
+  }
+
+  .badge-primary {
+    @apply badge bg-primary-700 text-primary-100;
+  }
+
+  .badge-accent {
+    @apply badge bg-accent-500 text-dark-900;
+  }
+
+  .badge-success {
+    @apply badge bg-green-600 text-green-100;
+  }
+
+  .badge-error {
+    @apply badge bg-red-600 text-red-100;
+  }
+}
+
+@layer utilities {
+  /* ===== GLOW EFFECTS ===== */
+  .glow-purple {
+    text-shadow: 0 0 10px rgba(167, 139, 250, 0.8),
+                 0 0 20px rgba(139, 92, 246, 0.6),
+                 0 0 30px rgba(124, 58, 237, 0.4);
+  }
+
+  .glow-yellow {
+    text-shadow: 0 0 10px rgba(250, 204, 21, 0.8),
+                 0 0 20px rgba(234, 179, 8, 0.6),
+                 0 0 30px rgba(202, 138, 4, 0.4);
+  }
+
+  .shadow-glow-purple {
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.6),
+                0 0 40px rgba(139, 92, 246, 0.4);
+  }
+
+  .shadow-glow-purple-sm {
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.5),
+                0 0 20px rgba(139, 92, 246, 0.3);
+  }
+
+  .shadow-glow-yellow {
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.6),
+                0 0 40px rgba(234, 179, 8, 0.4);
+  }
+
+  .shadow-glow-yellow-sm {
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.5),
+                0 0 20px rgba(234, 179, 8, 0.3);
+  }
+
+  /* ===== GRADIENTS ===== */
+  .bg-gradient-dark {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #0f0f23 100%);
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #7c3aed 0%, #9333ea 100%);
+  }
+
+  .bg-gradient-accent {
+    background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  }
+
+  /* ===== ANIMATIONS ===== */
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0f0f23;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 6px;
+  border: 2px solid #0f0f23;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9333ea;
+}

@@ -1,0 +1,157 @@
+<div class="min-h-screen flex items-center justify-center p-4 bg-dark-900">
+  <div class="card-dark max-w-md w-full">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="font-pixel text-3xl md:text-4xl text-primary-400 glow-purple mb-2">
+        AI QuizVerse
+      </h1>
+      <p class="font-retro text-dark-300">
+        {{ (is2FARequired$ | async) ? 'Two-Factor Authentication' : 'Login to your account' }}
+      </p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error$ | async; as error) {
+      <div class="bg-red-900/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6 font-retro text-sm">
+        {{ error }}
+      </div>
+    }
+
+    <!-- Login Form -->
+    @if (!(is2FARequired$ | async)) {
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()" class="space-y-6">
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label" for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            class="input-field"
+            [class.input-error]="email?.invalid && email?.touched"
+            placeholder="player@quizverse.com"
+            autocomplete="email"
+          />
+          @if (email?.invalid && email?.touched) {
+            <p class="form-error">
+              @if (email?.errors?.['required']) {
+                Email is required
+              } @else if (email?.errors?.['email']) {
+                Please enter a valid email
+              }
+            </p>
+          }
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            class="input-field"
+            [class.input-error]="password?.invalid && password?.touched"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          @if (password?.invalid && password?.touched) {
+            <p class="form-error">
+              @if (password?.errors?.['required']) {
+                Password is required
+              } @else if (password?.errors?.['minlength']) {
+                Password must be at least 6 characters
+              }
+            </p>
+          }
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="btn btn-primary w-full"
+          [disabled]="(loading$ | async) || loginForm.invalid"
+        >
+          @if (loading$ | async) {
+            <span class="spinner"></span>
+            <span>Logging in...</span>
+          } @else {
+            <span>LOGIN</span>
+          }
+        </button>
+      </form>
+    }
+
+    <!-- 2FA Form -->
+    @if (is2FARequired$ | async) {
+      <form [formGroup]="twoFAForm" (ngSubmit)="onVerify2FA()" class="space-y-6">
+        <div class="text-center mb-6">
+          <p class="font-retro text-dark-300 text-sm">
+            Enter the 6-digit code from your authenticator app
+          </p>
+        </div>
+
+        <!-- 2FA Code -->
+        <div class="form-group">
+          <label class="form-label" for="code">Authentication Code</label>
+          <input
+            id="code"
+            type="text"
+            formControlName="code"
+            class="input-field text-center text-2xl tracking-widest font-pixel"
+            [class.input-error]="code?.invalid && code?.touched"
+            placeholder="000000"
+            maxlength="6"
+            inputmode="numeric"
+            pattern="\d{6}"
+            autocomplete="one-time-code"
+          />
+          @if (code?.invalid && code?.touched) {
+            <p class="form-error">
+              @if (code?.errors?.['required']) {
+                Code is required
+              } @else if (code?.errors?.['pattern']) {
+                Code must be 6 digits
+              }
+            </p>
+          }
+        </div>
+
+        <!-- Buttons -->
+        <div class="space-y-3">
+          <button
+            type="submit"
+            class="btn btn-primary w-full"
+            [disabled]="(loading$ | async) || twoFAForm.invalid"
+          >
+            @if (loading$ | async) {
+              <span class="spinner"></span>
+              <span>Verifying...</span>
+            } @else {
+              <span>VERIFY</span>
+            }
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-ghost w-full"
+            (click)="onBack2FA()"
+            [disabled]="loading$ | async"
+          >
+            Back to Login
+          </button>
+        </div>
+      </form>
+    }
+
+    <!-- Footer -->
+    <div class="mt-8 text-center">
+      <p class="font-retro text-dark-400 text-sm">
+        Don't have an account?
+        <a routerLink="/auth/register" class="text-accent-400 hover:text-accent-300 transition-colors ml-1">
+          Register here
+        </a>
+      </p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+/* Login component specific styles */
+
+/* Glow animation for title */
+h1 {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* 2FA code input focus effect */
+input[type='text'][formControlName='code']:focus {
+  letter-spacing: 0.5em;
+  transition: letter-spacing 0.2s ease;
+}

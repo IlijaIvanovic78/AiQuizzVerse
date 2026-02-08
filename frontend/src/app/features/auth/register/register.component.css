@@ -1,0 +1,36 @@
+/* Register component specific styles */
+
+/* Glow animation for title */
+h1 {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Small spinner for username availability check */
+.spinner-small {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(124, 58, 237, 0.3);
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Success/Error icon animations */
+svg {
+  animation: scaleIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}

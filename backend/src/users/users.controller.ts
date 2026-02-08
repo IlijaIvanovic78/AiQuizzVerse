@@ -23,9 +23,15 @@ export class UsersController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
+    // For testing only - use /auth/register in production
+    const passwordHash = `test_${createUserDto.password}`;
+    const user = await this.usersService.create({
+      email: createUserDto.email,
+      username: createUserDto.username,
+      passwordHash,
+    });
     // Remove passwordHash from response
-    const { passwordHash, ...result } = user;
+    const { passwordHash: _, ...result } = user;
     return result;
   }
 }

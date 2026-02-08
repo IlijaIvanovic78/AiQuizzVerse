@@ -1,0 +1,157 @@
+<div class="min-h-screen flex items-center justify-center p-4 bg-dark-900">
+  <div class="card-dark max-w-md w-full">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="font-pixel text-3xl md:text-4xl text-primary-400 glow-purple mb-2">
+        Join QuizVerse
+      </h1>
+      <p class="font-retro text-dark-300">Create your player account</p>
+    </div>
+
+    <!-- Error Alert -->
+    @if (error$ | async; as error) {
+      <div class="bg-red-900/20 border border-red-500 text-red-300 px-4 py-3 rounded mb-6 font-retro text-sm">
+        {{ error }}
+      </div>
+    }
+
+    <!-- Register Form -->
+    <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="space-y-6">
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          class="input-field"
+          [class.input-error]="email?.invalid && email?.touched"
+          placeholder="player@quizverse.com"
+          autocomplete="email"
+        />
+        @if (email?.invalid && email?.touched) {
+          <p class="form-error">
+            @if (email?.errors?.['required']) {
+              Email is required
+            } @else if (email?.errors?.['email']) {
+              Please enter a valid email
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <div class="relative">
+          <input
+            id="username"
+            type="text"
+            formControlName="username"
+            class="input-field pr-10"
+            [class.input-error]="(username?.invalid && username?.touched) || usernameAvailability === 'taken'"
+            placeholder="quizmaster123"
+            autocomplete="username"
+          />
+          <!-- Availability Indicator -->
+          <div class="absolute right-3 top-1/2 -translate-y-1/2">
+            @if (usernameAvailability === 'checking') {
+              <div class="spinner-small"></div>
+            } @else if (usernameAvailability === 'available') {
+              <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+              </svg>
+            } @else if (usernameAvailability === 'taken') {
+              <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+              </svg>
+            }
+          </div>
+        </div>
+        @if (username?.invalid && username?.touched) {
+          <p class="form-error">
+            @if (username?.errors?.['required']) {
+              Username is required
+            } @else if (username?.errors?.['minlength']) {
+              Username must be at least 3 characters
+            } @else if (username?.errors?.['maxlength']) {
+              Username must be at most 20 characters
+            } @else if (username?.errors?.['pattern']) {
+              Username can only contain letters, numbers, dashes and underscores
+            }
+          </p>
+        } @else if (usernameAvailability === 'taken') {
+          <p class="form-error">Username is already taken</p>
+        } @else if (usernameAvailability === 'available') {
+          <p class="text-green-400 text-xs mt-1 font-retro">Username is available!</p>
+        }
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          class="input-field"
+          [class.input-error]="password?.invalid && password?.touched"
+          placeholder="••••••••"
+          autocomplete="new-password"
+        />
+        @if (password?.invalid && password?.touched) {
+          <p class="form-error">
+            @if (password?.errors?.['required']) {
+              Password is required
+            } @else if (password?.errors?.['minlength']) {
+              Password must be at least 6 characters
+            }
+          </p>
+        }
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="form-group">
+        <label class="form-label" for="confirmPassword">Confirm Password</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          formControlName="confirmPassword"
+          class="input-field"
+          [class.input-error]="(confirmPassword?.invalid && confirmPassword?.touched) || passwordMismatch"
+          placeholder="••••••••"
+          autocomplete="new-password"
+        />
+        @if (confirmPassword?.invalid && confirmPassword?.touched) {
+          <p class="form-error">Please confirm your password</p>
+        } @else if (passwordMismatch) {
+          <p class="form-error">Passwords do not match</p>
+        }
+      </div>
+
+      <!-- Submit Button -->
+      <button
+        type="submit"
+        class="btn btn-primary w-full"
+        [disabled]="(loading$ | async) || registerForm.invalid || usernameAvailability === 'taken' || usernameAvailability === 'checking'"
+      >
+        @if (loading$ | async) {
+          <span class="spinner"></span>
+          <span>Creating Account...</span>
+        } @else {
+          <span>CREATE ACCOUNT</span>
+        }
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="mt-8 text-center">
+      <p class="font-retro text-dark-400 text-sm">
+        Already have an account?
+        <a routerLink="/auth/login" class="text-accent-400 hover:text-accent-300 transition-colors ml-1">
+          Login here
+        </a>
+      </p>
+    </div>
+  </div>
+</div>
