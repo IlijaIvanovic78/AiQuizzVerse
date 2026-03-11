@@ -13,15 +13,9 @@ export function initializeAuth(store: Store): () => Promise<void> {
       const refreshToken = localStorage.getItem('refreshToken');
 
       if (accessToken && refreshToken) {
-        // Restore tokens in store
-        store.dispatch(
-          AuthActions.refreshTokenSuccess({
-            accessToken,
-            refreshToken,
-          }),
-        );
-
-        // Load user profile
+        // Restore tokens in store so interceptor can use them
+        store.dispatch(AuthActions.restoreTokens({ accessToken, refreshToken }));
+        // Load user profile from server
         store.dispatch(AuthActions.loadProfile());
       }
 

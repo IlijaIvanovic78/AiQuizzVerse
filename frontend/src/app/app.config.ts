@@ -14,6 +14,10 @@ import { authReducer } from './store/auth/auth.reducer';
 import { AuthEffects } from './store/auth/auth.effects';
 import { friendsReducer } from './store/friends/friends.reducer';
 import { FriendsEffects } from './store/friends/friends.effects';
+import { quizReducer } from './store/quiz/quiz.reducer';
+import { QuizEffects } from './store/quiz/quiz.effects';
+import { gameReducer } from './store/game/game.reducer';
+import { GameEffects } from './store/game/game.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,8 +29,10 @@ export const appConfig: ApplicationConfig = {
       appStatus: appStatusReducer,
       auth: authReducer,
       friends: friendsReducer,
+      quiz: quizReducer,
+      game: gameReducer,
     }),
-    provideEffects([AppStatusEffects, AuthEffects, FriendsEffects]),
+    provideEffects([AppStatusEffects, AuthEffects, FriendsEffects, QuizEffects, GameEffects]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: !isDevMode(),

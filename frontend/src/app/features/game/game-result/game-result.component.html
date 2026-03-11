@@ -1,0 +1,63 @@
+<div class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-dark-800/60 border border-dark-600/30 rounded-2xl p-6 space-y-6 text-center">
+
+    <!-- Title -->
+    <div>
+      <h1 class="font-pixel text-3xl text-primary-400 mb-2">🏆 Game Over</h1>
+      @if (match$ | async; as match) {
+        <p class="font-retro text-sm text-dark-400">{{ match.quiz.title }}</p>
+      }
+    </div>
+
+    <!-- Scores -->
+    <div class="bg-dark-900/50 rounded-xl p-6">
+      @if (players$ | async; as players) {
+        <div class="space-y-4">
+          @for (player of players; track player.userId) {
+            <div class="flex items-center gap-3 p-3 rounded-lg"
+              [class.bg-primary-500]="player.isWinner"
+              [class.bg-opacity-10]="player.isWinner"
+              [class.border-primary-500]="player.isWinner"
+              [class.border]="player.isWinner">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                [class.bg-primary-500]="player.isWinner"
+                [class.bg-opacity-20]="player.isWinner"
+                [class.bg-dark-700]="!player.isWinner">
+                @if (player.isWinner) {
+                  <span class="text-lg">👑</span>
+                } @else {
+                  <span class="font-retro text-sm text-dark-400">
+                    {{ player.user.username.charAt(0).toUpperCase() }}
+                  </span>
+                }
+              </div>
+              <div class="text-left flex-1">
+                <p class="font-retro text-sm text-dark-100">{{ player.user.username }}</p>
+                @if (player.isWinner) {
+                  <p class="font-retro text-xs text-primary-400">Winner!</p>
+                }
+              </div>
+              <span class="font-pixel text-xl" [class.text-primary-400]="player.isWinner" [class.text-dark-300]="!player.isWinner">
+                {{ player.score }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Rewards Info -->
+    <div class="space-y-2">
+      <div class="flex items-center justify-center gap-4 font-retro text-xs text-dark-400">
+        <span>⭐ XP earned</span>
+        <span>💰 Coins earned</span>
+      </div>
+    </div>
+
+    <!-- Back Button -->
+    <button (click)="goToDashboard()"
+      class="w-full py-3 rounded-xl font-pixel text-sm bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:from-primary-400 hover:to-accent-400 transition-all shadow-lg shadow-primary-500/20">
+      🏠 Back to Dashboard
+    </button>
+  </div>
+</div>

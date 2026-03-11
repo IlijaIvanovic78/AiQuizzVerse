@@ -1,0 +1,171 @@
+<div class="max-w-2xl mx-auto p-6">
+
+  <!-- Header -->
+  <div class="text-center mb-8">
+    <h2 class="font-pixel text-3xl text-primary-400 mb-2">Create Quiz</h2>
+    <p class="font-retro text-dark-400 text-sm">Enter a topic or upload a PDF to generate an AI-powered quiz</p>
+  </div>
+
+  <!-- Result View -->
+  @if (showResult && (currentQuiz$ | async); as quiz) {
+    <div class="bg-dark-800/60 border border-green-500/30 rounded-xl p-6 mb-6 animate-fade-in">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+          <svg class="w-6 h-6 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div>
+          <h3 class="font-pixel text-lg text-green-400">Quiz Generated!</h3>
+          <p class="font-retro text-dark-400 text-xs">Your quiz is ready to play</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-dark-700/50 rounded-lg p-3">
+          <span class="font-retro text-dark-400 text-xs block">Title</span>
+          <span class="font-retro text-primary-300 text-sm">{{ quiz.title }}</span>
+        </div>
+        <div class="bg-dark-700/50 rounded-lg p-3">
+          <span class="font-retro text-dark-400 text-xs block">Theme</span>
+          <span class="font-retro text-accent-400 text-sm">{{ quiz.theme }}</span>
+        </div>
+        <div class="bg-dark-700/50 rounded-lg p-3">
+          <span class="font-retro text-dark-400 text-xs block">Questions</span>
+          <span class="font-retro text-primary-300 text-sm">{{ quiz.questions.length }}</span>
+        </div>
+        <div class="bg-dark-700/50 rounded-lg p-3">
+          <span class="font-retro text-dark-400 text-xs block">Difficulty</span>
+          <span class="font-retro text-sm"
+            [class.text-green-400]="quiz.difficulty === 'EASY'"
+            [class.text-accent-400]="quiz.difficulty === 'MEDIUM'"
+            [class.text-orange-400]="quiz.difficulty === 'HARD'"
+            [class.text-red-400]="quiz.difficulty === 'EXPERT'">
+            {{ quiz.difficulty }}
+          </span>
+        </div>
+      </div>
+
+      <button (click)="resetForm()"
+        class="w-full py-2.5 rounded-lg font-retro text-sm bg-primary-600/20 border border-primary-500/30 text-primary-300 hover:bg-primary-600/30 transition-colors">
+        Create Another Quiz
+      </button>
+    </div>
+  } @else {
+
+    <!-- Creation Form -->
+    <div class="space-y-5">
+
+      <!-- Topic Input -->
+      <div>
+        <label class="font-retro text-dark-300 text-xs block mb-1.5">Topic / Prompt</label>
+        <input
+          type="text"
+          [(ngModel)]="topic"
+          placeholder="e.g. Solar System, World War II, JavaScript Closures..."
+          class="w-full bg-dark-800/60 border border-dark-600/50 rounded-lg px-4 py-3 font-retro text-sm text-dark-100 placeholder:text-dark-500 focus:outline-none focus:border-primary-500/50 focus:ring-1 focus:ring-primary-500/20 transition-colors"
+        />
+      </div>
+
+      <!-- PDF Upload -->
+      <div>
+        <label class="font-retro text-dark-300 text-xs block mb-1.5">Or Upload a PDF (optional)</label>
+        @if (uploadedFileName$ | async; as fileName) {
+          <div class="flex items-center gap-3 bg-dark-800/60 border border-primary-500/30 rounded-lg px-4 py-3">
+            <svg class="w-5 h-5 text-primary-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+            </svg>
+            <span class="font-retro text-sm text-primary-300 truncate flex-1">{{ fileName }}</span>
+            <button (click)="clearUploadedFile()" class="text-dark-400 hover:text-red-400 transition-colors">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+        } @else {
+          <label
+            class="flex flex-col items-center justify-center gap-2 bg-dark-800/40 border-2 border-dashed border-dark-600/40 rounded-lg px-4 py-6 cursor-pointer hover:border-primary-500/40 hover:bg-dark-800/60 transition-colors"
+            [class.opacity-50]="(uploading$ | async)"
+            [class.pointer-events-none]="(uploading$ | async)">
+            @if (uploading$ | async) {
+              <div class="w-6 h-6 border-2 border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+              <span class="font-retro text-xs text-primary-400">Uploading & processing...</span>
+            } @else {
+              <svg class="w-8 h-8 text-dark-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+              </svg>
+              <span class="font-retro text-xs text-dark-400">Drop PDF here or click to browse</span>
+              <span class="font-retro text-xs text-dark-500">Max 10MB</span>
+            }
+            <input type="file" accept="application/pdf" class="hidden" (change)="onFileSelected($event)" />
+          </label>
+        }
+      </div>
+
+      <!-- Settings Row -->
+      <div class="grid grid-cols-3 gap-4">
+        <!-- Difficulty -->
+        <div>
+          <label class="font-retro text-dark-300 text-xs block mb-1.5">Difficulty</label>
+          <select [(ngModel)]="difficulty"
+            class="w-full bg-dark-800/60 border border-dark-600/50 rounded-lg px-3 py-2.5 font-retro text-sm text-dark-100 focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer">
+            @for (d of difficulties; track d) {
+              <option [value]="d">{{ d }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Number of Questions -->
+        <div>
+          <label class="font-retro text-dark-300 text-xs block mb-1.5">Questions</label>
+          <select [(ngModel)]="numQuestions"
+            class="w-full bg-dark-800/60 border border-dark-600/50 rounded-lg px-3 py-2.5 font-retro text-sm text-dark-100 focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer">
+            @for (c of questionCounts; track c) {
+              <option [ngValue]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+
+        <!-- Time per Question -->
+        <div>
+          <label class="font-retro text-dark-300 text-xs block mb-1.5">Seconds/Q</label>
+          <select [(ngModel)]="timePerQuestion"
+            class="w-full bg-dark-800/60 border border-dark-600/50 rounded-lg px-3 py-2.5 font-retro text-sm text-dark-100 focus:outline-none focus:border-primary-500/50 transition-colors appearance-none cursor-pointer">
+            @for (t of timeLimits; track t) {
+              <option [ngValue]="t">{{ t }}s</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <!-- Error -->
+      @if (error$ | async; as err) {
+        <div class="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 flex items-center gap-2">
+          <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+          </svg>
+          <span class="font-retro text-sm text-red-300">{{ err }}</span>
+        </div>
+      }
+
+      <!-- Generate Button -->
+      <button
+        (click)="generate()"
+        [disabled]="!isFormValid || (generating$ | async)"
+        class="w-full py-3.5 rounded-xl font-pixel text-lg tracking-wide transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        [class]="(generating$ | async)
+          ? 'bg-primary-700/40 border-2 border-primary-500/30 text-primary-300'
+          : 'bg-gradient-to-r from-primary-600 to-primary-700 border-2 border-primary-500/40 text-white hover:from-primary-500 hover:to-primary-600 hover:shadow-[0_0_20px_rgba(124,58,237,0.3)]'">
+        @if (generating$ | async) {
+          <div class="flex items-center justify-center gap-3">
+            <div class="w-5 h-5 border-2 border-primary-300 border-t-transparent rounded-full animate-spin"></div>
+            <span>AI is generating your quiz...</span>
+          </div>
+        } @else {
+          <span>🧠 Generate Quiz</span>
+        }
+      </button>
+
+    </div>
+  }
+</div>

@@ -159,38 +159,22 @@ export class FriendsEffects {
   );
 
   // Socket Event Listeners - Friend Online
-  friendOnline$ = createEffect(() => {
-    const online$ = this.socketService.friendOnline$;
-    if (!online$) {
-      return of(); // Return empty observable if socket not connected
-    }
-    return online$.pipe(
-      tap(({ userId }) => {
-        // Show toast notification (we don't have username here, so just show generic message)
-        this.toastService.info('Friend Online', 'A friend just came online!');
-      }),
+  friendOnline$ = createEffect(() =>
+    this.socketService.friendOnline$.pipe(
       map(({ userId }) => FriendsActions.friendOnline({ userId }))
-    );
-  });
+    )
+  );
 
   // Socket Event Listeners - Friend Offline
-  friendOffline$ = createEffect(() => {
-    const offline$ = this.socketService.friendOffline$;
-    if (!offline$) {
-      return of();
-    }
-    return offline$.pipe(
+  friendOffline$ = createEffect(() =>
+    this.socketService.friendOffline$.pipe(
       map(({ userId }) => FriendsActions.friendOffline({ userId }))
-    );
-  });
+    )
+  );
 
   // Socket Event Listeners - Friend Request Received
-  friendRequestReceived$ = createEffect(() => {
-    const requestSent$ = this.socketService.friendRequestSent$;
-    if (!requestSent$) {
-      return of();
-    }
-    return requestSent$.pipe(
+  friendRequestReceived$ = createEffect(() =>
+    this.socketService.friendRequestSent$.pipe(
       tap(({ from }) => {
         this.toastService.info(
           'New Friend Request',
@@ -207,16 +191,12 @@ export class FriendsEffects {
           },
         })
       )
-    );
-  });
+    )
+  );
 
   // Socket Event Listeners - Friend Request Accepted
-  friendRequestAcceptedNotification$ = createEffect(() => {
-    const requestAccepted$ = this.socketService.friendRequestAccepted$;
-    if (!requestAccepted$) {
-      return of();
-    }
-    return requestAccepted$.pipe(
+  friendRequestAcceptedNotification$ = createEffect(() =>
+    this.socketService.friendRequestAccepted$.pipe(
       tap(({ friend }) => {
         this.toastService.success(
           'Friend Request Accepted',
@@ -239,6 +219,6 @@ export class FriendsEffects {
           friend: friendData,
         });
       })
-    );
-  });
+    )
+  );
 }

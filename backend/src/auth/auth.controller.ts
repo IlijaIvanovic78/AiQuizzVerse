@@ -9,7 +9,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService, Tokens } from './auth.service';
+import { AuthService, AuthResponse } from './auth.service';
 import { RegisterDto, LoginDto, TwoFactorDto, Login2FADto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtRefreshAuthGuard } from './guards/jwt-refresh.guard';
@@ -41,7 +41,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Returns JWT tokens or 2FA required flag' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto): Promise<Tokens | { is2FARequired: true; userId: string }> {
+  async login(@Body() loginDto: LoginDto): Promise<AuthResponse | { is2FARequired: true; userId: string }> {
     return this.authService.login(loginDto);
   }
 
@@ -51,7 +51,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Complete login with 2FA code' })
   @ApiResponse({ status: 200, description: 'Returns JWT tokens after 2FA verification' })
   @ApiResponse({ status: 401, description: 'Invalid 2FA code' })
-  async login2FA(@Body() login2FADto: Login2FADto): Promise<Tokens> {
+  async login2FA(@Body() login2FADto: Login2FADto): Promise<AuthResponse> {
     return this.authService.login2FA(login2FADto.userId, login2FADto.token);
   }
 
@@ -63,7 +63,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
   @ApiResponse({ status: 200, description: 'Returns new JWT tokens' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refreshTokens(@CurrentUser() user: RequestUser): Promise<Tokens> {
+  async refreshTokens(@CurrentUser() user: RequestUser): Promise<AuthResponse> {
     return this.authService.refreshTokens(user.userId, user.refreshToken!);
   }
 

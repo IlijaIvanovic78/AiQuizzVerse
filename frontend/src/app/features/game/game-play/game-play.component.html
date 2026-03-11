@@ -1,0 +1,145 @@
+<div class="min-h-screen flex flex-col p-4">
+
+  <!-- Header: Score + Timer + Progress -->
+  <div class="w-full max-w-2xl mx-auto mb-6">
+    <div class="flex items-center justify-between bg-dark-800/60 border border-dark-600/30 rounded-xl p-4">
+      <!-- Player Score -->
+      <div class="text-center">
+        <p class="font-retro text-xs text-dark-400">Your Score</p>
+        <p class="font-pixel text-xl text-primary-400">{{ playerScore$ | async }}</p>
+      </div>
+
+      <!-- Timer -->
+      <div class="text-center">
+        <div class="w-16 h-16 rounded-full border-4 flex items-center justify-center"
+          [class]="timerColor()"
+          [style.border-color]="'currentColor'">
+          <span class="font-pixel text-lg">{{ timeRemaining() }}</span>
+        </div>
+      </div>
+
+      <!-- Progress / Opponent Score -->
+      @if ((mode$ | async) === 'PVP') {
+        <div class="text-center">
+          <p class="font-retro text-xs text-dark-400">Opponent</p>
+          <p class="font-pixel text-xl text-red-400">{{ opponentScore$ | async }}</p>
+        </div>
+      } @else {
+        <div class="text-center">
+          <p class="font-retro text-xs text-dark-400">Question</p>
+          <p class="font-pixel text-lg text-dark-200">
+            {{ ((questionIndex$ | async) ?? 0) + 1 }} / {{ totalQuestions$ | async }}
+          </p>
+        </div>
+      }
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="mt-3 h-1.5 bg-dark-700/50 rounded-full overflow-hidden">
+      @if (totalQuestions$ | async; as total) {
+        <div class="h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full transition-all duration-300"
+          [style.width.%]="total > 0 ? (((questionIndex$ | async) ?? 0) + 1) / total * 100 : 0">
+        </div>
+      }
+    </div>
+
+    <!-- Co-op Turn Indicator -->
+    @if ((mode$ | async) === 'COOP' && (currentTurn$ | async)) {
+      <div class="mt-3 text-center">
+        @if ((currentTurn$ | async) === (userId$ | async)) {
+          <span class="px-3 py-1 rounded-full text-xs font-retro text-green-400 bg-green-500/10 border border-green-500/30">
+            🎯 Your Turn
+          </span>
+        } @else {
+          <span class="px-3 py-1 rounded-full text-xs font-retro text-yellow-400 bg-yellow-500/10 border border-yellow-500/30">
+            ⏳ Partner's Turn
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Question Card -->
+  @if (question$ | async; as question) {
+    <div class="w-full max-w-2xl mx-auto flex-1">
+      <div class="bg-dark-800/60 border border-dark-600/30 rounded-2xl p-6 mb-6">
+        <h2 class="font-retro text-lg text-dark-100 leading-relaxed">{{ question.text }}</h2>
+      </div>
+
+      <!-- Options -->
+      <div class="space-y-3 mb-6">
+        @for (option of question.options; track $index; let i = $index) {
+          <button (click)="selectOption(i)"
+            [disabled]="answered()"
+            class="w-full text-left p-4 rounded-xl border-2 transition-all font-retro text-sm"
+            [class]="getOptionClass(i)"
+            [class.text-dark-100]="!showResult()"
+            [class.cursor-not-allowed]="answered()"
+            [class.border-green-500]="showResult() && (lastResult$ | async)?.correctAnswer === i"
+            [class.bg-green-500]="showResult() && (lastResult$ | async)?.correctAnswer === i"
+            [class.bg-opacity-10]="showResult() && (lastResult$ | async)?.correctAnswer === i"
+            [class.border-red-500]="showResult() && selectedAnswer() === i && !(lastResult$ | async)?.correct && (lastResult$ | async)?.correctAnswer !== i"
+            [class.bg-red-500]="showResult() && selectedAnswer() === i && !(lastResult$ | async)?.correct && (lastResult$ | async)?.correctAnswer !== i">
+            <div class="flex items-center gap-3">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-pixel"
+                [class.bg-primary-500]="selectedAnswer() === i && !showResult()"
+                [class.bg-dark-700]="selectedAnswer() !== i && !showResult()"
+                [class.text-white]="selectedAnswer() === i && !showResult()"
+                [class.text-dark-400]="selectedAnswer() !== i && !showResult()">
+                {{ ['A','B','C','D'][i] }}
+              </span>
+              <span>{{ option }}</span>
+            </div>
+          </button>
+        }
+      </div>
+
+      <!-- Waiting for opponent (PvP) -->
+      @if (answered() && !showResult() && (waitingForOpponent$ | async)) {
+        <div class="text-center p-4">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-dark-700/50 border border-dark-600/30">
+            <div class="w-4 h-4 border-2 border-primary-400 border-t-transparent rounded-full animate-spin"></div>
+            <span class="font-retro text-sm text-dark-300">Waiting for opponent...</span>
+          </div>
+        </div>
+      }
+
+      <!-- Result Feedback -->
+      @if (showResult() && (allResults$ | async); as results) {
+        @if (results.length > 0) {
+          <div class="space-y-3 mt-4">
+            @for (result of results; track result.userId) {
+              <div class="p-4 rounded-xl border"
+                [class.bg-green-500/10]="result.correct"
+                [class.border-green-500/30]="result.correct"
+                [class.bg-red-500/10]="!result.correct"
+                [class.border-red-500/30]="!result.correct">
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    @if (result.userId === (userId$ | async)) {
+                      <span class="font-retro text-xs text-primary-300">You</span>
+                    } @else {
+                      <span class="font-retro text-xs text-accent-300">{{ result.username || 'Opponent' }}</span>
+                    }
+                    <span class="font-pixel text-sm" [class.text-green-400]="result.correct" [class.text-red-400]="!result.correct">
+                      {{ result.correct ? '✅ Correct!' : '❌ Wrong!' }}
+                    </span>
+                  </div>
+                  <span class="font-retro text-xs text-dark-300">+{{ result.points }} pts</span>
+                </div>
+                @if ((question$ | async); as q) {
+                  <p class="font-retro text-xs text-dark-400">
+                    Answered: {{ result.answer >= 0 && result.answer < q.options.length ? q.options[result.answer] : 'No answer' }}
+                  </p>
+                }
+              </div>
+            }
+            @if (results[0]?.explanation) {
+              <p class="font-retro text-xs text-dark-400 px-2 mt-2">💡 {{ results[0].explanation }}</p>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

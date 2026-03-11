@@ -57,6 +57,14 @@ export const routes: Routes = [
         title: 'My Profile - AI QuizVerse',
       },
 
+      // Game lobby (with match ID)
+      {
+        path: 'game/:id',
+        loadComponent: () =>
+          import('./features/game/game-lobby/game-lobby.component').then((m) => m.GameLobbyComponent),
+        title: 'Game - AI QuizVerse',
+      },
+
     ],
   },
 

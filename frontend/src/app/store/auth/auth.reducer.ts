@@ -98,15 +98,24 @@ export const authReducer = createReducer(
     // Don't set loading=true for refresh to avoid UI flicker
   })),
 
-  on(AuthActions.refreshTokenSuccess, (state, { accessToken, refreshToken }): AuthState => ({
+  on(AuthActions.refreshTokenSuccess, (state, { response }): AuthState => ({
     ...state,
-    accessToken,
-    refreshToken,
+    user: response.user,
+    accessToken: response.accessToken,
+    refreshToken: response.refreshToken,
     isAuthenticated: true,
   })),
 
   on(AuthActions.refreshTokenFailure, (state): AuthState => ({
     ...initialAuthState, // Reset to initial state on refresh failure
+  })),
+
+  // ==================== RESTORE TOKENS ====================
+  on(AuthActions.restoreTokens, (state, { accessToken, refreshToken }): AuthState => ({
+    ...state,
+    accessToken,
+    refreshToken,
+    isAuthenticated: true,
   })),
 
   // ==================== LOGOUT ====================

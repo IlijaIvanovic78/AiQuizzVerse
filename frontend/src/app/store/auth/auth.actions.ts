@@ -35,8 +35,11 @@ export const AuthActions = createActionGroup({
 
     // ==================== REFRESH TOKEN ====================
     'Refresh Token': props<{ refreshToken: string }>(),
-    'Refresh Token Success': props<{ accessToken: string; refreshToken: string }>(),
+    'Refresh Token Success': props<{ response: LoginResponse }>(),
     'Refresh Token Failure': props<{ error: string }>(),
+
+    // ==================== RESTORE TOKENS (app init from localStorage) ====================
+    'Restore Tokens': props<{ accessToken: string; refreshToken: string }>(),
 
     // ==================== LOGOUT ====================
     'Logout': emptyProps(),

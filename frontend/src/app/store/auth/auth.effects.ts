@@ -250,10 +250,7 @@ export class AuthEffects {
       switchMap(({ refreshToken }) =>
         this.authService.refreshToken(refreshToken).pipe(
           map((response) =>
-            AuthActions.refreshTokenSuccess({
-              accessToken: response.accessToken,
-              refreshToken: response.refreshToken,
-            }),
+            AuthActions.refreshTokenSuccess({ response }),
           ),
           catchError((error) =>
             of(AuthActions.refreshTokenFailure({ error: error.error?.message || 'Token refresh failed' })),
@@ -267,10 +264,10 @@ export class AuthEffects {
     () =>
       this.actions$.pipe(
         ofType(AuthActions.refreshTokenSuccess),
-        tap(({ accessToken, refreshToken }) => {
+        tap(({ response }) => {
           // Update tokens in localStorage
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', refreshToken);
+          localStorage.setItem('accessToken', response.accessToken);
+          localStorage.setItem('refreshToken', response.refreshToken);
         }),
       ),
     { dispatch: false },

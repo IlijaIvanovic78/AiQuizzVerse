@@ -11,11 +11,14 @@ import {
 } from '../../store/auth/auth.selectors';
 import { FriendsSidebarComponent } from './friends-sidebar/friends-sidebar.component';
 import { ProfileComponent } from '../profile/profile.component';
+import { CreateQuizComponent } from './create-quiz/create-quiz.component';
+import { MyQuizzesComponent } from './my-quizzes/my-quizzes.component';
+import { JoinGameComponent } from '../game/join-game/join-game.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FriendsSidebarComponent, ProfileComponent],
+  imports: [CommonModule, RouterLink, FriendsSidebarComponent, ProfileComponent, CreateQuizComponent, MyQuizzesComponent, JoinGameComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })

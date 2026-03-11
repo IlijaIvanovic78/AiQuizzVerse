@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     container_name: quizverse-db
     restart: unless-stopped
     ports:
@@ -34,6 +34,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
       - ./backend:/app
       - /app/node_modules

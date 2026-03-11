@@ -17,6 +17,12 @@ export interface Tokens {
   refreshToken: string;
 }
 
+export interface AuthResponse {
+  user: Omit<User, 'passwordHash' | 'refreshToken' | 'twoFaSecret'>;
+  accessToken: string;
+  refreshToken: string;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -25,7 +31,7 @@ export class AuthService {
   ) {}
 
   // ==================== REGISTRATION ====================
-  async register(registerDto: RegisterDto): Promise<{ message: string }> {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     // Check if email already exists
     const existingEmail = await this.usersService.findByEmail(registerDto.email);
     if (existingEmail) {
@@ -42,19 +48,26 @@ export class AuthService {
     const passwordHash = await this.hashData(registerDto.password);
 
     // Create user
-    await this.usersService.create({
+    const user = await this.usersService.create({
       email: registerDto.email,
       username: registerDto.username,
       passwordHash,
     });
 
-    return { message: 'User registered successfully' };
+    // Generate tokens and auto-login
+    const tokens = await this.getTokens(user.id, user.email);
+    await this.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      user: this.sanitizeUser(user),
+      ...tokens,
+    };
   }
 
   // ==================== LOGIN ====================
   async login(
     loginDto: LoginDto,
-  ): Promise<Tokens | { is2FARequired: true; userId: string }> {
+  ): Promise<AuthResponse | { is2FARequired: true; userId: string }> {
     // Validate user credentials
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
@@ -76,11 +89,14 @@ export class AuthService {
     // Save hashed refresh token to database
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return {
+      user: this.sanitizeUser(user),
+      ...tokens,
+    };
   }
 
   // ==================== 2FA LOGIN ====================
-  async login2FA(userId: string, token: string): Promise<Tokens> {
+  async login2FA(userId: string, token: string): Promise<AuthResponse> {
     // Validate 2FA token
     const isValid = await this.validate2FAToken(userId, token);
 
@@ -99,7 +115,10 @@ export class AuthService {
     // Save hashed refresh token
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return {
+      user: this.sanitizeUser(user),
+      ...tokens,
+    };
   }
 
   // ==================== VALIDATE USER ====================
@@ -121,7 +140,7 @@ export class AuthService {
   }
 
   // ==================== REFRESH TOKENS ====================
-  async refreshTokens(userId: string, refreshToken: string): Promise<Tokens> {
+  async refreshTokens(userId: string, refreshToken: string): Promise<AuthResponse> {
     const user = await this.usersService.findOne(userId);
 
     if (!user || !user.refreshToken) {
@@ -144,7 +163,10 @@ export class AuthService {
     // Update refresh token in database
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
-    return tokens;
+    return {
+      user: this.sanitizeUser(user),
+      ...tokens,
+    };
   }
 
   // ==================== LOGOUT ====================
@@ -268,6 +290,12 @@ export class AuthService {
   ): Promise<void> {
     const hashedRefreshToken = await this.hashData(refreshToken);
     await this.usersService.updateRefreshToken(userId, hashedRefreshToken);
+  }
+
+  // ==================== HELPER: SANITIZE USER ====================
+  private sanitizeUser(user: User): Omit<User, 'passwordHash' | 'refreshToken' | 'twoFaSecret'> {
+    const { passwordHash, refreshToken, twoFaSecret, ...safeUser } = user;
+    return safeUser;
   }
 
   // ==================== HELPER: GENERATE QR CODE ====================

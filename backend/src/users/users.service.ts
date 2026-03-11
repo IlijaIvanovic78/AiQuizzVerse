@@ -72,4 +72,23 @@ export class UsersService {
       },
     });
   }
+
+  async addRewards(userId: string, xp: number, coins: number): Promise<User> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        xp: { increment: xp },
+        coins: { increment: coins },
+      },
+    });
+    // Recalculate level: every 500 XP = 1 level
+    const newLevel = Math.floor(user.xp / 500) + 1;
+    if (newLevel !== user.level) {
+      return this.prisma.user.update({
+        where: { id: userId },
+        data: { level: newLevel },
+      });
+    }
+    return user;
+  }
 }

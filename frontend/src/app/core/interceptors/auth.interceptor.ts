@@ -107,10 +107,7 @@ function handle401Error(
 
         // Update tokens in store
         store.dispatch(
-          AuthActions.refreshTokenSuccess({
-            accessToken: response.accessToken,
-            refreshToken: response.refreshToken,
-          }),
+          AuthActions.refreshTokenSuccess({ response }),
         );
 
         // Retry the original request with the new token
