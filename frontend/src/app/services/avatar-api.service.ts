@@ -28,4 +28,20 @@ export class AvatarApiService {
   selectStarter(itemId: string): Observable<UserItem> {
     return this.http.post<UserItem>(`${this.baseUrl}/select-starter`, { itemId });
   }
+
+  getMyPets(): Observable<UserItem[]> {
+    return this.http.get<UserItem[]>(`${this.baseUrl}/pets`);
+  }
+
+  getEquippedPet(): Observable<UserItem | null> {
+    return this.http.get<UserItem | null>(`${this.baseUrl}/pets/equipped`);
+  }
+
+  selectPet(userItemId: string): Observable<UserItem> {
+    return this.http.post<UserItem>(`${this.baseUrl}/pets/select/${userItemId}`, {});
+  }
+
+  unequipPet(): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.baseUrl}/pets/unequip`);
+  }
 }

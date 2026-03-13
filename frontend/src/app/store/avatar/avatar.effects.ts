@@ -68,4 +68,40 @@ export class AvatarEffects {
       ),
     ),
   );
+
+  loadPets$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AvatarActions.loadPets),
+      exhaustMap(() =>
+        this.avatarApi.getMyPets().pipe(
+          map((pets) => AvatarActions.loadPetsSuccess({ pets })),
+          catchError((err) => of(AvatarActions.loadPetsFailure({ error: err.error?.message || 'Failed to load pets' }))),
+        ),
+      ),
+    ),
+  );
+
+  selectPet$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AvatarActions.selectPet),
+      exhaustMap(({ userItemId }) =>
+        this.avatarApi.selectPet(userItemId).pipe(
+          switchMap((equipped) => [AvatarActions.selectPetSuccess({ equipped }), AuthActions.loadProfile()]),
+          catchError((err) => of(AvatarActions.selectPetFailure({ error: err.error?.message || 'Failed' }))),
+        ),
+      ),
+    ),
+  );
+
+  unequipPet$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AvatarActions.unequipPet),
+      exhaustMap(() =>
+        this.avatarApi.unequipPet().pipe(
+          switchMap(() => [AvatarActions.unequipPetSuccess(), AuthActions.loadProfile()]),
+          catchError((err) => of(AvatarActions.unequipPetFailure({ error: err.error?.message || 'Failed' }))),
+        ),
+      ),
+    ),
+  );
 }

@@ -19,14 +19,16 @@ import {
   selectUserDisplayName,
   selectUserLevel,
   selectUserAvatarUrl,
+  selectUserPetUrl,
 } from '../../../store/auth/auth.selectors';
 import { Friend } from '../../../models';
 import { SpriteAnimatorComponent } from '../../../shared/components/sprite-animator/sprite-animator.component';
+import { AvatarDisplayComponent } from '../../../shared/components/avatar-display/avatar-display.component';
 
 @Component({
   selector: 'app-friends-sidebar',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SpriteAnimatorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, SpriteAnimatorComponent, AvatarDisplayComponent],
   template: `
     <div class="h-full flex flex-col bg-dark-800/80 backdrop-blur-sm overflow-hidden">
 
@@ -35,15 +37,9 @@ import { SpriteAnimatorComponent } from '../../../shared/components/sprite-anima
         <div class="flex items-center gap-3">
           <!-- Avatar with level badge (clickable) -->
           <a routerLink="/profile" class="relative flex-shrink-0 group cursor-pointer" title="View Profile">
-            @if (avatarUrl$ | async; as url) {
-              <div class="w-12 h-12 rounded-full overflow-hidden shadow-[0_0_12px_rgba(124,58,237,0.4)] group-hover:shadow-[0_0_20px_rgba(124,58,237,0.6)] ring-2 ring-primary-500/50 group-hover:ring-primary-400 transition-all">
-                <app-sprite-animator [characterId]="url" [displaySize]="48"></app-sprite-animator>
-              </div>
-            } @else {
-              <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-lg font-pixel shadow-[0_0_12px_rgba(124,58,237,0.4)] group-hover:shadow-[0_0_20px_rgba(124,58,237,0.6)] ring-2 ring-primary-500/50 group-hover:ring-primary-400 transition-all">
-                {{ (displayName$ | async)?.charAt(0)?.toUpperCase() }}
-              </div>
-            }
+            <div class="w-12 h-12">
+              <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? null" [petUrl]="(petUrl$ | async) ?? null" [size]="48" [ring]="true"></app-avatar-display>
+            </div>
             <!-- Level badge - bottom right corner -->
             <div class="absolute -bottom-1 -right-1 bg-dark-900 border-2 border-accent-500 rounded-full w-6 h-6 flex items-center justify-center shadow-[0_0_8px_rgba(250,204,21,0.4)]">
               <span class="font-pixel text-[9px] text-accent-400 leading-none">{{ level$ | async }}</span>
@@ -448,6 +444,7 @@ export class FriendsSidebarComponent implements OnInit, OnDestroy {
   displayName$ = this.store.select(selectUserDisplayName);
   level$ = this.store.select(selectUserLevel);
   avatarUrl$ = this.store.select(selectUserAvatarUrl);
+  petUrl$ = this.store.select(selectUserPetUrl);
 
   // Store selectors
   allFriends$ = this.store.select(selectAllFriends);

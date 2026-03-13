@@ -20,6 +20,8 @@ interface SpriteManifestEntry {
   frames: number;
   sheet: string;
   fps: number;
+  rows?: number;
+  cols?: number;
 }
 
 @Component({
@@ -105,11 +107,13 @@ export class SpriteAnimatorComponent implements OnInit, OnChanges, OnDestroy {
     const el = this.spriteEl.nativeElement;
     const sheetUrl = `/assets/avatars${this.entry.sheet}`;
     const scale = this.displaySize / this.entry.frameWidth;
-    const totalWidth = this.entry.frameWidth * this.entry.frames;
+    const cols = this.entry.cols ?? this.entry.frames;
+    const totalWidth = this.entry.frameWidth * cols;
+    const rows = this.entry.rows ?? 1;
     const scaledHeight = this.entry.frameHeight * scale;
 
     el.style.backgroundImage = `url('${sheetUrl}')`;
-    el.style.backgroundSize = `${totalWidth * scale}px ${scaledHeight}px`;
+    el.style.backgroundSize = `${totalWidth * scale}px ${scaledHeight * rows}px`;
 
     // Center vertically if sprite is taller than display area
     this.yOffset = (scaledHeight - this.displaySize) / 2;

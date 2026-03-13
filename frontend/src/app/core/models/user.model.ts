@@ -6,6 +6,7 @@ export interface User {
   coins: number;
   level: number;
   avatarUrl: string | null;
+  petUrl: string | null;
   twoFaEnabled: boolean;
   createdAt: string;
   updatedAt: string;

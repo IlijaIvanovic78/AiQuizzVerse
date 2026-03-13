@@ -28,4 +28,16 @@ export const avatarReducer = createReducer(
   on(AvatarActions.selectStarterFailure, (state, { error }) => ({ ...state, loading: false, error })),
 
   on(AvatarActions.clearError, (state) => ({ ...state, error: null })),
+
+  on(AvatarActions.loadPets, (state) => ({ ...state, loading: true, error: null })),
+  on(AvatarActions.loadPetsSuccess, (state, { pets }) => ({ ...state, pets, loading: false })),
+  on(AvatarActions.loadPetsFailure, (state, { error }) => ({ ...state, loading: false, error })),
+
+  on(AvatarActions.selectPet, (state) => ({ ...state, loading: true })),
+  on(AvatarActions.selectPetSuccess, (state, { equipped }) => ({ ...state, equippedPet: equipped, loading: false })),
+  on(AvatarActions.selectPetFailure, (state, { error }) => ({ ...state, loading: false, error })),
+
+  on(AvatarActions.unequipPet, (state) => ({ ...state, loading: true })),
+  on(AvatarActions.unequipPetSuccess, (state) => ({ ...state, equippedPet: null, loading: false })),
+  on(AvatarActions.unequipPetFailure, (state, { error }) => ({ ...state, loading: false, error })),
 );

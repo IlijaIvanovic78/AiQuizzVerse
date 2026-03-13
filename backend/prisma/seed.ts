@@ -44,9 +44,7 @@ async function main() {
   console.log('✅ Created test user:', testUser);
 
   // ── Shop Items (Avatars) ─────────────────────────────────
-  // Delete old items & user items first (dev only)
-  await prisma.userItem.deleteMany({});
-  await prisma.item.deleteMany({});
+  // Upsert items without wiping existing user purchases
 
   const avatarItems = [
     // 3 Free starter avatars (imagePath = character id from manifest.json)
@@ -68,7 +66,6 @@ async function main() {
     { name: 'Lightning Warrior', imagePath: 'mini-lightning-warrior', price: 300, minLevel: 3 },
     { name: 'Water Spearwoman', imagePath: 'mini-water-spearwoman', price: 350, minLevel: 4 },
     { name: 'Wind Warrior', imagePath: 'mini-wind-warrior', price: 400, minLevel: 5 },
-    { name: 'Soldier', imagePath: 'human-soldier-sword-shield', price: 500, minLevel: 6 },
   ];
 
   for (const item of avatarItems) {
@@ -85,6 +82,38 @@ async function main() {
 
   console.log(`✅ Seeded ${avatarItems.length} avatar items (3 free starters, 15 paid)`);
 
+  // ── Shop Items (Pets) ─────────────────────────────────
+  const petItems = [
+    { name: 'Bird', imagePath: 'pet-bird', price: 30, minLevel: 1 },
+    { name: 'Bunny', imagePath: 'pet-bunny', price: 40, minLevel: 1 },
+    { name: 'Hermie', imagePath: 'pet-hermie', price: 40, minLevel: 1 },
+    { name: 'Roach', imagePath: 'pet-roach', price: 50, minLevel: 1 },
+    { name: 'Mr Circuit', imagePath: 'pet-mr-circuit', price: 50, minLevel: 1 },
+    { name: 'Orchid Owl', imagePath: 'pet-orchid-owl', price: 60, minLevel: 1 },
+    { name: 'Bear', imagePath: 'pet-bear', price: 80, minLevel: 1 },
+    { name: 'Fox', imagePath: 'pet-fox', price: 80, minLevel: 1 },
+    { name: 'Deer', imagePath: 'pet-deer', price: 90, minLevel: 2 },
+    { name: 'Deer Royal', imagePath: 'pet-deer2', price: 120, minLevel: 2 },
+    { name: 'Boar', imagePath: 'pet-boar', price: 100, minLevel: 2 },
+    { name: 'Wolf', imagePath: 'pet-wolf', price: 120, minLevel: 2 },
+    { name: 'Martian Red', imagePath: 'pet-martian-red', price: 100, minLevel: 2 },
+    { name: 'Jumpy Lumpy', imagePath: 'pet-jumpy-lumpy', price: 110, minLevel: 2 },
+    { name: 'Robot Walky', imagePath: 'pet-robot-walky', price: 150, minLevel: 3 },
+  ];
+
+  for (const item of petItems) {
+    await prisma.item.upsert({
+      where: { id: 'pet-' + item.name.toLowerCase().replace(/\s+/g, '-') },
+      update: { ...item, type: 'PET' },
+      create: {
+        id: 'pet-' + item.name.toLowerCase().replace(/\s+/g, '-'),
+        type: 'PET',
+        ...item,
+      },
+    });
+  }
+
+  console.log(`✅ Seeded ${petItems.length} pet items (all paid)`);
 
   console.log('🎉 Seeding completed!');
 }

@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { ShopActions, selectShopItems, selectShopBoosts, selectShopLoading } from '../../store/shop';
 import { selectUser } from '../../store/auth/auth.selectors';
-import { selectAllUserItems } from '../../store/avatar/avatar.selectors';
+import { selectAllUserItems, selectUserPets } from '../../store/avatar/avatar.selectors';
 import { AvatarActions } from '../../store/avatar/avatar.actions';
 import { BoostType, ShopItem } from '../../models';
 import { SpriteAnimatorComponent } from '../../shared/components/sprite-animator/sprite-animator.component';
@@ -36,6 +36,10 @@ const BOOST_INFO: { type: BoostType; label: string; desc: string; price: number;
                 [class]="tab === 'avatars' ? 'bg-primary-600 text-white' : 'bg-dark-700 text-dark-400 hover:text-white'">
           Avatars
         </button>
+        <button (click)="tab = 'pets'" class="px-4 py-2 rounded-lg font-retro text-sm transition-colors"
+                [class]="tab === 'pets' ? 'bg-primary-600 text-white' : 'bg-dark-700 text-dark-400 hover:text-white'">
+          Pets
+        </button>
         <button (click)="tab = 'boosts'" class="px-4 py-2 rounded-lg font-retro text-sm transition-colors"
                 [class]="tab === 'boosts' ? 'bg-primary-600 text-white' : 'bg-dark-700 text-dark-400 hover:text-white'">
           Boosts
@@ -58,6 +62,38 @@ const BOOST_INFO: { type: BoostType; label: string; desc: string; price: number;
                 } @else {
                   <span class="text-accent-400 font-bold text-sm">{{ item.price }} 🪙</span>
                 }
+                @if (item.minLevel > 1) {
+                  <span class="text-xs text-dark-500 font-retro">Lv.{{ item.minLevel }}</span>
+                }
+              </div>
+              @if (owned) {
+                <div class="mt-3 w-full py-2 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-sm font-retro text-center">
+                  ✓ Owned
+                </div>
+              } @else {
+                <button (click)="confirmBuyItem(item)"
+                        class="mt-3 w-full py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-sm font-retro transition-colors"
+                        [disabled]="(loading$ | async)">
+                  Buy
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Pets tab -->
+      @if (tab === 'pets') {
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          @for (item of getPets(items$ | async); track item.id) {
+            @let owned = isOwned(item.id);
+            <div class="bg-dark-800 rounded-xl p-4 border transition-all group" [class]="owned ? 'border-green-500/30 opacity-70' : 'border-dark-600 hover:border-primary-500'">
+              <div class="w-full aspect-square bg-dark-700/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                <app-sprite-animator [characterId]="item.imagePath" [displaySize]="140"></app-sprite-animator>
+              </div>
+              <h3 class="font-retro text-white text-sm truncate">{{ item.name }}</h3>
+              <div class="flex items-center justify-between mt-2">
+                <span class="text-accent-400 font-bold text-sm">{{ item.price }} 🪙</span>
                 @if (item.minLevel > 1) {
                   <span class="text-xs text-dark-500 font-retro">Lv.{{ item.minLevel }}</span>
                 }
@@ -147,10 +183,16 @@ export class ShopComponent implements OnInit {
   user$ = this.store.select(selectUser);
 
   // Track owned items to show "Owned" badge
-  private ownedItems = toSignal(this.store.select(selectAllUserItems), { initialValue: [] });
-  private ownedItemIds = computed(() => new Set(this.ownedItems().map(ui => ui.itemId)));
+  private ownedAvatars = toSignal(this.store.select(selectAllUserItems), { initialValue: [] });
+  private ownedPets = toSignal(this.store.select(selectUserPets), { initialValue: [] });
+  private ownedItemIds = computed(() => {
+    const ids = new Set<string>();
+    this.ownedAvatars().forEach(ui => ids.add(ui.itemId));
+    this.ownedPets().forEach(ui => ids.add(ui.itemId));
+    return ids;
+  });
 
-  tab: 'avatars' | 'boosts' = 'avatars';
+  tab: 'avatars' | 'pets' | 'boosts' = 'avatars';
   boostInfo = BOOST_INFO;
 
   confirmDialog = signal<{ name: string; price: number; action: () => void } | null>(null);
@@ -162,10 +204,15 @@ export class ShopComponent implements OnInit {
     this.store.dispatch(ShopActions.loadItems());
     this.store.dispatch(ShopActions.loadBoosts());
     this.store.dispatch(AvatarActions.loadItems());
+    this.store.dispatch(AvatarActions.loadPets());
   }
 
   getAvatars(items: ShopItem[] | null): ShopItem[] {
     return (items || []).filter((i) => i.type === 'AVATAR');
+  }
+
+  getPets(items: ShopItem[] | null): ShopItem[] {
+    return (items || []).filter((i) => i.type === 'PET');
   }
 
   isOwned(itemId: string): boolean {
@@ -197,6 +244,7 @@ export class ShopComponent implements OnInit {
             // Reload shop items and user's owned avatars
             this.store.dispatch(ShopActions.loadItems());
             this.store.dispatch(AvatarActions.loadItems());
+            this.store.dispatch(AvatarActions.loadPets());
           } else {
             this.confirmError.set((result as any).error || 'Purchase failed');
           }

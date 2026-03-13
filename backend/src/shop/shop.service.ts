@@ -47,11 +47,11 @@ export class ShopService {
       }),
     ];
 
-    // If buying an AVATAR, unequip current, equip new, set avatarUrl
-    if (item.type === ItemType.AVATAR) {
+    // If buying an AVATAR or PET, unequip same type, equip new, set URL
+    if (item.type === ItemType.AVATAR || item.type === ItemType.PET) {
       txOps.push(
         this.prisma.userItem.updateMany({
-          where: { userId, isEquipped: true },
+          where: { userId, isEquipped: true, item: { type: item.type } },
           data: { isEquipped: false },
         }),
       );
@@ -61,10 +61,11 @@ export class ShopService {
           include: { item: true },
         }),
       );
+      const urlField = item.type === ItemType.AVATAR ? 'avatarUrl' : 'petUrl';
       txOps.push(
         this.prisma.user.update({
           where: { id: userId },
-          data: { avatarUrl: item.imagePath },
+          data: { [urlField]: item.imagePath },
         }),
       );
     } else {
@@ -77,8 +78,8 @@ export class ShopService {
     }
 
     const results = await this.prisma.$transaction(txOps);
-    // The userItem is at index 2 for avatars, index 1 for others
-    return item.type === ItemType.AVATAR ? results[2] : results[1];
+    // The userItem is at index 2 for avatars/pets, index 1 for others
+    return (item.type === ItemType.AVATAR || item.type === ItemType.PET) ? results[2] : results[1];
   }
 
   /** Buy a boost for the user */

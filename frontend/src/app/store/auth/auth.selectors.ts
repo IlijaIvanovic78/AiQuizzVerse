@@ -62,6 +62,11 @@ export const selectUserEmail = createSelector(selectUser, (user) => user?.email 
 export const selectUserAvatarUrl = createSelector(selectUser, (user) => user?.avatarUrl || null);
 
 /**
+ * User pet URL
+ */
+export const selectUserPetUrl = createSelector(selectUser, (user) => user?.petUrl || null);
+
+/**
  * User level
  */
 export const selectUserLevel = createSelector(selectUser, (user) => user?.level || 1);

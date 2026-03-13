@@ -3,6 +3,7 @@ export interface UserProfile {
   email: string;
   username: string;
   avatarUrl: string | null;
+  petUrl: string | null;
   xp: number;
   coins: number;
   level: number;

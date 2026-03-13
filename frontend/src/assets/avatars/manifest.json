@@ -170,40 +170,24 @@
     "fps": 8
   },
   {
-    "id": "human-soldier-sword-shield",
-    "type": "character",
-    "source": "FreeCharactersAnimationsAssetPack/FreeCharactersAnimationsAssetPack/SpriteSheets(96x96)/Human_Soldier_Sword_Shield/No_Shadows/Human_Soldier_Sword_Shield_Idle-Sheet.png",
-    "frameWidth": 96,
-    "frameHeight": 96,
-    "frames": 6,
-    "sheet": "/characters/human-soldier-sword-shield/idle-sheet.png",
-    "fps": 8
-  },
-  {
-    "id": "monster-slime",
-    "type": "pet",
-    "source": "FreeCharactersAnimationsAssetPack/FreeCharactersAnimationsAssetPack/SpriteSheets(96x96)/Monster_Slime/No_Shadows/Monster_Slime_Idle-Sheet.png",
-    "frameWidth": 96,
-    "frameHeight": 96,
-    "frames": 6,
-    "sheet": "/pets/monster-slime/idle-sheet.png",
-    "fps": 8
-  },
-  {
     "id": "pet-bear",
     "type": "pet",
     "frameWidth": 32,
     "frameHeight": 32,
     "frames": 4,
+    "cols": 10,
+    "rows": 8,
     "sheet": "/pets/bear/idle-sheet.png",
     "fps": 8
   },
   {
     "id": "pet-bird",
     "type": "pet",
-    "frameWidth": 32,
-    "frameHeight": 32,
+    "frameWidth": 16,
+    "frameHeight": 16,
     "frames": 4,
+    "cols": 4,
+    "rows": 3,
     "sheet": "/pets/bird/idle-sheet.png",
     "fps": 8
   },
@@ -213,6 +197,8 @@
     "frameWidth": 32,
     "frameHeight": 32,
     "frames": 4,
+    "cols": 5,
+    "rows": 6,
     "sheet": "/pets/boar/idle-sheet.png",
     "fps": 8
   },
@@ -222,7 +208,31 @@
     "frameWidth": 32,
     "frameHeight": 32,
     "frames": 4,
+    "cols": 4,
+    "rows": 4,
     "sheet": "/pets/bunny/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-deer",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "cols": 5,
+    "rows": 6,
+    "sheet": "/pets/deer1/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-deer2",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "cols": 7,
+    "rows": 7,
+    "sheet": "/pets/deer2/idle-sheet.png",
     "fps": 8
   },
   {
@@ -231,7 +241,72 @@
     "frameWidth": 32,
     "frameHeight": 32,
     "frames": 4,
+    "cols": 6,
+    "rows": 6,
     "sheet": "/pets/fox/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-hermie",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/hermie/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-jumpy-lumpy",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/jumpy-lumpy/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-martian-red",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/martian-red/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-mr-circuit",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/mr-circuit/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-orchid-owl",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/orchid-owl/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-roach",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/roach/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-robot-walky",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "sheet": "/pets/robot-walky/idle-sheet.png",
     "fps": 8
   },
   {
@@ -240,25 +315,9 @@
     "frameWidth": 32,
     "frameHeight": 32,
     "frames": 4,
+    "cols": 7,
+    "rows": 8,
     "sheet": "/pets/wolf/idle-sheet.png",
-    "fps": 8
-  },
-  {
-    "id": "pet-raccoon",
-    "type": "pet",
-    "frameWidth": 32,
-    "frameHeight": 32,
-    "frames": 4,
-    "sheet": "/pets/raccoon/idle-sheet.png",
-    "fps": 8
-  },
-  {
-    "id": "pet-squirrel",
-    "type": "pet",
-    "frameWidth": 32,
-    "frameHeight": 32,
-    "frames": 4,
-    "sheet": "/pets/squirrel/idle-sheet.png",
     "fps": 8
   }
 ]

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -44,5 +45,28 @@ export class AvatarController {
     @Body('itemId') itemId: string,
   ) {
     return this.avatarService.selectStarter(userId, itemId);
+  }
+
+  @Get('pets')
+  getMyPets(@CurrentUser('userId') userId: string) {
+    return this.avatarService.getUserPets(userId);
+  }
+
+  @Get('pets/equipped')
+  getEquippedPet(@CurrentUser('userId') userId: string) {
+    return this.avatarService.getEquippedPet(userId);
+  }
+
+  @Post('pets/select/:userItemId')
+  selectPet(
+    @CurrentUser('userId') userId: string,
+    @Param('userItemId') userItemId: string,
+  ) {
+    return this.avatarService.selectPet(userId, userItemId);
+  }
+
+  @Delete('pets/unequip')
+  unequipPet(@CurrentUser('userId') userId: string) {
+    return this.avatarService.unequipPet(userId);
   }
 }

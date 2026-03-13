@@ -5,17 +5,18 @@ import { Store } from '@ngrx/store';
 import { ProfileApiService } from '../../services';
 import { UserProfile } from '../../models';
 import { AuthActions } from '../../store/auth/auth.actions';
-import { selectUserAvatarUrl } from '../../store/auth/auth.selectors';
+import { selectUserAvatarUrl, selectUserPetUrl } from '../../store/auth/auth.selectors';
 import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component';
 import { AvatarDisplayComponent } from '../../shared/components/avatar-display/avatar-display.component';
 import { AvatarChangerComponent } from '../../shared/components/avatar-changer/avatar-changer.component';
+import { PetChangerComponent } from '../../shared/components/pet-changer/pet-changer.component';
 import { BoostsOverviewComponent } from '../../shared/components/boosts-overview/boosts-overview.component';
 import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TwoFASetupComponent, AvatarDisplayComponent, AvatarChangerComponent, BoostsOverviewComponent, FormatCoinsPipe],
+  imports: [CommonModule, ReactiveFormsModule, TwoFASetupComponent, AvatarDisplayComponent, AvatarChangerComponent, PetChangerComponent, BoostsOverviewComponent, FormatCoinsPipe],
   template: `
     <div class="h-full overflow-y-auto">
       <!-- Profile Banner -->
@@ -24,7 +25,7 @@ import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
           <!-- Avatar -->
           <div class="relative flex-shrink-0">
             <div class="w-24 h-24">
-              <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? profile()?.avatarUrl ?? null" [size]="96"></app-avatar-display>
+              <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? profile()?.avatarUrl ?? null" [petUrl]="(petUrl$ | async) ?? profile()?.petUrl ?? null" [size]="96"></app-avatar-display>
             </div>
             <div class="absolute -bottom-1 -right-1 bg-dark-900 border-2 border-accent-500 rounded-full w-8 h-8 flex items-center justify-center shadow-[0_0_10px_rgba(250,204,21,0.4)]">
               <span class="font-pixel text-[10px] text-accent-400 leading-none">{{ profile()?.level }}</span>
@@ -145,9 +146,10 @@ import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
             </div>
           </div>
 
-          <!-- Avatar & Boosts -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Avatar & Pet & Boosts -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <app-avatar-changer></app-avatar-changer>
+            <app-pet-changer></app-pet-changer>
             <app-boosts-overview></app-boosts-overview>
           </div>
 
@@ -206,6 +208,7 @@ export class ProfileComponent implements OnInit {
   private store = inject(Store);
 
   avatarUrl$ = this.store.select(selectUserAvatarUrl);
+  petUrl$ = this.store.select(selectUserPetUrl);
 
   profile = signal<UserProfile | null>(null);
   loading = signal(false);

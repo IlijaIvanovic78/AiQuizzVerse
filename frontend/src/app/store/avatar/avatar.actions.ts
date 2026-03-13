@@ -23,5 +23,17 @@ export const AvatarActions = createActionGroup({
     'Select Starter Failure': props<{ error: string }>(),
 
     'Clear Error': emptyProps(),
+
+    'Load Pets': emptyProps(),
+    'Load Pets Success': props<{ pets: UserItem[] }>(),
+    'Load Pets Failure': props<{ error: string }>(),
+
+    'Select Pet': props<{ userItemId: string }>(),
+    'Select Pet Success': props<{ equipped: UserItem }>(),
+    'Select Pet Failure': props<{ error: string }>(),
+
+    'Unequip Pet': emptyProps(),
+    'Unequip Pet Success': emptyProps(),
+    'Unequip Pet Failure': props<{ error: string }>(),
   },
 });

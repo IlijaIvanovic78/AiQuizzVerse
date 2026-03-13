@@ -15,6 +15,7 @@ model User {
   twoFaEnabled     Boolean      @default(false) @map("two_fa_enabled")
   refreshToken     String?      @map("refresh_token")
   avatarUrl        String?      @map("avatar_url")
+  petUrl           String?      @map("pet_url")
   xp               Int          @default(0)
   coins            Int          @default(0)
   level            Int          @default(1)

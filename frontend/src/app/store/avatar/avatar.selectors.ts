@@ -10,3 +10,5 @@ export const selectEquippedAvatar = createSelector(selectAvatarState, (s) => s.e
 export const selectAvatarStarters = createSelector(selectAvatarState, (s) => s.starters);
 export const selectAvatarLoading = createSelector(selectAvatarState, (s) => s.loading);
 export const selectAvatarError = createSelector(selectAvatarState, (s) => s.error);
+export const selectUserPets = createSelector(selectAvatarState, (s) => s.pets);
+export const selectEquippedPet = createSelector(selectAvatarState, (s) => s.equippedPet);
