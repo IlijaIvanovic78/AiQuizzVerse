@@ -65,6 +65,28 @@ export const routes: Routes = [
         title: 'Game - AI QuizVerse',
       },
 
+      // Shop
+      {
+        path: 'shop',
+        loadComponent: () =>
+          import('./features/shop/shop.component').then((m) => m.ShopComponent),
+        title: 'Shop - AI QuizVerse',
+      },
+
+      // Ranked
+      {
+        path: 'ranked',
+        loadComponent: () =>
+          import('./features/ranked/ranked-list.component').then((m) => m.RankedListComponent),
+        title: 'Ranked - AI QuizVerse',
+      },
+      {
+        path: 'ranked/:id',
+        loadComponent: () =>
+          import('./features/ranked/ranked-detail.component').then((m) => m.RankedDetailComponent),
+        title: 'Ranked Journey - AI QuizVerse',
+      },
+
     ],
   },
 

@@ -8,7 +8,7 @@
   padding: 10px 18px;
   border-radius: 10px;
   font-family: 'VT323', monospace;
-  font-size: 20px;
+  font-size: 22px;
   color: rgba(196, 181, 253, 0.6);
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -16,6 +16,7 @@
   border: 1px solid transparent;
   background: transparent;
   text-decoration: none;
+  flex-shrink: 0;
 }
 
 .nav-item:hover {

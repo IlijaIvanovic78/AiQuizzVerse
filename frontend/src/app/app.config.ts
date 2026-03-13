@@ -18,6 +18,12 @@ import { quizReducer } from './store/quiz/quiz.reducer';
 import { QuizEffects } from './store/quiz/quiz.effects';
 import { gameReducer } from './store/game/game.reducer';
 import { GameEffects } from './store/game/game.effects';
+import { shopReducer } from './store/shop/shop.reducer';
+import { ShopEffects } from './store/shop/shop.effects';
+import { avatarReducer } from './store/avatar/avatar.reducer';
+import { AvatarEffects } from './store/avatar/avatar.effects';
+import { rankedReducer } from './store/ranked/ranked.reducer';
+import { RankedEffects } from './store/ranked/ranked.effects';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,8 +37,11 @@ export const appConfig: ApplicationConfig = {
       friends: friendsReducer,
       quiz: quizReducer,
       game: gameReducer,
+      shop: shopReducer,
+      avatar: avatarReducer,
+      ranked: rankedReducer,
     }),
-    provideEffects([AppStatusEffects, AuthEffects, FriendsEffects, QuizEffects, GameEffects]),
+    provideEffects([AppStatusEffects, AuthEffects, FriendsEffects, QuizEffects, GameEffects, ShopEffects, AvatarEffects, RankedEffects]),
     provideStoreDevtools({
       maxAge: 25,
       logOnly: !isDevMode(),

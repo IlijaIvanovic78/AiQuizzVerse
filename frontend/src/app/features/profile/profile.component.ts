@@ -1,17 +1,21 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { ProfileApiService } from '../../services';
 import { UserProfile } from '../../models';
 import { AuthActions } from '../../store/auth/auth.actions';
+import { selectUserAvatarUrl } from '../../store/auth/auth.selectors';
 import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component';
+import { AvatarDisplayComponent } from '../../shared/components/avatar-display/avatar-display.component';
+import { AvatarChangerComponent } from '../../shared/components/avatar-changer/avatar-changer.component';
+import { BoostsOverviewComponent } from '../../shared/components/boosts-overview/boosts-overview.component';
+import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, TwoFASetupComponent],
+  imports: [CommonModule, ReactiveFormsModule, TwoFASetupComponent, AvatarDisplayComponent, AvatarChangerComponent, BoostsOverviewComponent, FormatCoinsPipe],
   template: `
     <div class="h-full overflow-y-auto">
       <!-- Profile Banner -->
@@ -19,10 +23,8 @@ import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component
         <div class="px-8 py-6 flex items-center gap-6">
           <!-- Avatar -->
           <div class="relative flex-shrink-0">
-            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-dark-900 text-3xl font-pixel shadow-[0_0_24px_rgba(124,58,237,0.3)] ring-3 ring-primary-500/40">
-              @if (profile()) {
-                {{ profile()!.username.charAt(0).toUpperCase() }}
-              }
+            <div class="w-24 h-24">
+              <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? profile()?.avatarUrl ?? null" [size]="96"></app-avatar-display>
             </div>
             <div class="absolute -bottom-1 -right-1 bg-dark-900 border-2 border-accent-500 rounded-full w-8 h-8 flex items-center justify-center shadow-[0_0_10px_rgba(250,204,21,0.4)]">
               <span class="font-pixel text-[10px] text-accent-400 leading-none">{{ profile()?.level }}</span>
@@ -52,7 +54,7 @@ import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component
               </div>
               <div class="w-px h-8 bg-primary-700/30"></div>
               <div class="text-center">
-                <p class="font-pixel text-xl text-accent-400 glow-yellow leading-none">{{ profile()!.coins }}</p>
+                <p class="font-pixel text-xl text-accent-400 glow-yellow leading-none">{{ profile()!.coins | formatCoins }}</p>
                 <p class="font-retro text-[11px] text-dark-400 mt-1 uppercase">Coins</p>
               </div>
               <div class="w-px h-8 bg-primary-700/30"></div>
@@ -96,7 +98,7 @@ import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component
               <p class="font-retro text-[10px] text-dark-400 uppercase">XP</p>
             </div>
             <div class="bg-dark-800/60 border border-primary-700/20 rounded-lg p-3 text-center">
-              <p class="font-pixel text-lg text-accent-400 glow-yellow">{{ profile()!.coins }}</p>
+              <p class="font-pixel text-lg text-accent-400 glow-yellow">{{ profile()!.coins | formatCoins }}</p>
               <p class="font-retro text-[10px] text-dark-400 uppercase">Coins</p>
             </div>
             <div class="bg-dark-800/60 border border-primary-700/20 rounded-lg p-3 text-center">
@@ -123,10 +125,6 @@ import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component
                     <p class="mt-1 font-retro text-xs text-red-400">Username must be between 3 and 20 characters</p>
                   }
                 </div>
-                <div class="mb-5">
-                  <label for="avatarUrl" class="block font-retro text-xs text-dark-300 mb-1.5 uppercase tracking-wider">Avatar URL</label>
-                  <input id="avatarUrl" type="text" formControlName="avatarUrl" class="input-field" placeholder="https://example.com/avatar.jpg" />
-                </div>
                 <div class="flex items-center gap-3">
                   <button type="submit" [disabled]="editForm.invalid || saving()" class="btn btn-primary text-sm">
                     @if (saving()) { <span>Saving...</span> } @else { <span>SAVE CHANGES</span> }
@@ -145,6 +143,12 @@ import { TwoFASetupComponent } from '../auth/two-fa-setup/two-fa-setup.component
             <div>
               <app-two-fa-setup></app-two-fa-setup>
             </div>
+          </div>
+
+          <!-- Avatar & Boosts -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <app-avatar-changer></app-avatar-changer>
+            <app-boosts-overview></app-boosts-overview>
           </div>
 
           <!-- Bottom Row: Account Info + Session -->
@@ -201,6 +205,8 @@ export class ProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private store = inject(Store);
 
+  avatarUrl$ = this.store.select(selectUserAvatarUrl);
+
   profile = signal<UserProfile | null>(null);
   loading = signal(false);
   saving = signal(false);
@@ -209,7 +215,6 @@ export class ProfileComponent implements OnInit {
 
   editForm: FormGroup = this.fb.group({
     username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
-    avatarUrl: [''],
   });
 
   ngOnInit() {
@@ -225,7 +230,6 @@ export class ProfileComponent implements OnInit {
         this.profile.set(profile);
         this.editForm.patchValue({
           username: profile.username,
-          avatarUrl: profile.avatarUrl || '',
         });
         this.loading.set(false);
       },
@@ -265,7 +269,6 @@ export class ProfileComponent implements OnInit {
     if (this.profile()) {
       this.editForm.patchValue({
         username: this.profile()!.username,
-        avatarUrl: this.profile()!.avatarUrl || '',
       });
     }
     this.successMessage.set(null);

@@ -1,5 +1,12 @@
 <div class="h-screen bg-dark-900 flex overflow-hidden">
 
+  <!-- Avatar Picker Modal (first login) -->
+  @if ((user$ | async); as user) {
+    @if (!user.avatarUrl) {
+      <app-avatar-picker></app-avatar-picker>
+    }
+  }
+
   <!-- ========== LEFT: TOPBAR + CONTENT ========== -->
   <div class="flex-1 flex flex-col min-w-0">
 
@@ -8,38 +15,37 @@
       class="flex-shrink-0 bg-dark-800/90 backdrop-blur-sm border-b-2 border-primary-700/40 px-5 h-[88px] flex items-center justify-between z-20">
 
       <!-- Left: Logo + Nav Items -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0 overflow-x-auto">
         <!-- Logo Text -->
         <a routerLink="/dashboard" class="flex-shrink-0 mr-2 group" (click)="setActiveTab('home')">
-          <span class="font-pixel text-2xl text-primary-400 drop-shadow-[0_0_12px_rgba(124,58,237,0.5)] group-hover:text-primary-300 group-hover:drop-shadow-[0_0_18px_rgba(124,58,237,0.7)] transition-all tracking-wide">AI <span class="text-accent-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.4)]">QuizVerse</span></span>
+          <span class="font-pixel text-xl text-primary-400 drop-shadow-[0_0_12px_rgba(124,58,237,0.5)] group-hover:text-primary-300 group-hover:drop-shadow-[0_0_18px_rgba(124,58,237,0.7)] transition-all tracking-wide">AI <span class="text-accent-400 drop-shadow-[0_0_12px_rgba(250,204,21,0.4)]">QuizVerse</span></span>
         </a>
 
         <!-- Divider -->
         <div class="w-px h-10 bg-primary-700/40 mx-1"></div>
 
         <!-- Nav Items -->
+        <button (click)="setActiveTab('home')" class="nav-item" [class.nav-item-active]="activeTab === 'home'"
+          title="Home">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+          </svg>
+          <span class="hidden lg:inline">Home</span>
+        </button>
+
         <button (click)="setActiveTab('create')" class="nav-item" [class.nav-item-active]="activeTab === 'create'"
-          title="Create Quiz">
-          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+          title="Create / Join">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd"
               d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
               clip-rule="evenodd" />
           </svg>
-          <span class="hidden lg:inline">Create Quiz</span>
-        </button>
-
-        <button (click)="setActiveTab('join')" class="nav-item" [class.nav-item-active]="activeTab === 'join'"
-          title="Join Game">
-          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-          </svg>
-          <span class="hidden lg:inline">Join Game</span>
+          <span class="hidden lg:inline">Play</span>
         </button>
 
         <button (click)="setActiveTab('ranked')" class="nav-item" [class.nav-item-active]="activeTab === 'ranked'"
           title="Ranked">
-          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path
               d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
           </svg>
@@ -48,7 +54,7 @@
 
         <button (click)="setActiveTab('shop')" class="nav-item" [class.nav-item-active]="activeTab === 'shop'"
           title="Shop">
-          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path
               d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
           </svg>
@@ -57,7 +63,7 @@
 
         <button (click)="setActiveTab('profile')" class="nav-item" [class.nav-item-active]="activeTab === 'profile'"
           title="My Profile">
-          <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 20 20">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
           </svg>
           <span class="hidden lg:inline">Profile</span>
@@ -65,16 +71,16 @@
       </div>
 
       <!-- Right: Coins + Balance -->
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 bg-dark-700/60 border border-accent-500/30 rounded-lg px-4 py-2">
-          <svg class="w-5 h-5 text-accent-400" fill="currentColor" viewBox="0 0 20 20">
+      <div class="flex-shrink-0 flex items-center gap-3 ml-3">
+        <div class="flex items-center gap-2 bg-dark-700/60 border border-accent-500/30 rounded-lg px-3 py-2">
+          <svg class="w-6 h-6 text-accent-400" fill="currentColor" viewBox="0 0 20 20">
             <path
               d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
             <path fill-rule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
               clip-rule="evenodd" />
           </svg>
-          <span class="font-pixel text-sm text-accent-400">{{ coins$ | async }}</span>
+          <span class="font-pixel text-sm text-accent-400">{{ (coins$ | async) | formatCoins }}</span>
           <button
             class="ml-1 w-6 h-6 rounded bg-accent-500/20 border border-accent-500/40 flex items-center justify-center hover:bg-accent-500/40 transition-colors"
             title="Buy Coins">
@@ -92,48 +98,65 @@
     <div class="flex-1 overflow-y-auto">
       @switch (activeTab) {
       @case ('home') {
-      <div class="flex flex-col items-center justify-center min-h-[60vh] text-center px-6 pt-8">
-        <h1 class="font-pixel text-5xl text-primary-400/15 mb-6 select-none">AI <span class="text-accent-400/15">QuizVerse</span></h1>
-        <p class="font-retro text-dark-400 text-sm max-w-md mb-8">
-          Select an option from the menu above to get started
-        </p>
+      <div class="px-6 pt-6 pb-8">
+        <!-- Top row: Avatar (clickable) + Boosts -->
+        <div class="flex gap-6 mb-6 items-center">
+          <!-- Avatar display — click to open modal changer -->
+          <div class="flex-shrink-0 cursor-pointer group" (click)="showAvatarChanger = true">
+            <div class="relative">
+              <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? null" [size]="130" [ring]="true"></app-avatar-display>
+              <div class="absolute inset-0 rounded-full bg-dark-900/0 group-hover:bg-dark-900/40 transition-colors flex items-center justify-center">
+                <svg class="w-7 h-7 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                </svg>
+              </div>
+            </div>
+            <p class="font-retro text-[10px] text-dark-500 text-center mt-1">Change Avatar</p>
+          </div>
+          <!-- Boosts -->
+          <div class="flex-1 min-w-0">
+            <app-boosts-overview></app-boosts-overview>
+          </div>
+        </div>
+
+        <!-- Quizzes -->
         <app-my-quizzes></app-my-quizzes>
       </div>
+
+      <!-- Avatar Changer Modal -->
+      @if (showAvatarChanger) {
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-dark-900/80 backdrop-blur-sm" (click)="showAvatarChanger = false">
+          <div class="w-full max-w-2xl mx-4" (click)="$event.stopPropagation()">
+            <app-avatar-changer></app-avatar-changer>
+            <div class="flex justify-center mt-4">
+              <button (click)="showAvatarChanger = false" class="px-8 py-2.5 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-pixel text-sm transition-colors">OK</button>
+            </div>
+          </div>
+        </div>
+      }
       }
       @case ('profile') {
       <app-profile></app-profile>
       }
       @case ('create') {
-      <app-create-quiz></app-create-quiz>
-      }
-      @case ('join') {
-      <app-join-game></app-join-game>
+      <div class="p-6">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <!-- Left: Create Quiz -->
+          <div>
+            <app-create-quiz></app-create-quiz>
+          </div>
+          <!-- Right: Join Game -->
+          <div>
+            <app-join-game></app-join-game>
+          </div>
+        </div>
+      </div>
       }
       @case ('ranked') {
-      <div class="flex flex-col items-center justify-center h-full text-center px-6">
-        <div class="w-20 h-20 mb-6 bg-primary-900/30 rounded-2xl flex items-center justify-center">
-          <svg class="w-10 h-10 text-primary-400/60" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-          </svg>
-        </div>
-        <h2 class="font-pixel text-xl text-primary-400 mb-2">Ranked Journey</h2>
-        <p class="font-retro text-dark-400 text-sm">Progress through difficulty levels</p>
-        <span class="mt-4 badge badge-purple">Coming Soon</span>
-      </div>
+      <app-ranked-list></app-ranked-list>
       }
       @case ('shop') {
-      <div class="flex flex-col items-center justify-center h-full text-center px-6">
-        <div class="w-20 h-20 mb-6 bg-primary-900/30 rounded-2xl flex items-center justify-center">
-          <svg class="w-10 h-10 text-primary-400/60" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-          </svg>
-        </div>
-        <h2 class="font-pixel text-xl text-primary-400 mb-2">Shop</h2>
-        <p class="font-retro text-dark-400 text-sm">Buy avatars and power-ups</p>
-        <span class="mt-4 badge badge-purple">Coming Soon</span>
-      </div>
+      <app-shop></app-shop>
       }
       }
     </div>

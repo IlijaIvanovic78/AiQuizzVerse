@@ -24,6 +24,9 @@ model User {
   sentRequests     Friendship[]  @relation("SentRequests")
   quizzes          Quiz[]
   matchPlayers     MatchPlayer[]
+  userItems        UserItem[]
+  userBoosts       UserBoost[]
+  rankedJourneys   RankedJourney[]
 
   @@map("users")
 }
@@ -79,6 +82,7 @@ model Quiz {
   createdBy  User       @relation(fields: [createdById], references: [id])
   questions  Question[]
   matches    Match[]
+  rankedStages RankedStage[]
 
   @@map("quizzes")
 }
@@ -151,4 +155,98 @@ model MatchPlayer {
 
   @@unique([matchId, userId])
   @@map("match_players")
+}
+
+// ── Shop & Avatar ────────────────────────────────────────
+
+enum ItemType {
+  HAT
+  ARMOR
+  WEAPON
+  SHIELD
+  BADGE
+  PET
+  AVATAR
+}
+
+model Item {
+  id        String   @id @default(uuid())
+  name      String
+  type      ItemType
+  imagePath String   @map("image_path")
+  price     Int
+  minLevel  Int      @default(1) @map("min_level")
+
+  userItems UserItem[]
+
+  @@map("items")
+}
+
+model UserItem {
+  id         String  @id @default(uuid())
+  userId     String  @map("user_id")
+  itemId     String  @map("item_id")
+  isEquipped Boolean @default(false) @map("is_equipped")
+
+  user User @relation(fields: [userId], references: [id])
+  item Item @relation(fields: [itemId], references: [id])
+
+  @@unique([userId, itemId])
+  @@map("user_items")
+}
+
+// ── Boosts ───────────────────────────────────────────────
+
+enum BoostType {
+  HINT
+  EXTRA_TIME
+  FIFTY_FIFTY
+  DOUBLE_POINTS
+  SHIELD
+  STREAK_FREEZE
+}
+
+model UserBoost {
+  id       String    @id @default(uuid())
+  userId   String    @map("user_id")
+  type     BoostType
+  quantity Int       @default(1)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, type])
+  @@map("user_boosts")
+}
+
+// ── Ranked Journey ───────────────────────────────────────
+
+model RankedJourney {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  topic        String
+  totalStages  Int      @map("total_stages")
+  currentStage Int      @default(0) @map("current_stage")
+  isCompleted  Boolean  @default(false) @map("is_completed")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user   User          @relation(fields: [userId], references: [id])
+  stages RankedStage[]
+
+  @@map("ranked_journeys")
+}
+
+model RankedStage {
+  id           String     @id @default(uuid())
+  journeyId    String     @map("journey_id")
+  stageNumber  Int        @map("stage_number")
+  quizId       String     @map("quiz_id")
+  difficulty   Difficulty
+  isCompleted  Boolean    @default(false) @map("is_completed")
+  score        Int?
+  earnedReward Json?      @map("earned_reward")
+
+  journey RankedJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  quiz    Quiz          @relation(fields: [quizId], references: [id])
+
+  @@map("ranked_stages")
 }

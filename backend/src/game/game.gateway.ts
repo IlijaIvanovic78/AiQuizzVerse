@@ -251,6 +251,29 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     await this.advanceOrFinish(matchId, match.type, match.quiz.numQuestions);
   }
 
+  // ─── Use Boost ────────────────────────────────────────────
+
+  @SubscribeMessage('use-boost')
+  async handleUseBoost(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { matchId: string; boostType: string; questionId?: string },
+  ) {
+    const userId = client.data.userId;
+    if (!userId) return;
+
+    try {
+      const result = await this.gameService.useBoost(
+        userId,
+        data.boostType as any,
+        data.matchId,
+        data.questionId,
+      );
+      client.emit('boost-applied', result);
+    } catch (err: any) {
+      client.emit('boost-error', { message: err.message || 'Boost failed' });
+    }
+  }
+
   // ─── Helpers ──────────────────────────────────────────────
 
   private async advanceOrFinish(matchId: string, type: string, totalQuestions: number) {

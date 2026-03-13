@@ -13,6 +13,9 @@ import { AiModule } from './ai/ai.module';
 import { UploadModule } from './upload/upload.module';
 import { QuizModule } from './quiz/quiz.module';
 import { GameModule } from './game/game.module';
+import { ShopModule } from './shop/shop.module';
+import { AvatarModule } from './avatar/avatar.module';
+import { RankedModule } from './ranked/ranked.module';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { GameModule } from './game/game.module';
     UploadModule,
     QuizModule,
     GameModule,
+    ShopModule,
+    AvatarModule,
+    RankedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

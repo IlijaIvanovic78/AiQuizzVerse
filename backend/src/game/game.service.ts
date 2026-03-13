@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchType, MatchStatus } from '@prisma/client';
+import { MatchType, MatchStatus, BoostType } from '@prisma/client';
 import { nanoid } from 'nanoid';
 
 @Injectable()
@@ -211,5 +211,54 @@ export class GameService {
         },
       },
     });
+  }
+
+  /** Use a boost — decrement quantity, return boost effect data */
+  async useBoost(userId: string, type: BoostType, matchId: string, questionId?: string) {
+    const boost = await this.prisma.userBoost.findUnique({
+      where: { userId_type: { userId, type } },
+    });
+    if (!boost || boost.quantity < 1) {
+      throw new BadRequestException('No boost available');
+    }
+
+    await this.prisma.userBoost.update({
+      where: { id: boost.id },
+      data: { quantity: { decrement: 1 } },
+    });
+
+    // Compute boost-specific payload
+    if (type === 'FIFTY_FIFTY' && questionId) {
+      return { type, effect: await this.fiftyFifty(matchId, questionId) };
+    }
+    if (type === 'HINT' && questionId) {
+      const match = await this.prisma.match.findUnique({
+        where: { id: matchId },
+        include: { quiz: { include: { questions: true } } },
+      });
+      const q = match?.quiz.questions.find((q) => q.id === questionId);
+      return { type, effect: { hint: q?.explanation || 'Think carefully!' } };
+    }
+
+    // EXTRA_TIME, DOUBLE_POINTS, SHIELD, STREAK_FREEZE — handled on client
+    return { type, effect: null };
+  }
+
+  /** Return indices of 2 wrong answers to eliminate */
+  private async fiftyFifty(matchId: string, questionId: string): Promise<{ eliminatedIndices: number[] }> {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: { quiz: { include: { questions: true } } },
+    });
+    const question = match?.quiz.questions.find((q) => q.id === questionId);
+    if (!question) return { eliminatedIndices: [] };
+
+    const wrongIndices = [0, 1, 2, 3].filter((i) => i !== question.correctAnswer);
+    // Shuffle and take 2
+    for (let i = wrongIndices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [wrongIndices[i], wrongIndices[j]] = [wrongIndices[j], wrongIndices[i]];
+    }
+    return { eliminatedIndices: wrongIndices.slice(0, 2) };
   }
 }

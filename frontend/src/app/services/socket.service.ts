@@ -13,6 +13,7 @@ import {
   AnswerResult,
   RoundResults,
   Match,
+  BoostResult,
 } from '../models';
 
 @Injectable({
@@ -45,6 +46,8 @@ export class SocketService {
   private nextQuestionSubject = new Subject<NextQuestionEvent>();
   private matchFinishedSubject = new Subject<Match>();
   private playerDisconnectedSubject = new Subject<{ userId: string }>();
+  private boostAppliedSubject = new Subject<BoostResult>();
+  private boostErrorSubject = new Subject<{ message: string }>();
 
   public playerJoined$ = this.playerJoinedSubject.asObservable();
   public playerLeft$ = this.playerLeftSubject.asObservable();
@@ -55,6 +58,8 @@ export class SocketService {
   public nextQuestion$ = this.nextQuestionSubject.asObservable();
   public matchFinished$ = this.matchFinishedSubject.asObservable();
   public playerDisconnected$ = this.playerDisconnectedSubject.asObservable();
+  public boostApplied$ = this.boostAppliedSubject.asObservable();
+  public boostError$ = this.boostErrorSubject.asObservable();
 
   /**
    * Connect to main WebSocket server with JWT authentication
@@ -158,6 +163,14 @@ export class SocketService {
     fromEvent<{ userId: string }>(this.gameSocket, 'player-disconnected')
       .pipe(takeUntil(this.gameDestroy$))
       .subscribe((e) => this.playerDisconnectedSubject.next(e));
+
+    fromEvent<BoostResult>(this.gameSocket, 'boost-applied')
+      .pipe(takeUntil(this.gameDestroy$))
+      .subscribe((e) => this.boostAppliedSubject.next(e));
+
+    fromEvent<{ message: string }>(this.gameSocket, 'boost-error')
+      .pipe(takeUntil(this.gameDestroy$))
+      .subscribe((e) => this.boostErrorSubject.next(e));
   }
 
   // ─── Game emit helpers ────────────────────────────────────
@@ -176,6 +189,10 @@ export class SocketService {
 
   emitSubmitAnswer(matchId: string, questionId: string, answer: number, timeMs: number): void {
     this.gameSocket?.emit('submit-answer', { matchId, questionId, answer, timeMs });
+  }
+
+  emitUseBoost(matchId: string, boostType: string, questionId?: string): void {
+    this.gameSocket?.emit('use-boost', { matchId, boostType, questionId });
   }
 
   /**

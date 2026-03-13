@@ -1,0 +1,264 @@
+[
+  {
+    "id": "mini-archer-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniArcherMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-archer-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-arch-mage",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniArchMage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-arch-mage/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-cavalier-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniCavalierMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 8,
+    "sheet": "/characters/mini-cavalier-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-cross-bow-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniCrossBowMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-cross-bow-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-halberd-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniHalberdMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-halberd-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-horse-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniHorseMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 8,
+    "sheet": "/characters/mini-horse-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-king-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniKingMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-king-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-mage",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniMage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-mage/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-prince-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniPrinceMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-prince-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-shield-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniShieldMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-shield-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-spear-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniSpearMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-spear-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-sword-man",
+    "type": "character",
+    "source": "MinifolksHumans/Without Outline/MiniSwordMan.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-sword-man/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-earth-warrior",
+    "type": "character",
+    "source": "MiniElementsHeroes/MiniElementsHeroes/Without Outline/MiniEarthWarrior-Sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-earth-warrior/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-ice-swordswoman",
+    "type": "character",
+    "source": "MiniElementsHeroes/MiniElementsHeroes/Without Outline/MiniIceSwordswoman-Sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-ice-swordswoman/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-lightning-warrior",
+    "type": "character",
+    "source": "MiniElementsHeroes/MiniElementsHeroes/Without Outline/MiniLightningWarrior-Sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-lightning-warrior/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-water-spearwoman",
+    "type": "character",
+    "source": "MiniElementsHeroes/MiniElementsHeroes/Without Outline/MiniWaterSpearwoman-Sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-water-spearwoman/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "mini-wind-warrior",
+    "type": "character",
+    "source": "MiniElementsHeroes/MiniElementsHeroes/Without Outline/MiniWindWarrior-Sheet.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/characters/mini-wind-warrior/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "human-soldier-sword-shield",
+    "type": "character",
+    "source": "FreeCharactersAnimationsAssetPack/FreeCharactersAnimationsAssetPack/SpriteSheets(96x96)/Human_Soldier_Sword_Shield/No_Shadows/Human_Soldier_Sword_Shield_Idle-Sheet.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "frames": 6,
+    "sheet": "/characters/human-soldier-sword-shield/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "monster-slime",
+    "type": "pet",
+    "source": "FreeCharactersAnimationsAssetPack/FreeCharactersAnimationsAssetPack/SpriteSheets(96x96)/Monster_Slime/No_Shadows/Monster_Slime_Idle-Sheet.png",
+    "frameWidth": 96,
+    "frameHeight": 96,
+    "frames": 6,
+    "sheet": "/pets/monster-slime/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-bear",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/bear/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-bird",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/bird/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-boar",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/boar/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-bunny",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/bunny/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-fox",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/fox/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-wolf",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/wolf/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-raccoon",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/raccoon/idle-sheet.png",
+    "fps": 8
+  },
+  {
+    "id": "pet-squirrel",
+    "type": "pet",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "sheet": "/pets/squirrel/idle-sheet.png",
+    "fps": 8
+  }
+]
