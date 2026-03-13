@@ -18,16 +18,17 @@ import {
   selectAllResults,
   selectWaitingForOpponent,
 } from '../../../store/game/game.selectors';
-import { selectUserId } from '../../../store/auth/auth.selectors';
+import { selectUserId, selectUserAvatarUrl, selectUserPetUrl } from '../../../store/auth/auth.selectors';
 import { selectShopBoosts } from '../../../store/shop/shop.selectors';
 import { ShopActions } from '../../../store/shop/shop.actions';
 import { SocketService } from '../../../services/socket.service';
 import { BoostType, UserBoost } from '../../../models';
+import { SpriteAnimatorComponent } from '../../../shared/components/sprite-animator/sprite-animator.component';
 
 @Component({
   selector: 'app-game-play',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SpriteAnimatorComponent],
   templateUrl: './game-play.component.html',
 })
 export class GamePlayComponent implements OnInit, OnDestroy {
@@ -50,6 +51,8 @@ export class GamePlayComponent implements OnInit, OnDestroy {
   allResults$ = this.store.select(selectAllResults);
   waitingForOpponent$ = this.store.select(selectWaitingForOpponent);
   boosts$ = this.store.select(selectShopBoosts);
+  avatarUrl$ = this.store.select(selectUserAvatarUrl);
+  petUrl$ = this.store.select(selectUserPetUrl);
 
   timeRemaining = signal(0);
   selectedAnswer = signal<number | null>(null);
@@ -196,11 +199,11 @@ export class GamePlayComponent implements OnInit, OnDestroy {
   getOptionClass(index: number): string {
     if (!this.showResult()) {
       if (this.eliminatedIndices().includes(index)) {
-        return 'border-dark-700/20 bg-dark-800/30 opacity-40 cursor-not-allowed';
+        return 'border-dark-700/20 bg-black/40 opacity-40 cursor-not-allowed';
       }
       return this.selectedAnswer() === index
-        ? 'border-primary-500 bg-primary-500/10'
-        : 'border-dark-600/30 hover:border-primary-500/50';
+        ? 'border-primary-500 bg-primary-500/20'
+        : 'border-dark-500/40 bg-black/60 hover:border-primary-500/50';
     }
     return '';
   }

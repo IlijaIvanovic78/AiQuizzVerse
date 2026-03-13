@@ -1,7 +1,13 @@
 import { Match, GameQuestion, MatchType, AnswerResult } from '../../models';
 
+export interface RankedContext {
+  journeyId: string;
+  stageId: string;
+}
+
 export interface GameState {
   currentMatch: Match | null;
+  rankedContext: RankedContext | null;
   currentQuestion: GameQuestion | null;
   currentQuestionIndex: number;
   totalQuestions: number;
@@ -20,6 +26,7 @@ export interface GameState {
 
 export const initialGameState: GameState = {
   currentMatch: null,
+  rankedContext: null,
   currentQuestion: null,
   currentQuestionIndex: 0,
   totalQuestions: 0,

@@ -9,6 +9,7 @@ import {
   selectOpponentScore,
   selectGameMode,
   selectMatchPlayers,
+  selectRankedContext,
 } from '../../../store/game/game.selectors';
 import { selectUserId } from '../../../store/auth/auth.selectors';
 
@@ -28,9 +29,15 @@ export class GameResultComponent {
   mode$ = this.store.select(selectGameMode);
   players$ = this.store.select(selectMatchPlayers);
   userId$ = this.store.select(selectUserId);
+  rankedContext$ = this.store.select(selectRankedContext);
 
   goToDashboard(): void {
     this.store.dispatch(GameActions.resetGame());
     this.router.navigate(['/dashboard']);
+  }
+
+  goToJourney(journeyId: string): void {
+    this.store.dispatch(GameActions.resetGame());
+    this.router.navigate(['/ranked', journeyId]);
   }
 }

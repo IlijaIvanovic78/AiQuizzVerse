@@ -1,8 +1,29 @@
-<div class="min-h-screen flex flex-col p-4">
+<div class="relative min-h-screen overflow-hidden">
+  <!-- Arena Background -->
+  <div class="absolute inset-0 bg-cover bg-center bg-no-repeat"
+    style="background-image: url('/assets/Arena.png');">
+  </div>
+
+  <!-- Avatar + Pet on left platform -->
+  <div class="absolute z-10" style="bottom: 28%; left: 5%;">
+    @if (avatarUrl$ | async; as avatarUrl) {
+      <div class="relative">
+        <app-sprite-animator [characterId]="avatarUrl" [displaySize]="240"></app-sprite-animator>
+        @if (petUrl$ | async; as petUrl) {
+          <div class="absolute" style="bottom: 10px; right: -80px;">
+            <app-sprite-animator [characterId]="petUrl" [displaySize]="140"></app-sprite-animator>
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Quiz UI overlay -->
+  <div class="relative z-20 min-h-screen flex flex-col p-4">
 
   <!-- Header: Score + Timer + Progress -->
   <div class="w-full max-w-2xl mx-auto mb-6">
-    <div class="flex items-center justify-between bg-dark-800/60 border border-dark-600/30 rounded-xl p-4">
+    <div class="flex items-center justify-between bg-black/70 backdrop-blur-sm border border-dark-600/40 rounded-xl p-4">
       <!-- Player Score -->
       <div class="text-center">
         <p class="font-retro text-xs text-dark-400">Your Score</p>
@@ -62,8 +83,8 @@
   <!-- Question Card -->
   @if (question$ | async; as question) {
     <div class="w-full max-w-2xl mx-auto flex-1">
-      <div class="bg-dark-800/60 border border-dark-600/30 rounded-2xl p-6 mb-6">
-        <h2 class="font-retro text-lg text-dark-100 leading-relaxed">{{ question.text }}</h2>
+      <div class="bg-black/70 backdrop-blur-sm border border-dark-600/40 rounded-2xl p-6 mb-6">
+        <h2 class="font-retro text-lg text-white leading-relaxed">{{ question.text }}</h2>
         @if (hintText()) {
           <div class="mt-3 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
             <span class="font-retro text-xs text-yellow-300">💡 Hint: {{ hintText() }}</span>
@@ -108,9 +129,9 @@
         @for (option of question.options; track $index; let i = $index) {
           <button (click)="selectOption(i)"
             [disabled]="answered() || isOptionEliminated(i)"
-            class="w-full text-left p-4 rounded-xl border-2 transition-all font-retro text-sm"
+            class="w-full text-left p-4 rounded-xl border-2 transition-all font-retro text-sm backdrop-blur-sm"
             [class]="getOptionClass(i)"
-            [class.text-dark-100]="!showResult()"
+            [class.text-white]="!showResult()"
             [class.cursor-not-allowed]="answered()"
             [class.border-green-500]="showResult() && (lastResult$ | async)?.correctAnswer === i"
             [class.bg-green-500]="showResult() && (lastResult$ | async)?.correctAnswer === i"
@@ -179,4 +200,5 @@
       }
     </div>
   }
+  </div>
 </div>

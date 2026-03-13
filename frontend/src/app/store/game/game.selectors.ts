@@ -29,3 +29,4 @@ export const selectMatchPlayers = createSelector(
 
 export const selectAllResults = createSelector(selectGameState, (s) => s.allResults);
 export const selectWaitingForOpponent = createSelector(selectGameState, (s) => s.waitingForOpponent);
+export const selectRankedContext = createSelector(selectGameState, (s) => s.rankedContext);

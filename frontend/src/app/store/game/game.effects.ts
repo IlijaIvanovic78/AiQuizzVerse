@@ -2,11 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { map, catchError, switchMap, tap, withLatestFrom } from 'rxjs/operators';
+import { map, catchError, switchMap, tap, withLatestFrom, filter } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { GameActions } from './game.actions';
 import { GameApiService, SocketService, ToastService } from '../../services';
 import { selectUserId } from '../auth/auth.selectors';
+import { selectRankedContext, selectPlayerScore } from './game.selectors';
+import { RankedActions } from '../ranked/ranked.actions';
 
 @Injectable()
 export class GameEffects {
@@ -171,6 +173,25 @@ export class GameEffects {
         })
       ),
     { dispatch: false }
+  );
+
+  // Auto-complete ranked stage when match finishes
+  completeRankedStage$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(GameActions.matchFinished),
+      withLatestFrom(
+        this.store.select(selectRankedContext),
+        this.store.select(selectPlayerScore),
+      ),
+      filter(([, ctx]) => !!ctx),
+      map(([, ctx, score]) =>
+        RankedActions.completeStage({
+          journeyId: ctx!.journeyId,
+          stageId: ctx!.stageId,
+          score,
+        })
+      ),
+    )
   );
 
   onError$ = createEffect(

@@ -6,18 +6,24 @@ export const gameReducer = createReducer(
   initialGameState,
 
   // Create Match
-  on(GameActions.createMatch, (state) => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-  on(GameActions.createMatchSuccess, (state, { match }) => ({
-    ...state,
-    currentMatch: match,
-    mode: match.type,
-    status: match.type === 'SOLO' ? 'LOBBY' as const : 'LOBBY' as const,
-    loading: false,
-  })),
+
+  on(GameActions.createMatch, GameActions.createMatchSuccess, (state, action) => {
+    if ('match' in action) {
+      return {
+        ...state,
+        currentMatch: action.match,
+        mode: action.match.type,
+        status: 'LOBBY' as const,
+        loading: false,
+      };
+    }
+    return {
+      ...state,
+      loading: true,
+      error: null,
+      rankedContext: action.rankedContext ?? state.rankedContext,
+    };
+  }),
   on(GameActions.createMatchFailure, (state, { error }) => ({
     ...state,
     loading: false,

@@ -6,11 +6,25 @@ import { RankedActions, selectCurrentJourney, selectRankedLoading } from '../../
 import { GameActions } from '../../store/game/game.actions';
 import { RankedStage } from '../../models';
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  EASY: 'text-green-400 border-green-500',
-  MEDIUM: 'text-yellow-400 border-yellow-500',
-  HARD: 'text-orange-400 border-orange-500',
-  EXPERT: 'text-red-400 border-red-500',
+const DIFFICULTY_BG: Record<string, string> = {
+  EASY: 'from-green-600 to-green-800',
+  MEDIUM: 'from-yellow-600 to-yellow-800',
+  HARD: 'from-orange-600 to-orange-800',
+  EXPERT: 'from-red-600 to-red-800',
+};
+
+const DIFFICULTY_BORDER: Record<string, string> = {
+  EASY: 'border-green-500 shadow-green-500/30',
+  MEDIUM: 'border-yellow-500 shadow-yellow-500/30',
+  HARD: 'border-orange-500 shadow-orange-500/30',
+  EXPERT: 'border-red-500 shadow-red-500/30',
+};
+
+const DIFFICULTY_TEXT: Record<string, string> = {
+  EASY: 'text-green-400',
+  MEDIUM: 'text-yellow-400',
+  HARD: 'text-orange-400',
+  EXPERT: 'text-red-400',
 };
 
 @Component({
@@ -18,77 +32,97 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="p-6 max-w-4xl mx-auto">
+    <div class="min-h-screen p-6 flex flex-col">
       @let journey = journey$ | async;
       @if (journey) {
-        <div class="flex items-center gap-4 mb-8">
-          <button (click)="goBack()" class="text-gray-400 hover:text-white">← Back</button>
+        <!-- Header -->
+        <div class="flex items-center gap-4 mb-6">
+          <button (click)="goBack()" class="text-gray-400 hover:text-white transition-colors text-lg">← Back</button>
           <div>
-            <h1 class="text-3xl font-bold text-white">{{ journey.topic }}</h1>
-            <p class="text-gray-400">
-              {{ journey.currentStage }} / {{ journey.totalStages }} stages completed
+            <h1 class="text-3xl font-pixel text-white">{{ journey.topic }}</h1>
+            <p class="font-retro text-sm text-dark-400 mt-1">
+              {{ journey.currentStage }} / {{ journey.totalStages }} stages cleared
               @if (journey.isCompleted) {
-                <span class="ml-2 text-green-400 font-bold">🏆 Journey Complete!</span>
+                <span class="ml-2 text-yellow-400 font-bold">🏆 Journey Complete!</span>
               }
             </p>
           </div>
         </div>
 
-        <!-- Stage map -->
-        <div class="relative">
-          <!-- Connecting line -->
-          <div class="absolute left-8 top-8 bottom-8 w-0.5 bg-dark-600"></div>
-
-          <div class="space-y-6">
-            @for (stage of journey.stages; track stage.id; let i = $index) {
-              <div class="relative flex items-start gap-4 pl-4">
-                <!-- Node circle -->
-                <div class="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                     [class]="stage.isCompleted ? 'bg-green-600 text-white' :
-                              isPlayable(stage, journey.stages) ? 'bg-indigo-600 text-white animate-pulse' :
-                              'bg-dark-700 text-gray-500 border border-dark-500'">
-                  @if (stage.isCompleted) { ✓ } @else { {{ stage.stageNumber }} }
-                </div>
-
-                <!-- Stage card -->
-                <div class="flex-1 rounded-xl p-4 border transition-colors"
-                     [class]="stage.isCompleted ? 'bg-dark-800 border-green-700' :
-                              isPlayable(stage, journey.stages) ? 'bg-dark-800 border-indigo-500' :
-                              'bg-dark-900 border-dark-700 opacity-60'">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <h3 class="text-white font-medium">Stage {{ stage.stageNumber }}</h3>
-                      <span class="text-sm" [class]="diffColor(stage.difficulty)">
-                        {{ stage.difficulty }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-3">
-                      @if (stage.isCompleted && stage.score !== null) {
-                        <span class="text-yellow-400 font-bold">{{ stage.score }} pts</span>
-                      }
-                      @if (stage.earnedReward) {
-                        <span class="text-xs bg-dark-700 px-2 py-1 rounded text-gray-300">
-                          +{{ stage.earnedReward.amount }} {{ stage.earnedReward.type }}
-                        </span>
-                      }
-                      @if (isPlayable(stage, journey.stages) && !stage.isCompleted) {
-                        <button (click)="playStage(stage)"
-                                class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition-colors">
-                          Play
-                        </button>
-                      }
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <!-- Roadmap: full-width, nodes spread evenly with zigzag -->
+        <div class="flex-1 flex items-center relative px-4">
+          <!-- SVG connecting path -->
+          <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
+            @for (stage of journey.stages; track stage.id; let i = $index; let last = $last) {
+              @if (!last) {
+                <line
+                  [attr.x1]="getNodeX(i, journey.stages.length) + '%'"
+                  [attr.y1]="getNodeY(i) + '%'"
+                  [attr.x2]="getNodeX(i + 1, journey.stages.length) + '%'"
+                  [attr.y2]="getNodeY(i + 1) + '%'"
+                  [attr.stroke]="stage.isCompleted && journey.stages[i+1].isCompleted ? '#22c55e' : stage.isCompleted ? '#4f46e5' : '#334155'"
+                  stroke-width="3"
+                  stroke-dasharray="8 4"
+                />
+              }
             }
-          </div>
+          </svg>
+
+          <!-- Nodes -->
+          @for (stage of journey.stages; track stage.id; let i = $index) {
+            <div class="absolute flex flex-col items-center z-10"
+                 [style.left]="getNodeX(i, journey.stages.length) + '%'"
+                 [style.top]="getNodeY(i) + '%'"
+                 style="transform: translate(-50%, -50%);">
+
+              <!-- Reward badge -->
+              @if (stage.earnedReward) {
+                <div class="absolute -top-9 px-2 py-0.5 rounded-full text-[10px] font-retro bg-dark-700/80 text-yellow-300 border border-yellow-500/30 whitespace-nowrap">
+                  +{{ stage.earnedReward.amount }} {{ stage.earnedReward.type }}
+                </div>
+              }
+
+              <!-- Round node -->
+              <button
+                (click)="playStage(stage)"
+                [disabled]="!isPlayable(stage, journey.stages)"
+                class="w-20 h-20 rounded-full border-4 flex items-center justify-center transition-all duration-300 shadow-lg"
+                [class]="getNodeClasses(stage, journey.stages)">
+
+                @if (stage.isCompleted) {
+                  <span class="text-2xl">✓</span>
+                } @else if (isPlayable(stage, journey.stages)) {
+                  <span class="font-pixel text-xl text-white">{{ stage.stageNumber }}</span>
+                } @else {
+                  <span class="text-2xl">🔒</span>
+                }
+              </button>
+
+              <!-- Difficulty label -->
+              <span class="mt-2 font-retro text-[10px] whitespace-nowrap"
+                    [class]="diffTextColor(stage.difficulty)">
+                {{ stage.difficulty }}
+              </span>
+
+              <!-- Score -->
+              @if (stage.isCompleted && stage.score !== null) {
+                <span class="font-retro text-[10px] text-yellow-400/80 whitespace-nowrap">
+                  {{ stage.score }} pts
+                </span>
+              }
+            </div>
+          }
         </div>
       } @else if (loading$ | async) {
-        <div class="text-center py-12 text-gray-500">Loading journey...</div>
+        <div class="text-center py-12 text-gray-500 font-retro">Loading journey...</div>
       }
     </div>
   `,
+  styles: [`
+    :host { display: block; }
+    button:not(:disabled):hover { transform: scale(1.15); }
+    button:disabled { cursor: default; }
+  `],
 })
 export class RankedDetailComponent implements OnInit {
   private readonly store = inject(Store);
@@ -112,14 +146,40 @@ export class RankedDetailComponent implements OnInit {
     return prev?.isCompleted ?? false;
   }
 
-  diffColor(difficulty: string): string {
-    return DIFFICULTY_COLORS[difficulty] || 'text-gray-400';
+  getNodeClasses(stage: RankedStage, stages: RankedStage[]): string {
+    if (stage.isCompleted) {
+      return 'bg-gradient-to-br from-green-500 to-green-700 border-green-400 text-white shadow-green-500/40';
+    }
+    if (this.isPlayable(stage, stages)) {
+      const bg = DIFFICULTY_BG[stage.difficulty] || 'from-indigo-600 to-indigo-800';
+      const border = DIFFICULTY_BORDER[stage.difficulty] || 'border-indigo-500';
+      return `bg-gradient-to-br ${bg} ${border} text-white animate-pulse`;
+    }
+    return 'bg-dark-800 border-dark-600 text-dark-500';
+  }
+
+  diffTextColor(difficulty: string): string {
+    return DIFFICULTY_TEXT[difficulty] || 'text-gray-400';
+  }
+
+  /** Spread nodes evenly from left to right (5% to 95%) */
+  getNodeX(index: number, total: number): number {
+    if (total <= 1) return 50;
+    return 5 + (index / (total - 1)) * 90;
+  }
+
+  /** Zigzag: alternate between 38% and 62% vertically */
+  getNodeY(index: number): number {
+    return index % 2 === 0 ? 38 : 62;
   }
 
   playStage(stage: RankedStage) {
     if (stage.quizId) {
-      // Create a SOLO match for the ranked stage quiz, then navigate to lobby
-      this.store.dispatch(GameActions.createMatch({ quizId: stage.quizId, matchType: 'SOLO' }));
+      this.store.dispatch(GameActions.createMatch({
+        quizId: stage.quizId,
+        matchType: 'SOLO',
+        rankedContext: { journeyId: stage.journeyId, stageId: stage.id },
+      }));
     }
   }
 

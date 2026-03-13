@@ -55,9 +55,22 @@
     </div>
 
     <!-- Back Button -->
-    <button (click)="goToDashboard()"
-      class="w-full py-3 rounded-xl font-pixel text-sm bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:from-primary-400 hover:to-accent-400 transition-all shadow-lg shadow-primary-500/20">
-      🏠 Back to Dashboard
-    </button>
+    @if (rankedContext$ | async; as ctx) {
+      <div class="space-y-3">
+        <button (click)="goToJourney(ctx.journeyId)"
+          class="w-full py-3 rounded-xl font-pixel text-sm bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/20">
+          ⚔️ Back to Journey
+        </button>
+        <button (click)="goToDashboard()"
+          class="w-full py-2 rounded-xl font-retro text-xs text-dark-400 hover:text-white transition-colors">
+          🏠 Dashboard
+        </button>
+      </div>
+    } @else {
+      <button (click)="goToDashboard()"
+        class="w-full py-3 rounded-xl font-pixel text-sm bg-gradient-to-r from-primary-500 to-accent-500 text-white hover:from-primary-400 hover:to-accent-400 transition-all shadow-lg shadow-primary-500/20">
+        🏠 Back to Dashboard
+      </button>
+    }
   </div>
 </div>

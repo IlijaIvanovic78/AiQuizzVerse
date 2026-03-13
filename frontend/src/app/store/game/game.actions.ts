@@ -5,7 +5,7 @@ export const GameActions = createActionGroup({
   source: 'Game',
   events: {
     // Create / Join
-    'Create Match': props<{ quizId: string; matchType: MatchType }>(),
+    'Create Match': props<{ quizId: string; matchType: MatchType; rankedContext?: { journeyId: string; stageId: string } }>(),
     'Create Match Success': props<{ match: Match }>(),
     'Create Match Failure': props<{ error: string }>(),
 
