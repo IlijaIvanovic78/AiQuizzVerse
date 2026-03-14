@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -37,8 +37,8 @@ const DIFFICULTY_TEXT: Record<string, string> = {
       @if (journey) {
         <!-- Header -->
         <div class="flex items-center gap-4 mb-6">
-          <button (click)="goBack()" class="text-gray-400 hover:text-white transition-colors text-lg">← Back</button>
-          <div>
+          <button (click)="goBack()" class="text-gray-400 hover:text-white transition-colors text-lg flex-shrink-0">← Back</button>
+          <div class="flex-1 text-center">
             <h1 class="text-3xl font-pixel text-white">{{ journey.topic }}</h1>
             <p class="font-retro text-sm text-dark-400 mt-1">
               {{ journey.currentStage }} / {{ journey.totalStages }} stages cleared
@@ -122,6 +122,13 @@ const DIFFICULTY_TEXT: Record<string, string> = {
     :host { display: block; }
     button:not(:disabled):hover { transform: scale(1.15); }
     button:disabled { cursor: default; }
+    @keyframes node-glow {
+      0%, 100% { box-shadow: 0 0 8px 2px rgba(124,58,237,0.4); }
+      50% { box-shadow: 0 0 20px 6px rgba(124,58,237,0.7); }
+    }
+    .animate-node-glow {
+      animation: node-glow 2s ease-in-out infinite;
+    }
   `],
 })
 export class RankedDetailComponent implements OnInit {
@@ -129,11 +136,16 @@ export class RankedDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  /** When set, the component runs in embedded mode (inside dashboard tab). */
+  @Input() journeyId: string | null = null;
+  /** Emitted when user clicks Back in embedded mode. */
+  @Output() back = new EventEmitter<void>();
+
   journey$ = this.store.select(selectCurrentJourney);
   loading$ = this.store.select(selectRankedLoading);
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id');
+    const id = this.journeyId || this.route.snapshot.paramMap.get('id');
     if (id) {
       this.store.dispatch(RankedActions.loadJourney({ id }));
     }
@@ -153,7 +165,7 @@ export class RankedDetailComponent implements OnInit {
     if (this.isPlayable(stage, stages)) {
       const bg = DIFFICULTY_BG[stage.difficulty] || 'from-indigo-600 to-indigo-800';
       const border = DIFFICULTY_BORDER[stage.difficulty] || 'border-indigo-500';
-      return `bg-gradient-to-br ${bg} ${border} text-white animate-pulse`;
+      return `bg-gradient-to-br ${bg} ${border} text-white animate-node-glow`;
     }
     return 'bg-dark-800 border-dark-600 text-dark-500';
   }
@@ -184,6 +196,10 @@ export class RankedDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/ranked']);
+    if (this.journeyId) {
+      this.back.emit();
+    } else {
+      this.router.navigate(['/ranked']);
+    }
   }
 }

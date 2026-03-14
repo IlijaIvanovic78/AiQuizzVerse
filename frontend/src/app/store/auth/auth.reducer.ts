@@ -1,5 +1,6 @@
 import { createReducer, on } from '@ngrx/store';
 import { AuthActions } from './auth.actions';
+import { AvatarActions } from '../avatar/avatar.actions';
 import { AuthState, initialAuthState } from './auth.state';
 
 /**
@@ -205,6 +206,17 @@ export const authReducer = createReducer(
     ...state,
     loading: false,
     error,
+  })),
+
+  // ==================== AVATAR / PET (cross-slice) ====================
+  on(AvatarActions.unequipPetSuccess, (state): AuthState => ({
+    ...state,
+    user: state.user ? { ...state.user, petUrl: null } : null,
+  })),
+
+  on(AvatarActions.selectPetSuccess, (state, { equipped }): AuthState => ({
+    ...state,
+    user: state.user ? { ...state.user, petUrl: equipped.item.imagePath } : null,
   })),
 
   // ==================== UI ====================

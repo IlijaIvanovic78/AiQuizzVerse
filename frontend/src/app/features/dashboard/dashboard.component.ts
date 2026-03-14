@@ -18,6 +18,7 @@ import { MyQuizzesComponent } from './my-quizzes/my-quizzes.component';
 import { JoinGameComponent } from '../game/join-game/join-game.component';
 import { ShopComponent } from '../shop/shop.component';
 import { RankedListComponent } from '../ranked/ranked-list.component';
+import { RankedDetailComponent } from '../ranked/ranked-detail.component';
 import { AvatarDisplayComponent } from '../../shared/components/avatar-display/avatar-display.component';
 import { AvatarPickerComponent } from '../../shared/components/avatar-picker/avatar-picker.component';
 import { AvatarChangerComponent } from '../../shared/components/avatar-changer/avatar-changer.component';
@@ -28,7 +29,7 @@ import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FriendsSidebarComponent, ProfileComponent, CreateQuizComponent, MyQuizzesComponent, JoinGameComponent, ShopComponent, RankedListComponent, AvatarDisplayComponent, AvatarPickerComponent, AvatarChangerComponent, PetChangerComponent, BoostsOverviewComponent, FormatCoinsPipe],
+  imports: [CommonModule, RouterLink, FriendsSidebarComponent, ProfileComponent, CreateQuizComponent, MyQuizzesComponent, JoinGameComponent, ShopComponent, RankedListComponent, RankedDetailComponent, AvatarDisplayComponent, AvatarPickerComponent, AvatarChangerComponent, PetChangerComponent, BoostsOverviewComponent, FormatCoinsPipe],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -45,6 +46,8 @@ export class DashboardComponent {
 
   activeTab = 'home';
   showAvatarChanger = false;
+  selectedJourneyId: string | null = null;
+  shopInitialTab: 'avatars' | 'pets' | 'boosts' = 'avatars';
 
   constructor() {
     this.user$ = this.store.select(selectUser);
@@ -58,5 +61,22 @@ export class DashboardComponent {
 
   setActiveTab(tab: string) {
     this.activeTab = tab;
+    this.selectedJourneyId = null;
+    if (tab !== 'shop') {
+      this.shopInitialTab = 'avatars';
+    }
+  }
+
+  openJourney(id: string) {
+    this.selectedJourneyId = id;
+  }
+
+  closeJourney() {
+    this.selectedJourneyId = null;
+  }
+
+  goToShopBoosts() {
+    this.shopInitialTab = 'boosts';
+    this.activeTab = 'shop';
   }
 }

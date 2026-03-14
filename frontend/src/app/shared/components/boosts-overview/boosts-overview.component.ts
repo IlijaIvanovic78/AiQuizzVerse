@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Store } from '@ngrx/store';
 import { ShopActions, selectShopBoosts } from '../../../store/shop';
@@ -18,25 +18,29 @@ const BOOST_META: Record<string, { label: string; icon: string; desc: string }> 
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-dark-800/40 border border-primary-700/20 rounded-xl p-5">
-      <h3 class="font-pixel text-base text-primary-400 mb-4 flex items-center gap-2">
-        <span class="text-lg">⚡</span>
-        My Boosts
-      </h3>
+    <div class="bg-dark-800/40 border border-primary-700/20 rounded-xl p-4 h-full flex flex-col">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-pixel text-sm text-primary-400 flex items-center gap-2">
+          <span class="text-base">⚡</span>
+          My Boosts
+        </h3>
+        <button (click)="shopClick.emit()" class="w-6 h-6 rounded bg-primary-500/20 border border-primary-500/40 flex items-center justify-center hover:bg-primary-500/40 transition-colors" title="Buy Boosts">
+          <svg class="w-3.5 h-3.5 text-primary-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
 
       @if (boosts$ | async; as boosts) {
         @if (boosts.length === 0) {
-          <p class="font-retro text-dark-400 text-sm">No boosts yet. Buy some in the Shop!</p>
+          <p class="font-retro text-dark-400 text-xs">No boosts yet. Buy some in the Shop!</p>
         } @else {
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 flex-1">
             @for (boost of boosts; track boost.type) {
-              <div class="bg-dark-700/40 border border-dark-600 rounded-lg p-3 flex items-center gap-3">
-                <span class="text-2xl">{{ getMeta(boost.type).icon }}</span>
-                <div class="min-w-0 flex-1">
-                  <p class="font-retro text-white text-sm truncate">{{ getMeta(boost.type).label }}</p>
-                  <p class="font-retro text-dark-400 text-[10px]">{{ getMeta(boost.type).desc }}</p>
-                </div>
-                <span class="font-pixel text-accent-400 text-lg">{{ boost.quantity }}</span>
+              <div class="bg-dark-700/40 border border-dark-600 rounded-lg p-2 flex flex-col items-center justify-center gap-1.5 text-center" [title]="getMeta(boost.type).desc">
+                <span class="text-2xl leading-none">{{ getMeta(boost.type).icon }}</span>
+                <p class="font-retro text-dark-300 text-[10px] truncate w-full">{{ getMeta(boost.type).label }}</p>
+                <span class="font-pixel text-accent-400 text-sm leading-none">×{{ boost.quantity }}</span>
               </div>
             }
           </div>
@@ -47,6 +51,8 @@ const BOOST_META: Record<string, { label: string; icon: string; desc: string }> 
 })
 export class BoostsOverviewComponent implements OnInit {
   private readonly store = inject(Store);
+
+  @Output() shopClick = new EventEmitter<void>();
 
   boosts$ = this.store.select(selectShopBoosts);
 

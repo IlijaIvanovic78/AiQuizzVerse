@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, filter } from 'rxjs';
 import { FriendsActions } from '../../../store/friends';
@@ -28,7 +27,7 @@ import { AvatarDisplayComponent } from '../../../shared/components/avatar-displa
 @Component({
   selector: 'app-friends-sidebar',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, SpriteAnimatorComponent, AvatarDisplayComponent],
+  imports: [CommonModule, ReactiveFormsModule, SpriteAnimatorComponent, AvatarDisplayComponent],
   template: `
     <div class="h-full flex flex-col bg-dark-800/80 backdrop-blur-sm overflow-hidden">
 
@@ -36,7 +35,7 @@ import { AvatarDisplayComponent } from '../../../shared/components/avatar-displa
       <div class="h-[88px] px-4 flex items-center border-b-2 border-primary-700/40 flex-shrink-0">
         <div class="flex items-center gap-3">
           <!-- Avatar with level badge (clickable) -->
-          <a routerLink="/profile" class="relative flex-shrink-0 group cursor-pointer" title="View Profile">
+          <a (click)="profileClick.emit()" class="relative flex-shrink-0 group cursor-pointer" title="View Profile">
             <div class="w-12 h-12">
               <app-avatar-display [avatarUrl]="(avatarUrl$ | async) ?? null" [petUrl]="(petUrl$ | async) ?? null" [size]="48" [ring]="true"></app-avatar-display>
             </div>
@@ -47,7 +46,7 @@ import { AvatarDisplayComponent } from '../../../shared/components/avatar-displa
           </a>
           <!-- Username + Status -->
           <div class="flex-1 min-w-0">
-            <a routerLink="/profile" class="font-pixel text-sm text-primary-400 hover:text-primary-300 truncate block transition-colors">
+            <a (click)="profileClick.emit()" class="font-pixel text-sm text-primary-400 hover:text-primary-300 truncate block transition-colors cursor-pointer">
               {{ displayName$ | async }}
             </a>
             <p class="font-retro text-xs text-green-400 flex items-center gap-1">
@@ -429,6 +428,8 @@ import { AvatarDisplayComponent } from '../../../shared/components/avatar-displa
 export class FriendsSidebarComponent implements OnInit, OnDestroy {
   private store = inject(Store);
   private destroy$ = new Subject<void>();
+
+  @Output() profileClick = new EventEmitter<void>();
 
   // UI state
   searchOpen = signal(false);

@@ -111,11 +111,10 @@
                 </svg>
               </div>
             </div>
-            <p class="font-retro text-[10px] text-dark-500 text-center mt-1">Change Avatar</p>
           </div>
           <!-- Boosts -->
           <div class="flex-1 min-w-0">
-            <app-boosts-overview></app-boosts-overview>
+            <app-boosts-overview (shopClick)="goToShopBoosts()"></app-boosts-overview>
           </div>
         </div>
 
@@ -137,7 +136,7 @@
       }
       }
       @case ('profile') {
-      <app-profile></app-profile>
+      <app-profile (shopClick)="goToShopBoosts()"></app-profile>
       }
       @case ('create') {
       <div class="p-6">
@@ -154,10 +153,14 @@
       </div>
       }
       @case ('ranked') {
-      <app-ranked-list></app-ranked-list>
+      @if (selectedJourneyId) {
+        <app-ranked-detail [journeyId]="selectedJourneyId" (back)="closeJourney()"></app-ranked-detail>
+      } @else {
+        <app-ranked-list (journeySelect)="openJourney($event)"></app-ranked-list>
+      }
       }
       @case ('shop') {
-      <app-shop></app-shop>
+      <app-shop [initialTab]="shopInitialTab"></app-shop>
       }
       }
     </div>
@@ -165,7 +168,7 @@
 
   <!-- ========== FRIENDS SIDEBAR (full height, flush right) ========== -->
   <div class="hidden lg:block w-72 xl:w-80 flex-shrink-0 h-full">
-    <app-friends-sidebar></app-friends-sidebar>
+    <app-friends-sidebar (profileClick)="setActiveTab('profile')"></app-friends-sidebar>
   </div>
 
 </div>

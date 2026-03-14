@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngrx/store';
@@ -150,7 +150,7 @@ import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
           <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <app-avatar-changer></app-avatar-changer>
             <app-pet-changer></app-pet-changer>
-            <app-boosts-overview></app-boosts-overview>
+            <app-boosts-overview (shopClick)="shopClick.emit()"></app-boosts-overview>
           </div>
 
           <!-- Bottom Row: Account Info + Session -->
@@ -203,6 +203,8 @@ import { FormatCoinsPipe } from '../../shared/pipes/format-coins.pipe';
   styles: [],
 })
 export class ProfileComponent implements OnInit {
+  @Output() shopClick = new EventEmitter<void>();
+
   private profileApi = inject(ProfileApiService);
   private fb = inject(FormBuilder);
   private store = inject(Store);

@@ -1,14 +1,13 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { RankedActions, selectJourneys, selectRankedLoading } from '../../store/ranked';
 
 @Component({
   selector: 'app-ranked-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="p-6 max-w-4xl mx-auto">
       <h1 class="text-3xl font-bold text-white mb-6">Ranked Journeys</h1>
@@ -34,8 +33,8 @@ import { RankedActions, selectJourneys, selectRankedLoading } from '../../store/
       @if (journeys && journeys.length > 0) {
         <div class="space-y-4">
           @for (journey of journeys; track journey.id) {
-            <a [routerLink]="['/ranked', journey.id]"
-               class="block bg-dark-800 rounded-xl p-5 border border-dark-600 hover:border-indigo-500 transition-colors">
+            <a (click)="onJourneyClick(journey.id)" class="cursor-pointer
+               block bg-dark-800 rounded-xl p-5 border border-dark-600 hover:border-indigo-500 transition-colors">
               <div class="flex items-center justify-between">
                 <div>
                   <h3 class="text-white font-semibold text-lg">{{ journey.topic }}</h3>
@@ -65,6 +64,8 @@ import { RankedActions, selectJourneys, selectRankedLoading } from '../../store/
 export class RankedListComponent implements OnInit {
   private readonly store = inject(Store);
 
+  @Output() journeySelect = new EventEmitter<string>();
+
   journeys$ = this.store.select(selectJourneys);
   loading$ = this.store.select(selectRankedLoading);
   topic = '';
@@ -77,5 +78,9 @@ export class RankedListComponent implements OnInit {
     if (!this.topic.trim()) return;
     this.store.dispatch(RankedActions.createJourney({ topic: this.topic.trim() }));
     this.topic = '';
+  }
+
+  onJourneyClick(id: string) {
+    this.journeySelect.emit(id);
   }
 }

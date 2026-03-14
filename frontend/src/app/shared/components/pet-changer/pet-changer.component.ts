@@ -24,6 +24,27 @@ import { SpriteAnimatorComponent } from '../sprite-animator/sprite-animator.comp
           <p class="font-retro text-dark-400 text-sm">No pets owned yet. Visit the Shop to buy some!</p>
         } @else {
           <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+            <!-- No Pet card (always visible) -->
+            <button
+              (click)="removePet()"
+              [disabled]="!currentPetUrl || ((loading$ | async) ?? false)"
+              class="relative flex flex-col items-center gap-1 p-2 rounded-lg border-2 transition-all hover:scale-105"
+              [class]="!currentPetUrl ? 'border-accent-500 bg-accent-500/10 shadow-[0_0_12px_rgba(250,204,21,0.3)]' : 'border-dark-600 bg-dark-700/40 hover:border-primary-500'">
+              <div class="w-16 h-16 rounded-lg flex items-center justify-center">
+                <svg class="w-10 h-10 text-dark-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                </svg>
+              </div>
+              <span class="font-retro text-[10px] text-dark-400 truncate w-full text-center">No Pet</span>
+              @if (!currentPetUrl) {
+                <div class="absolute -top-1 -right-1 w-5 h-5 bg-accent-500 rounded-full flex items-center justify-center">
+                  <svg class="w-3 h-3 text-dark-900" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+              }
+            </button>
             @for (ui of pets; track ui.id) {
               <button
                 (click)="selectPet(ui)"
@@ -44,14 +65,6 @@ import { SpriteAnimatorComponent } from '../sprite-animator/sprite-animator.comp
               </button>
             }
           </div>
-          @if (currentPetUrl) {
-            <button
-              (click)="removePet()"
-              [disabled]="(loading$ | async) ?? false"
-              class="mt-3 px-4 py-1.5 font-retro text-xs text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors">
-              Remove Pet
-            </button>
-          }
         }
       }
     </div>
