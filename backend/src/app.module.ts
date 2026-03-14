@@ -1,21 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
-import { UsersModule } from './users/users.module';
-import { HealthModule } from './health/health.module';
-import { AuthModule } from './auth/auth.module';
-import { ProfileModule } from './profile/profile.module';
-import { FriendshipModule } from './friendship/friendship.module';
-import { EventsModule } from './gateway/events.module';
-import { AiModule } from './ai/ai.module';
-import { UploadModule } from './upload/upload.module';
-import { QuizModule } from './quiz/quiz.module';
-import { GameModule } from './game/game.module';
-import { ShopModule } from './shop/shop.module';
-import { AvatarModule } from './avatar/avatar.module';
-import { RankedModule } from './ranked/ranked.module';
+import { PrismaModule } from './infrastructure/prisma/prisma.module';
+import { UsersModule } from './modules/users/users.module';
+import { HealthModule } from './modules/health/health.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { FriendshipModule } from './modules/friendship/friendship.module';
+import { EventsModule } from './modules/gateway/events.module';
+import { AiModule } from './modules/ai/ai.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { QuizModule } from './modules/quiz/quiz.module';
+import { GameModule } from './modules/game/game.module';
+import { ShopModule } from './modules/shop/shop.module';
+import { AvatarModule } from './modules/avatar/avatar.module';
+import { RankedModule } from './modules/ranked/ranked.module';
 
 @Module({
   imports: [
@@ -38,7 +36,5 @@ import { RankedModule } from './ranked/ranked.module';
     AvatarModule,
     RankedModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
