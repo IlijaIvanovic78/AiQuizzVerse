@@ -5,6 +5,9 @@ export interface User {
   xp: number;
   coins: number;
   level: number;
+  streak: number;
+  longestStreak: number;
+  lastPlayedAt: string | null;
   avatarUrl: string | null;
   petUrl: string | null;
   twoFaEnabled: boolean;

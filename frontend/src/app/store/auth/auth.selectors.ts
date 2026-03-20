@@ -82,6 +82,16 @@ export const selectUserXP = createSelector(selectUser, (user) => user?.xp || 0);
 export const selectUserCoins = createSelector(selectUser, (user) => user?.coins || 0);
 
 /**
+ * User current streak
+ */
+export const selectUserStreak = createSelector(selectUser, (user) => user?.streak || 0);
+
+/**
+ * User longest streak
+ */
+export const selectUserLongestStreak = createSelector(selectUser, (user) => user?.longestStreak || 0);
+
+/**
  * Whether auth state is ready (not loading and either authenticated or not)
  */
 export const selectAuthReady = createSelector(

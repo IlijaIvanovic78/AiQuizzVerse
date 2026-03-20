@@ -2,6 +2,7 @@ export * from './api.service';
 export * from './avatar-api.service';
 export * from './friends-api.service';
 export * from './game-api.service';
+export * from './leaderboard-api.service';
 export * from './quiz-api.service';
 export * from './ranked-api.service';
 export * from './shop-api.service';

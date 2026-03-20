@@ -208,8 +208,8 @@ export class GameService {
       include: {
         match: {
           include: {
-            quiz: { select: { id: true, title: true, theme: true } },
-            players: { include: { user: { select: { id: true, username: true } } } },
+            quiz: { select: { id: true, title: true, theme: true, difficulty: true, numQuestions: true } },
+            players: { include: { user: { select: { id: true, username: true, avatarUrl: true } } } },
           },
         },
       },

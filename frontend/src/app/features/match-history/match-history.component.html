@@ -1,0 +1,97 @@
+<div class="p-6 space-y-4">
+  <h2 class="font-pixel text-lg text-gray-200 flex items-center gap-2">
+    <span>📋</span> Match History
+  </h2>
+
+  @if (loading$ | async) {
+    <div class="flex items-center gap-2 justify-center py-16 text-gray-500">
+      <div class="w-6 h-6 border-2 border-primary-500/40 border-t-primary-500 rounded-full animate-spin"></div>
+      Loading match history...
+    </div>
+  } @else if (error$ | async; as error) {
+    <div class="text-center py-12">
+      <p class="text-red-400 text-sm mb-2">Failed to load history</p>
+      <p class="text-gray-500 text-xs">{{ error }}</p>
+    </div>
+  } @else {
+    @let entries = matches$ | async;
+    @let currentUserId = userId$ | async;
+
+    @if (entries && entries.length > 0) {
+      <div class="space-y-3">
+        @for (entry of entries; track entry.id) {
+          <div class="bg-dark-800/80 border rounded-xl p-4 transition-colors"
+               [ngClass]="entry.isWinner ? 'border-green-500/30' : 'border-dark-600'">
+            <div class="flex items-center gap-4">
+
+              <!-- Result badge -->
+              <div class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-lg font-pixel"
+                   [ngClass]="entry.isWinner ? 'bg-green-500/20 text-green-400' : 'bg-red-500/10 text-red-400'">
+                {{ entry.isWinner ? 'W' : 'L' }}
+              </div>
+
+              <!-- Match info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span>{{ getThemeIcon(entry.match.quiz?.theme || 'GENERAL') }}</span>
+                  <span class="font-pixel text-sm text-gray-200 truncate">{{ entry.match.quiz?.title || 'Quiz' }}</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-500">
+                  <span class="px-1.5 py-0.5 rounded border text-[10px] font-pixel"
+                        [ngClass]="getTypeColor(entry.match.type)">
+                    {{ getTypeIcon(entry.match.type) }} {{ entry.match.type }}
+                  </span>
+                  <span>{{ entry.match.createdAt | date: 'MMM d, y • HH:mm' }}</span>
+                </div>
+              </div>
+
+              <!-- Score -->
+              <div class="flex-shrink-0 text-right">
+                <span class="font-pixel text-xl" [ngClass]="entry.isWinner ? 'text-green-400' : 'text-gray-400'">
+                  {{ entry.score }}
+                </span>
+                <span class="text-gray-600 text-xs block">pts</span>
+              </div>
+
+              <!-- Players -->
+              @if (entry.match.players && entry.match.players.length > 1) {
+                <div class="flex-shrink-0 flex -space-x-2">
+                  @for (player of entry.match.players; track player.id) {
+                    <div class="relative" [title]="player.user.username">
+                      <app-avatar-display
+                        [avatarUrl]="player.user.avatarUrl"
+                        [size]="32"
+                        [ring]="player.userId === currentUserId">
+                      </app-avatar-display>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Answer breakdown (expandable if answers exist) -->
+            @if (entry.answers && entry.answers.length > 0) {
+              <div class="mt-3 pt-3 border-t border-dark-600/50 flex items-center gap-1.5 flex-wrap">
+                @for (a of entry.answers; track $index) {
+                  <div class="w-5 h-5 rounded text-[10px] flex items-center justify-center font-bold"
+                       [ngClass]="a.correct ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'">
+                    {{ a.correct ? '✓' : '✗' }}
+                  </div>
+                }
+                <span class="text-xs text-gray-500 ml-2">
+                  {{ countCorrect(entry.answers) }} / {{ entry.answers.length }} correct
+                </span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="text-center py-16">
+        <span class="text-4xl block mb-3">🎮</span>
+        <p class="text-gray-400 font-pixel text-sm">No matches played yet</p>
+        <p class="text-gray-600 text-xs mt-1">Start a quiz to see your history here!</p>
+      </div>
+    }
+  }
+</div>

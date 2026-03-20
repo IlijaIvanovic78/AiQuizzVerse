@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../infrastructure/prisma/prisma.service';
 import { User } from '@prisma/client';
-import { calculateLevel } from '../../core/constants';
+import { calculateLevel, STREAK_BONUS_COINS, MAX_STREAK_BONUS } from '../../core/constants';
 
 @Injectable()
 export class UsersService {
@@ -83,5 +83,63 @@ export class UsersService {
       });
     }
     return user;
+  }
+
+  /**
+   * Update daily streak after completing a match.
+   * - Same day → no-op
+   * - Consecutive day → increment streak
+   * - Gap > 1 day or first play → reset to 1
+   * Awards bonus coins based on streak length.
+   */
+  async updateStreak(userId: string): Promise<User> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('User not found');
+
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+    if (user.lastPlayedAt) {
+      const lastUTC = new Date(
+        Date.UTC(
+          user.lastPlayedAt.getUTCFullYear(),
+          user.lastPlayedAt.getUTCMonth(),
+          user.lastPlayedAt.getUTCDate(),
+        ),
+      );
+      const diffDays = Math.floor((todayUTC.getTime() - lastUTC.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) {
+        // Already played today — no streak change
+        return user;
+      }
+
+      if (diffDays === 1) {
+        // Consecutive day — increment streak
+        const newStreak = user.streak + 1;
+        const bonusCoins = Math.min(newStreak * STREAK_BONUS_COINS, MAX_STREAK_BONUS);
+        return this.prisma.user.update({
+          where: { id: userId },
+          data: {
+            streak: newStreak,
+            longestStreak: Math.max(newStreak, user.longestStreak),
+            lastPlayedAt: now,
+            coins: { increment: bonusCoins },
+          },
+        });
+      }
+    }
+
+    // First play or gap > 1 day — reset streak to 1
+    const bonusCoins = Math.min(1 * STREAK_BONUS_COINS, MAX_STREAK_BONUS);
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        streak: 1,
+        longestStreak: Math.max(1, user.longestStreak),
+        lastPlayedAt: now,
+        coins: { increment: bonusCoins },
+      },
+    });
   }
 }

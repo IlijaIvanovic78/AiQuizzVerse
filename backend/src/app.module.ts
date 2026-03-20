@@ -14,6 +14,7 @@ import { GameModule } from './modules/game/game.module';
 import { ShopModule } from './modules/shop/shop.module';
 import { AvatarModule } from './modules/avatar/avatar.module';
 import { RankedModule } from './modules/ranked/ranked.module';
+import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RankedModule } from './modules/ranked/ranked.module';
     ShopModule,
     AvatarModule,
     RankedModule,
+    LeaderboardModule,
   ],
 })
 export class AppModule {}

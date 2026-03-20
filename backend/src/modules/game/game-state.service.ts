@@ -144,6 +144,8 @@ export class GameStateService {
       if (xp > 0 || coins > 0) {
         await this.usersService.addRewards(player.userId, xp, coins);
       }
+      // Update daily streak for every player who completes a match
+      await this.usersService.updateStreak(player.userId);
     }
   }
 

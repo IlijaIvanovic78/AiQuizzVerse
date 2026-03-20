@@ -33,23 +33,34 @@
           <span class="hidden lg:inline">Home</span>
         </button>
 
-        <button (click)="setActiveTab('create')" class="nav-item" [class.nav-item-active]="activeTab === 'create'"
-          title="Create / Join">
+        <button (click)="setActiveTab('play')" class="nav-item" [class.nav-item-active]="activeTab === 'play'"
+          title="Play">
           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd"
-              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
               clip-rule="evenodd" />
           </svg>
           <span class="hidden lg:inline">Play</span>
         </button>
 
-        <button (click)="setActiveTab('ranked')" class="nav-item" [class.nav-item-active]="activeTab === 'ranked'"
-          title="Ranked">
+        <button (click)="setActiveTab('create')" class="nav-item" [class.nav-item-active]="activeTab === 'create'"
+          title="Create Quiz">
           <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+            <path fill-rule="evenodd"
+              d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+              clip-rule="evenodd" />
           </svg>
-          <span class="hidden lg:inline">Ranked</span>
+          <span class="hidden lg:inline">Create</span>
+        </button>
+
+        <button (click)="setActiveTab('history')" class="nav-item" [class.nav-item-active]="activeTab === 'history'"
+          title="Match History">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+              clip-rule="evenodd" />
+          </svg>
+          <span class="hidden lg:inline">History</span>
         </button>
 
         <button (click)="setActiveTab('shop')" class="nav-item" [class.nav-item-active]="activeTab === 'shop'"
@@ -98,9 +109,9 @@
     <div class="flex-1 overflow-y-auto">
       @switch (activeTab) {
       @case ('home') {
-      <div class="px-6 pt-6 pb-8">
-        <!-- Top row: Avatar (clickable) + Boosts -->
-        <div class="flex gap-6 mb-6 items-center">
+      <div class="px-6 pt-6 pb-8 space-y-6">
+        <!-- Top row: Avatar (clickable) + Streak + Boosts -->
+        <div class="flex gap-6 items-center">
           <!-- Avatar display — click to open modal changer -->
           <div class="flex-shrink-0 cursor-pointer group" (click)="showAvatarChanger = true">
             <div class="relative">
@@ -112,13 +123,31 @@
               </div>
             </div>
           </div>
+          <!-- Streak display -->
+          <app-streak-display [streak]="(streak$ | async) ?? 0" [longestStreak]="(longestStreak$ | async) ?? 0"></app-streak-display>
           <!-- Boosts -->
           <div class="flex-1 min-w-0">
             <app-boosts-overview (shopClick)="goToShopBoosts()"></app-boosts-overview>
           </div>
         </div>
 
-        <!-- Quizzes -->
+        <!-- Leaderboards: Global (left) + Friends (right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <app-leaderboard-table
+            [entries]="(globalRanking$ | async) ?? []"
+            [currentUserId]="(userId$ | async) ?? ''"
+            title="Global Leaderboard"
+            icon="🌍">
+          </app-leaderboard-table>
+          <app-leaderboard-table
+            [entries]="(friendsRanking$ | async) ?? []"
+            [currentUserId]="(userId$ | async) ?? ''"
+            title="Friends Leaderboard"
+            icon="👥">
+          </app-leaderboard-table>
+        </div>
+
+        <!-- My Quizzes -->
         <app-my-quizzes></app-my-quizzes>
       </div>
 
@@ -135,29 +164,28 @@
         </div>
       }
       }
-      @case ('profile') {
-      <app-profile (shopClick)="goToShopBoosts()"></app-profile>
-      }
-      @case ('create') {
-      <div class="p-6">
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          <!-- Left: Create Quiz -->
-          <div>
-            <app-create-quiz></app-create-quiz>
-          </div>
-          <!-- Right: Join Game -->
-          <div>
-            <app-join-game></app-join-game>
-          </div>
-        </div>
-      </div>
-      }
-      @case ('ranked') {
+      @case ('play') {
       @if (selectedJourneyId) {
         <app-ranked-detail [journeyId]="selectedJourneyId" (back)="closeJourney()"></app-ranked-detail>
       } @else {
-        <app-ranked-list (journeySelect)="openJourney($event)"></app-ranked-list>
+        <app-play (journeySelect)="openJourney($event)"></app-play>
       }
+      }
+      @case ('ranked-detail') {
+      @if (selectedJourneyId) {
+        <app-ranked-detail [journeyId]="selectedJourneyId" (back)="closeJourney()"></app-ranked-detail>
+      }
+      }
+      @case ('create') {
+      <div class="p-6">
+        <app-create-quiz></app-create-quiz>
+      </div>
+      }
+      @case ('history') {
+      <app-match-history></app-match-history>
+      }
+      @case ('profile') {
+      <app-profile (shopClick)="goToShopBoosts()"></app-profile>
       }
       @case ('shop') {
       <app-shop [initialTab]="shopInitialTab"></app-shop>
