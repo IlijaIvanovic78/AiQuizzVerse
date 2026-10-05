@@ -1,0 +1,31 @@
+.chest {
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.chest-shaking {
+  animation: shake-frames 320ms steps(2) infinite;
+}
+
+/* Starts on the shaking frame, shows the half open lid, then stays on the open frame. */
+.chest-opening {
+  animation: open-frames 400ms steps(2) forwards;
+}
+
+@keyframes shake-frames {
+  from {
+    background-position-x: 0;
+  }
+  to {
+    background-position-x: calc(-2 * var(--frame));
+  }
+}
+
+@keyframes open-frames {
+  from {
+    background-position-x: calc(-1 * var(--frame));
+  }
+  to {
+    background-position-x: calc(-3 * var(--frame));
+  }
+}

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { StepView } from '../../../core/models/path.model';
+import { CHEST_ICONS } from '../../../shared/chests';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { StarRatingComponent } from '../../../shared/components/star-rating.component';
@@ -42,6 +43,7 @@ export class PathMapComponent {
   readonly stepSelected = output<StepView>();
 
   protected readonly stopTop = STOP_TOP_REM;
+  protected readonly chestIcons = CHEST_ICONS;
   protected readonly heightRem = computed(() => mapHeightRem(this.steps().length));
   protected readonly viewBox = computed(() => `0 0 100 ${this.heightRem()}`);
 

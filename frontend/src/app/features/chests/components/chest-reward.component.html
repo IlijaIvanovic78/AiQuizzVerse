@@ -1,0 +1,58 @@
+@switch (reward().kind) {
+  @case ('COINS') {
+    <app-pixel-icon name="coin" [scale]="4" />
+    <p class="font-display text-2xl text-gold">+{{ reward().coins }}</p>
+    <p class="font-semibold">coins for your bag</p>
+  }
+
+  @case ('BOOSTS') {
+    <ul class="flex flex-wrap justify-center gap-3">
+      @for (boost of reward().boosts; track boost.type) {
+        <li class="flex w-24 flex-col items-center gap-1">
+          <span
+            class="flex h-16 w-16 items-center justify-center rounded border-3 border-outline bg-night-950"
+          >
+            <app-boost-icon [type]="boost.type" size="md" />
+          </span>
+          <span class="font-semibold leading-tight">{{ boostLabels[boost.type] }}</span>
+          <span class="badge badge-torch">x{{ boost.quantity }}</span>
+        </li>
+      }
+    </ul>
+    <p class="text-sm text-muted">Power-ups wait in your bag for solo and team games.</p>
+  }
+
+  @case ('ITEM') {
+    @if (reward().item; as item) {
+      <div class="reward-stage">
+        @if (item.type === 'AVATAR') {
+          <app-hero-sprite [heroKey]="item.id" [scale]="4" [decorative]="true" />
+        } @else {
+          <app-pet-sprite [petKey]="item.id" [scale]="4" [decorative]="true" />
+        }
+      </div>
+      <p class="text-sm font-semibold text-muted">
+        {{ item.type === 'AVATAR' ? 'A hero' : 'A pet' }}
+        @if (item.isChestOnly) {
+          <span class="badge badge-mana ml-1">Chest only</span>
+        }
+      </p>
+      <p class="text-2xl font-semibold text-torch-300">{{ item.name }}</p>
+      @if (reward().duplicate) {
+        <p class="flex items-center gap-2">
+          <app-pixel-icon name="coin" />
+          You already have it — converted to {{ reward().coins }} coins
+        </p>
+      } @else if (equipped()) {
+        <span class="badge badge-jade">
+          <app-pixel-icon name="check" [scale]="1" />
+          Equipped
+        </span>
+      } @else {
+        <button type="button" class="btn btn-success btn-sm" (click)="equip.emit(item)">
+          Equip now
+        </button>
+      }
+    }
+  }
+}

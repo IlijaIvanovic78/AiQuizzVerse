@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  computed,
   inject,
   input,
   output,
@@ -12,6 +13,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CurrentUser } from '../core/models/user.model';
 import { CoinAmountComponent } from '../shared/components/coin-amount.component';
 import { LevelBadgeComponent } from '../shared/components/level-badge.component';
+import { PixelIconComponent } from '../shared/components/pixel-icon.component';
 import { UserAvatarComponent } from '../shared/components/user-avatar.component';
 import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
 
@@ -22,6 +24,7 @@ import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
     RouterLinkActive,
     CoinAmountComponent,
     LevelBadgeComponent,
+    PixelIconComponent,
     UserAvatarComponent,
   ],
   templateUrl: './top-bar.component.html',
@@ -34,11 +37,16 @@ import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
 })
 export class TopBarComponent {
   readonly user = input.required<CurrentUser>();
+  readonly chestsToOpen = input(0);
   readonly logout = output<void>();
 
   protected readonly links = MAIN_LINKS;
   protected readonly phoneLinks = PHONE_MENU_LINKS;
   protected readonly menuOpen = signal(false);
+  protected readonly chestLinkLabel = computed(() => {
+    const count = this.chestsToOpen();
+    return count > 0 ? `Treasure room, ${count} to open` : 'Treasure room';
+  });
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly menuButton = viewChild.required<ElementRef<HTMLButtonElement>>('menuButton');

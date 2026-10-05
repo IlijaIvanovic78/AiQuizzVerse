@@ -1,0 +1,44 @@
+<app-modal [title]="title()" size="sm" (closed)="closed.emit()">
+  <div class="flex flex-col items-center gap-4">
+    <div class="relative" [class.animate-chest-bounce]="opened()">
+      <app-chest-sprite
+        [type]="chest().type"
+        [pose]="opened() ? 'opening' : 'shaking'"
+        [scale]="4"
+      />
+      @if (opened()) {
+        @for (sparkle of sparkles; track $index) {
+          <span
+            class="sparkle"
+            aria-hidden="true"
+            [style.left.%]="sparkle.left"
+            [style.top.%]="sparkle.top"
+            [style.animation-delay.ms]="rewardDelayMs + sparkle.delayMs"
+          ></span>
+        }
+      }
+    </div>
+
+    <p class="sr-only" role="status">{{ announcement() }}</p>
+
+    @if (opened() && reward(); as reward) {
+      <app-chest-reward
+        class="reward-pop w-full"
+        [style.animation-delay.ms]="rewardDelayMs"
+        [reward]="reward"
+        [equipped]="equipped()"
+        (equip)="equip.emit($event)"
+      />
+      <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+        <button type="button" class="btn btn-ghost" (click)="closed.emit()">Done</button>
+        @if (nextCount() > 0) {
+          <button type="button" class="btn btn-primary" (click)="next.emit()">
+            Next chest ({{ nextCount() }} left)
+          </button>
+        }
+      </div>
+    } @else {
+      <p class="text-muted" aria-hidden="true">The lock is clicking...</p>
+    }
+  </div>
+</app-modal>

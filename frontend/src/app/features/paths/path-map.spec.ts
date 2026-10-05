@@ -21,7 +21,7 @@ function step(position: number, unlocked: boolean, cleared: boolean): StepView {
     bestAccuracy: cleared ? 80 : 0,
     unlocked,
     cleared,
-    reward: { coins: 20, boost: null },
+    reward: { coins: 20, chest: 'WOODEN' },
   };
 }
 

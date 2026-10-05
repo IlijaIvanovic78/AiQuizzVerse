@@ -1,0 +1,25 @@
+<section class="panel flex h-full flex-col gap-4 p-5" aria-labelledby="chests-card-title">
+  <div class="flex items-center gap-4">
+    <app-pixel-icon name="chest-golden" [scale]="4" />
+    <h2 id="chests-card-title" class="text-xl">Chests to open</h2>
+  </div>
+
+  @if (status() === 'loading') {
+    <app-spinner label="Counting your chests..." />
+  } @else if (status() === 'failed') {
+    <p class="text-muted">Your chests didn't load this time.</p>
+  } @else if (count() > 0) {
+    <p class="flex items-baseline gap-3">
+      <span class="font-display text-3xl text-torch-300">{{ count() }}</span>
+      <span>{{ count() === 1 ? 'chest is' : 'chests are' }} waiting for you</span>
+    </p>
+    <div class="mt-auto">
+      <a class="btn btn-primary" routerLink="/chests">Open them</a>
+    </div>
+  } @else {
+    <p>No chests right now. Win games and clear path steps to earn them.</p>
+    <div class="mt-auto">
+      <a class="btn btn-secondary" routerLink="/chests">Treasure room</a>
+    </div>
+  }
+</section>

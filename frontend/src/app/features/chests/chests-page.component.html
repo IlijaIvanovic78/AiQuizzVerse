@@ -1,0 +1,83 @@
+<app-page-header
+  title="Treasure room"
+  subtitle="Open the chests you earned by playing and learning."
+>
+  @if (unopened().length > 1) {
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="opening() !== null"
+      (click)="openAll()"
+    >
+      Open all ({{ unopened().length }})
+    </button>
+  }
+</app-page-header>
+
+<p class="panel mb-5 flex items-center gap-3 px-4 py-3">
+  <app-pixel-icon name="lock" />
+  Chests can't be bought — you earn them by playing and learning.
+</p>
+
+<div class="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:items-start">
+  <div class="flex flex-col gap-5 lg:col-span-8">
+    <section aria-labelledby="unopened-title">
+      <h2 id="unopened-title" class="mb-3 text-2xl">Chests to open</h2>
+      @if (unopened().length > 0) {
+        <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          @for (chest of unopened(); track chest.id) {
+            <li>
+              <app-chest-card [chest]="chest" [busy]="opening() !== null" (open)="open(chest)" />
+            </li>
+          }
+        </ul>
+      } @else if (loaded()) {
+        <app-empty-state
+          title="No chests to open right now"
+          text="Play a good game today, win a duel or clear a path step to earn your next chest."
+          image="chest"
+        >
+          <a class="btn btn-primary" routerLink="/library">Find a quiz</a>
+          <a class="btn btn-secondary" routerLink="/paths">Go to paths</a>
+        </app-empty-state>
+      } @else {
+        <div class="panel p-5">
+          <app-spinner label="Looking for your chests..." />
+        </div>
+      }
+    </section>
+
+    <app-recent-rewards [chests]="recent()" />
+  </div>
+
+  <div class="flex flex-col gap-5 lg:col-span-4">
+    <section class="panel-parchment p-4" aria-labelledby="earn-title">
+      <h2 id="earn-title" class="text-xl">How to earn chests</h2>
+      <ul class="mt-3 flex flex-col gap-3">
+        @for (way of howToEarn; track way.type) {
+          <li class="flex items-start gap-3">
+            <app-pixel-icon [name]="chestIcons[way.type]" />
+            <span>
+              <span class="block font-semibold">{{ chestNames[way.type] }}</span>
+              <span class="block">{{ way.ways }}</span>
+            </span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <app-chest-odds [odds]="odds()" />
+  </div>
+</div>
+
+@if (opening(); as chest) {
+  <app-chest-opening
+    [chest]="chest"
+    [reward]="reveal()"
+    [nextCount]="nextCount()"
+    [equipped]="rewardEquipped()"
+    (next)="openNext()"
+    (equip)="equip($event)"
+    (closed)="closeReveal()"
+  />
+}

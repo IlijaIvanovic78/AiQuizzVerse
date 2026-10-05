@@ -1,0 +1,33 @@
+/* The reward waits until the lid is open, then pops out of the chest. */
+.reward-pop {
+  animation: pop 400ms ease-out both;
+}
+
+.sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--gold);
+  box-shadow:
+    8px 0 0 var(--parchment-100),
+    -8px 0 0 var(--parchment-100),
+    0 8px 0 var(--parchment-100),
+    0 -8px 0 var(--parchment-100);
+  opacity: 0;
+  animation: sparkle 700ms steps(4) both;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+}

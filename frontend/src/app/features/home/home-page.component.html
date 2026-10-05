@@ -11,19 +11,20 @@
 
     <app-hero-banner [user]="user" />
 
-    <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12">
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-6 xl:grid-cols-12">
       <app-continue-path-card
-        class="lg:col-span-7"
+        class="md:col-span-2 xl:col-span-6"
         [path]="pathToContinue()"
         [hasPaths]="hasPaths()"
         [status]="pathsStatus()"
       />
       <app-mistakes-card
-        class="lg:col-span-5"
+        class="xl:col-span-3"
         [dueToday]="dueToday()"
         [total]="reviewTotal()"
         [status]="reviewStatus()"
       />
+      <app-chests-card class="xl:col-span-3" [count]="chestsToOpen()" [status]="chestsStatus()" />
     </div>
 
     <app-quick-actions [joining]="matchBusy()" (join)="joinWithCode($event)" />

@@ -116,6 +116,12 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'chests',
+        title: 'Treasure room',
+        loadComponent: () =>
+          import('./features/chests/chests-page.component').then((m) => m.ChestsPageComponent),
+      },
+      {
         path: 'friends',
         title: 'Friends',
         loadComponent: () =>

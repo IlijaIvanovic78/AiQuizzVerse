@@ -36,7 +36,9 @@
 }
 
 <div class="reward mt-5">
-  <img src="/assets/images/icons/chest.webp" alt="" width="256" height="128" class="h-auto w-16" />
+  @if (step().reward.chest; as chest) {
+    <app-pixel-icon [name]="chestIcons[chest]" [scale]="4" />
+  }
   <div class="min-w-0 flex-1">
     @if (step().cleared) {
       <p class="flex items-center gap-1.5 font-semibold">
@@ -55,10 +57,10 @@
           <app-pixel-icon name="coin" />
           {{ step().reward.coins }} coins
         </span>
-        @if (step().reward.boost; as boost) {
+        @if (step().reward.chest; as chest) {
           <span class="flex items-center gap-1.5">
-            <app-boost-icon [type]="boost" size="sm" />
-            {{ boostLabel() }}
+            <app-pixel-icon [name]="chestIcons[chest]" />
+            {{ chestNames[chest] }}
           </span>
         }
       </p>

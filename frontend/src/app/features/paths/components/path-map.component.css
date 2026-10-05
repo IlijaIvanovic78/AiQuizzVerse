@@ -124,12 +124,12 @@
   pointer-events: none;
 }
 
+/* The chest of the step reward, drawn at 3x so its 16px pixel art stays sharp. */
 .stop-chest {
   position: absolute;
   top: -0.9rem;
   left: 100%;
-  width: 2.75rem;
-  height: auto;
+  width: max-content;
   margin-left: -1rem;
   pointer-events: none;
 }

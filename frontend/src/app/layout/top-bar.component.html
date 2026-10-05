@@ -2,11 +2,18 @@
   <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-6">
     <a routerLink="/home" class="shrink-0" aria-label="AI QuizVerse home">
       <img
-        src="/assets/images/logo.webp"
+        src="/assets/images/logo-mark.png"
         alt=""
-        width="720"
-        height="211"
-        class="h-7 w-auto sm:h-9 md:h-11"
+        width="32"
+        height="32"
+        class="pixelated block sm:hidden"
+      />
+      <img
+        src="/assets/images/logo.png"
+        alt=""
+        width="162"
+        height="32"
+        class="pixelated hidden sm:block"
       />
     </a>
 
@@ -34,6 +41,18 @@
       <a routerLink="/shop" class="coin-link">
         <app-coin-amount [amount]="user().coins" />
         <span class="sr-only">, open the shop</span>
+      </a>
+
+      <a
+        routerLink="/chests"
+        routerLinkActive="chest-link-active"
+        class="chest-link"
+        [attr.aria-label]="chestLinkLabel()"
+      >
+        <app-pixel-icon name="chest-wooden" />
+        @if (chestsToOpen() > 0) {
+          <span class="chest-count" aria-hidden="true">{{ chestsToOpen() }}</span>
+        }
       </a>
 
       <div class="relative">
@@ -67,6 +86,14 @@
                   </a>
                 </li>
               }
+              <li>
+                <a class="menu-item" routerLink="/chests" (click)="closeMenu()">
+                  Treasure room
+                  @if (chestsToOpen() > 0) {
+                    <span class="badge badge-torch ml-auto">{{ chestsToOpen() }}</span>
+                  }
+                </a>
+              </li>
               <li>
                 <a class="menu-item" routerLink="/profile" (click)="closeMenu()">Profile</a>
               </li>

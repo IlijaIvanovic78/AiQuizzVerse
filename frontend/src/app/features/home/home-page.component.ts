@@ -9,6 +9,8 @@ import { PlayChoice, PlayModalComponent } from '../../shared/components/play-mod
 import { QuizCardComponent } from '../../shared/components/quiz-card.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { authFeature } from '../../store/auth/auth.reducer';
+import { ChestsActions } from '../../store/chests/chests.actions';
+import { chestsFeature } from '../../store/chests/chests.reducer';
 import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
 import { LeaderboardActions } from '../../store/leaderboard/leaderboard.actions';
@@ -21,6 +23,7 @@ import { QuizzesActions } from '../../store/quizzes/quizzes.actions';
 import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
 import { ReviewActions } from '../../store/review/review.actions';
 import { reviewFeature } from '../../store/review/review.reducer';
+import { ChestsCardComponent } from './components/chests-card.component';
 import { ContinuePathCardComponent } from './components/continue-path-card.component';
 import { HeroBannerComponent } from './components/hero-banner.component';
 import { MistakesCardComponent } from './components/mistakes-card.component';
@@ -42,6 +45,7 @@ import { newestOpenPath, sectionStatus } from './home.rules';
     PlayModalComponent,
     QuizCardComponent,
     SpinnerComponent,
+    ChestsCardComponent,
     ContinuePathCardComponent,
     HeroBannerComponent,
     MistakesCardComponent,
@@ -91,6 +95,13 @@ export class HomePageComponent {
     sectionStatus(this.reviewLoaded(), this.reviewError()),
   );
 
+  protected readonly chestsToOpen = this.store.selectSignal(chestsFeature.selectUnopenedCount);
+  private readonly chestsLoaded = this.store.selectSignal(chestsFeature.selectLoaded);
+  private readonly chestsError = this.store.selectSignal(chestsFeature.selectError);
+  protected readonly chestsStatus = computed(() =>
+    sectionStatus(this.chestsLoaded(), this.chestsError()),
+  );
+
   private readonly friends = this.store.selectSignal(friendsFeature.selectAllFriends);
   protected readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
   protected readonly friendsLoading = this.store.selectSignal(friendsFeature.selectLoading);
@@ -120,6 +131,7 @@ export class HomePageComponent {
       this.quizzesStatus(),
       this.pathsStatus(),
       this.reviewStatus(),
+      this.chestsStatus(),
       this.friendsStatus(),
       this.weeklyStatus(),
     ].includes('failed'),
@@ -137,6 +149,7 @@ export class HomePageComponent {
     this.store.dispatch(QuizzesActions.loadFeatured());
     this.store.dispatch(PathsActions.load());
     this.store.dispatch(ReviewActions.load());
+    this.store.dispatch(ChestsActions.load());
     this.store.dispatch(FriendsActions.load());
     this.store.dispatch(LeaderboardActions.load({ scope: 'friends' }));
   }

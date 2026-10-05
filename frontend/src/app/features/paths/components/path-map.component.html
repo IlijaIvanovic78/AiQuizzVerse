@@ -70,15 +70,15 @@
               }
             </button>
 
-            <img
-              src="/assets/images/icons/chest.webp"
-              alt=""
-              width="256"
-              height="128"
-              class="stop-chest"
-              [class.stop-chest-collected]="stop.step.cleared"
-              [class.stop-chest-locked]="!stop.step.unlocked"
-            />
+            @if (stop.step.reward.chest; as chest) {
+              <app-pixel-icon
+                class="stop-chest"
+                [class.stop-chest-collected]="stop.step.cleared"
+                [class.stop-chest-locked]="!stop.step.unlocked"
+                [name]="chestIcons[chest]"
+                [scale]="3"
+              />
+            }
 
             @if (stop.step.unlocked) {
               <span class="stop-stars">

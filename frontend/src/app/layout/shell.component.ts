@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { AuthActions } from '../store/auth/auth.actions';
 import { authFeature } from '../store/auth/auth.reducer';
+import { chestsFeature } from '../store/chests/chests.reducer';
 import { BottomNavComponent } from './bottom-nav.component';
 import { TopBarComponent } from './top-bar.component';
 
@@ -11,7 +12,7 @@ import { TopBarComponent } from './top-bar.component';
   imports: [RouterOutlet, TopBarComponent, BottomNavComponent],
   template: `
     @if (user(); as user) {
-      <app-top-bar [user]="user" (logout)="logout()" />
+      <app-top-bar [user]="user" [chestsToOpen]="chestsToOpen()" (logout)="logout()" />
     }
     <main class="mx-auto w-full max-w-6xl px-4 pb-28 pt-5 md:px-6 md:pb-12 md:pt-8">
       <router-outlet />
@@ -27,6 +28,7 @@ export class ShellComponent {
   private readonly store = inject(Store);
 
   protected readonly user = this.store.selectSignal(authFeature.selectUser);
+  protected readonly chestsToOpen = this.store.selectSignal(chestsFeature.selectUnopenedCount);
 
   protected logout(): void {
     this.store.dispatch(AuthActions.logout());
