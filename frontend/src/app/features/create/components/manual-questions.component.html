@@ -1,0 +1,27 @@
+<ol class="flex flex-col gap-5">
+  @for (form of questions(); track form; let index = $index) {
+    <li class="panel-parchment p-4 sm:p-6" animate.enter="fade-enter">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <h3 class="flex items-center gap-3 text-xl">
+          <span class="question-number">{{ index + 1 }}</span>
+          Question {{ index + 1 }}
+        </h3>
+        @if (questions().length > min) {
+          <button type="button" class="btn btn-ghost btn-sm" (click)="removed.emit(index)">
+            <app-pixel-icon name="cross" [scale]="1" />
+            Remove<span class="sr-only"> question {{ index + 1 }}</span>
+          </button>
+        }
+      </div>
+      <app-question-editor [form]="form" />
+    </li>
+  }
+</ol>
+<button
+  type="button"
+  class="btn btn-secondary mt-5 w-full"
+  [disabled]="questions().length >= max"
+  (click)="added.emit()"
+>
+  + Add a question ({{ questions().length }} of {{ max }})
+</button>

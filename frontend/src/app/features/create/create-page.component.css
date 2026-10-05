@@ -1,0 +1,19 @@
+.wizard-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 3px dashed var(--night-600);
+}
+
+@media (min-width: 640px) {
+  .wizard-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+
+  .wizard-actions .btn-secondary {
+    margin-right: auto;
+  }
+}

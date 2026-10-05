@@ -1,0 +1,79 @@
+<section class="panel overflow-hidden text-center" aria-labelledby="done-title">
+  <div class="done-stage" aria-hidden="true">
+    <app-hero-sprite [heroKey]="heroKey()" [scale]="4" action="attack" [decorative]="true" />
+    <img
+      src="/assets/images/icons/treasure.webp"
+      alt=""
+      width="256"
+      height="150"
+      class="animate-chest-bounce h-auto w-28 md:w-36"
+    />
+    @for (coin of coins; track coin) {
+      <img
+        src="/assets/images/icons/coin.png"
+        alt=""
+        width="24"
+        height="24"
+        class="done-coin pixelated animate-coin-burst"
+        [class]="'done-coin-' + coin"
+      />
+    }
+  </div>
+
+  <div class="p-5 md:p-8">
+    @if (quiz(); as quiz) {
+      <h2 id="done-title" class="animate-banner-in text-3xl md:text-4xl">Your quiz is ready!</h2>
+      <div class="panel-parchment mx-auto mt-5 max-w-lg p-4 text-left">
+        <p class="read-text text-xl font-bold">{{ quiz.title }}</p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+          <app-theme-badge [theme]="quiz.theme" />
+          <app-difficulty-badge [difficulty]="quiz.difficulty" />
+          <span class="badge">{{ quiz.questions.length }} questions</span>
+        </div>
+      </div>
+      <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+        <button
+          type="button"
+          class="btn btn-primary btn-lg"
+          [disabled]="busy()"
+          (click)="play.emit(quiz.id)"
+        >
+          Play now
+        </button>
+        <a class="btn btn-secondary btn-lg" [routerLink]="['/library', quiz.id]">Open</a>
+      </div>
+    } @else if (path(); as path) {
+      <h2 id="done-title" class="animate-banner-in text-3xl md:text-4xl">
+        Your learning path is ready!
+      </h2>
+      <div class="panel-parchment mx-auto mt-5 max-w-lg p-4 text-left">
+        <p class="read-text text-xl font-bold">{{ path.topic }}</p>
+        <ol class="mt-3 flex flex-col gap-2">
+          @for (step of path.steps; track step.id) {
+            <li class="flex items-center gap-3">
+              <span class="done-step-number">{{ step.position }}</span>
+              <span class="read-text min-w-0 flex-1">{{ step.title }}</span>
+              <app-difficulty-badge [difficulty]="step.difficulty" />
+            </li>
+          }
+        </ol>
+      </div>
+      <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+        <a class="btn btn-primary btn-lg" [routerLink]="['/paths', path.id]">Open the path</a>
+        @if (path.steps[0]; as firstStep) {
+          <button
+            type="button"
+            class="btn btn-secondary btn-lg"
+            [disabled]="busy()"
+            (click)="play.emit(firstStep.quizId)"
+          >
+            Play step 1 now
+          </button>
+        }
+      </div>
+    }
+    <button type="button" class="btn btn-ghost mt-4" (click)="startOver.emit()">
+      Make something else
+    </button>
+  </div>
+</section>

@@ -1,0 +1,61 @@
+.done-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 1.5rem;
+  height: 10rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px solid var(--outline);
+  background: var(--night-900) url('/assets/images/arena-small.webp') center 80% / cover;
+}
+
+/* Coins pop out of the treasure, each in its own direction. */
+.done-coin {
+  position: absolute;
+  bottom: 3.5rem;
+  left: calc(50% + 3rem);
+  max-width: none;
+}
+
+.done-coin-1 {
+  --burst-x: -70px;
+  --burst-y: -60px;
+}
+
+.done-coin-2 {
+  --burst-x: -30px;
+  --burst-y: -95px;
+  animation-delay: 80ms;
+}
+
+.done-coin-3 {
+  --burst-x: 10px;
+  --burst-y: -110px;
+  animation-delay: 30ms;
+}
+
+.done-coin-4 {
+  --burst-x: 45px;
+  --burst-y: -80px;
+  animation-delay: 120ms;
+}
+
+.done-coin-5 {
+  --burst-x: 75px;
+  --burst-y: -50px;
+  animation-delay: 60ms;
+}
+
+.done-step-number {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+}

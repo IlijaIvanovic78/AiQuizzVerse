@@ -1,0 +1,73 @@
+@if (document(); as document) {
+  <div class="panel-parchment flex flex-col items-center gap-4 p-4 sm:flex-row sm:p-5">
+    <img
+      src="/assets/images/icons/chest.webp"
+      alt=""
+      width="256"
+      height="128"
+      class="h-16 w-auto"
+    />
+    <div class="min-w-0 flex-1 text-center sm:text-left">
+      <p class="flex items-center justify-center gap-2 font-semibold sm:justify-start">
+        <app-pixel-icon name="check" />
+        Lesson ready
+      </p>
+      <p class="read-text truncate font-bold">{{ document.fileName }}</p>
+      <p class="text-muted">
+        We read {{ document.characterCount | number }} characters from your lesson.
+      </p>
+    </div>
+    <button type="button" class="btn btn-secondary btn-sm" (click)="removed.emit()">
+      Use another PDF
+    </button>
+  </div>
+} @else if (uploadingName(); as fileName) {
+  <div class="panel flex flex-col gap-3 p-5" role="status">
+    <p class="font-semibold">
+      Uploading <span class="text-torch-300">{{ fileName }}</span>
+    </p>
+    <div class="scan-track" aria-hidden="true">
+      <span class="scan-block"></span>
+    </div>
+    <p class="text-sm text-muted">Reading the pages too, this takes a few seconds.</p>
+  </div>
+} @else {
+  <label
+    class="dropzone"
+    [class.dropzone-active]="dragging()"
+    (dragover)="dragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="drop($event)"
+  >
+    <input
+      #fileInput
+      type="file"
+      class="sr-only"
+      [accept]="accept"
+      aria-describedby="pdf-rules pdf-problem"
+      (change)="pick(fileInput)"
+    />
+    <img
+      src="/assets/images/icons/chest.webp"
+      alt=""
+      width="256"
+      height="128"
+      class="dropzone-chest h-16 w-auto sm:h-20"
+    />
+    <span class="text-xl font-semibold">
+      {{ dragging() ? 'Let go to upload' : 'Drop your PDF here' }}
+    </span>
+    <span class="btn btn-secondary btn-sm">Or choose a file</span>
+    <span id="pdf-rules" class="text-sm text-muted">
+      A PDF with text, up to {{ maxMegabytes }} MB. Scanned pages can't be read.
+    </span>
+  </label>
+  <div id="pdf-problem" aria-live="polite">
+    @if (problem(); as problem) {
+      <p class="form-alert mt-3">
+        <app-pixel-icon name="cross" />
+        {{ problem }}
+      </p>
+    }
+  </div>
+}

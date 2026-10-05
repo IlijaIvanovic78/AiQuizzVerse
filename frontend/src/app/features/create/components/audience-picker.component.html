@@ -1,0 +1,21 @@
+<ul class="grid gap-4 sm:grid-cols-3">
+  @for (choice of choices; track choice.value) {
+    <li>
+      <app-choice-card
+        [title]="choice.value | audienceLabel"
+        [text]="choice.ages + '. ' + choice.text"
+        [selected]="value() === choice.value"
+        (chosen)="picked.emit(choice.value)"
+      >
+        <span choiceArt class="flex h-16 w-full items-end justify-center overflow-hidden sm:h-24">
+          <app-hero-sprite
+            [heroKey]="choice.heroKey"
+            [scale]="3"
+            [action]="value() === choice.value ? 'attack' : 'idle'"
+            [decorative]="true"
+          />
+        </span>
+      </app-choice-card>
+    </li>
+  }
+</ul>

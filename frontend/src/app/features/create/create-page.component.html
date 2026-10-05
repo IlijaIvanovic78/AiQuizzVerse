@@ -1,0 +1,375 @@
+<app-page-header
+  title="Create"
+  subtitle="Turn any topic or lesson into a quiz, or write one yourself."
+/>
+
+@switch (phase()) {
+  @case ('working') {
+    <app-generation-progress
+      [kind]="workingKind()"
+      [progress]="progress()"
+      [heroKey]="user()?.avatarKey ?? null"
+      [petKey]="user()?.petKey ?? null"
+    />
+  }
+  @case ('done') {
+    <app-creation-done
+      [quiz]="createdQuiz()"
+      [path]="createdPath()"
+      [heroKey]="user()?.avatarKey ?? null"
+      [busy]="startingMatch()"
+      (play)="play($event)"
+      (startOver)="startOver()"
+    />
+  }
+  @case ('failed') {
+    @if (failure(); as failure) {
+      <app-creation-error [error]="failure" (retry)="retry()" (back)="backToChoices()" />
+    }
+  }
+  @default {
+    <div class="panel p-4 sm:p-6 md:p-8">
+      <app-wizard-steps [steps]="steps()" [current]="step()" (stepChosen)="showStep($event)" />
+
+      @switch (step()) {
+        @case ('source') {
+          <section class="mt-8" aria-labelledby="source-title" animate.enter="fade-enter">
+            <h2
+              #stepHeading
+              id="source-title"
+              tabindex="-1"
+              class="text-2xl focus:outline-none md:text-3xl"
+            >
+              Where should the questions come from?
+            </h2>
+            <ul class="mt-5 grid gap-4 sm:grid-cols-3">
+              @for (choice of sourceChoices; track choice.value) {
+                <li>
+                  <app-choice-card
+                    [title]="choice.title"
+                    [text]="choice.text"
+                    [selected]="source() === choice.value"
+                    (chosen)="source.set(choice.value)"
+                  >
+                    <img
+                      choiceArt
+                      alt=""
+                      class="h-14 w-auto sm:h-20"
+                      [src]="'/assets/images/icons/' + choice.image + '.webp'"
+                    />
+                  </app-choice-card>
+                </li>
+              }
+            </ul>
+
+            <div class="mt-8">
+              @switch (source()) {
+                @case ('TOPIC') {
+                  <label for="create-topic" class="field-label text-lg">
+                    What do you want to learn about?
+                  </label>
+                  <input
+                    id="create-topic"
+                    class="input text-lg"
+                    placeholder="For example: volcanoes"
+                    aria-describedby="create-topic-problem"
+                    [formControl]="topic"
+                    [attr.maxlength]="limits.topic"
+                    [attr.aria-invalid]="topicInvalid()"
+                    (keydown.enter)="continueFromSource()"
+                  />
+                  <div id="create-topic-problem">
+                    @if (topicInvalid()) {
+                      <p class="field-error">
+                        <app-pixel-icon name="cross" [scale]="1" />
+                        Type a topic with at least 3 letters.
+                      </p>
+                    }
+                  </div>
+                  <p id="topic-ideas" class="mt-5 font-semibold text-muted">Need an idea?</p>
+                  <div class="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="topic-ideas">
+                    @for (suggestion of suggestions; track suggestion) {
+                      <button
+                        type="button"
+                        class="chip"
+                        [attr.aria-pressed]="topicValue() === suggestion"
+                        (click)="suggestTopic(suggestion)"
+                      >
+                        {{ suggestion }}
+                      </button>
+                    }
+                  </div>
+                }
+                @case ('PDF') {
+                  <app-pdf-dropzone
+                    [state]="upload()"
+                    (fileChosen)="uploadLesson($event)"
+                    (removed)="removeLesson()"
+                  />
+                }
+                @case ('MANUAL') {
+                  <div class="panel-parchment flex items-center gap-4 p-4 sm:p-5">
+                    <img
+                      src="/assets/images/icons/axes.webp"
+                      alt=""
+                      width="256"
+                      height="204"
+                      class="hidden h-16 w-auto sm:block"
+                    />
+                    <p class="read-text">
+                      You'll write {{ limits.minQuestions }} to {{ limits.maxQuestions }} questions.
+                      Each one needs 4 answers, a hint and a short explanation of the right answer.
+                    </p>
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button
+                type="button"
+                class="btn btn-primary btn-lg"
+                [disabled]="source() === 'PDF' && !lessonDocument()"
+                (click)="continueFromSource()"
+              >
+                Next
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('make') {
+          <section class="mt-8" aria-labelledby="make-title" animate.enter="fade-enter">
+            <h2
+              #stepHeading
+              id="make-title"
+              tabindex="-1"
+              class="text-2xl focus:outline-none md:text-3xl"
+            >
+              What should the quiz master make?
+            </h2>
+            <ul class="mt-5 grid gap-4 sm:grid-cols-2">
+              @for (choice of kindChoices; track choice.value) {
+                <li>
+                  <app-choice-card
+                    [title]="choice.title"
+                    [text]="choice.text"
+                    [selected]="kind() === choice.value"
+                    (chosen)="kind.set(choice.value)"
+                  >
+                    <img
+                      choiceArt
+                      alt=""
+                      class="h-14 w-auto sm:h-20"
+                      [src]="'/assets/images/icons/' + choice.image + '.webp'"
+                    />
+                  </app-choice-card>
+                </li>
+              }
+            </ul>
+            @if (kind() === 'PATH') {
+              <p class="mt-5 text-muted">
+                A learning path counts as 5 of your 15 creations for today.
+              </p>
+            }
+
+            <div class="wizard-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
+              <button type="button" class="btn btn-primary btn-lg" (click)="showStep('settings')">
+                Next
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('settings') {
+          <section class="mt-8" aria-labelledby="settings-title" animate.enter="fade-enter">
+            <h2
+              #stepHeading
+              id="settings-title"
+              tabindex="-1"
+              class="text-2xl focus:outline-none md:text-3xl"
+            >
+              Set up your quest
+            </h2>
+            @if (subject()) {
+              <p class="mt-2 text-muted">
+                {{ makeKind() === 'PATH' ? 'A learning path' : 'A quiz' }} about
+                <span class="font-semibold text-parchment-100">{{ subject() }}</span>
+              </p>
+            }
+
+            @if (source() === 'MANUAL') {
+              <div class="mt-6">
+                <label for="create-title" class="field-label text-lg">Quiz name</label>
+                <input
+                  id="create-title"
+                  class="input text-lg"
+                  placeholder="For example: Planets of our Sun"
+                  aria-describedby="create-title-problem"
+                  [formControl]="title"
+                  [attr.maxlength]="limits.title"
+                  [attr.aria-invalid]="titleInvalid()"
+                />
+                <div id="create-title-problem">
+                  @if (titleInvalid()) {
+                    <p class="field-error">
+                      <app-pixel-icon name="cross" [scale]="1" />
+                      Give your quiz a name with at least 3 letters.
+                    </p>
+                  }
+                </div>
+              </div>
+
+              <div class="mt-6">
+                <p id="theme-label" class="field-label text-lg">Theme</p>
+                <div class="flex flex-wrap gap-2" role="group" aria-labelledby="theme-label">
+                  @for (option of themes; track option) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [attr.aria-pressed]="theme() === option"
+                      (click)="theme.set(option)"
+                    >
+                      {{ option | themeLabel }}
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <div class="mt-8">
+              <p class="field-label text-lg">Who is it for?</p>
+              <app-audience-picker [value]="audience()" (picked)="chooseAudience($event)" />
+            </div>
+
+            <div class="mt-8 grid gap-6 md:grid-cols-2">
+              <div>
+                <p id="language-label" class="field-label text-lg">Language</p>
+                <div class="flex flex-wrap gap-2" role="group" aria-labelledby="language-label">
+                  @for (option of languages; track option) {
+                    <button
+                      type="button"
+                      class="chip"
+                      [attr.aria-pressed]="language() === option"
+                      (click)="language.set(option)"
+                    >
+                      {{ option | languageLabel }}
+                    </button>
+                  }
+                </div>
+              </div>
+
+              @if (makeKind() === 'QUIZ') {
+                <div>
+                  <p id="difficulty-label" class="field-label text-lg">Difficulty</p>
+                  <div class="flex flex-wrap gap-2" role="group" aria-labelledby="difficulty-label">
+                    @for (option of difficulties; track option.value) {
+                      <button
+                        type="button"
+                        class="chip"
+                        [attr.aria-pressed]="difficulty() === option.value"
+                        (click)="difficulty.set(option.value)"
+                      >
+                        {{ option.label }}
+                      </button>
+                    }
+                  </div>
+                </div>
+
+                @if (source() !== 'MANUAL') {
+                  <div>
+                    <p id="count-label" class="field-label text-lg">Questions</p>
+                    <app-number-stepper
+                      labelledBy="count-label"
+                      name="questions"
+                      [value]="questionCount()"
+                      [min]="limits.minQuestions"
+                      [max]="limits.maxQuestions"
+                      (valueChange)="questionCount.set($event)"
+                    />
+                  </div>
+                }
+
+                <div>
+                  <p id="time-label" class="field-label text-lg">Time per question</p>
+                  <app-number-stepper
+                    labelledBy="time-label"
+                    name="seconds"
+                    unit="s"
+                    [value]="timePerQuestion()"
+                    [min]="limits.minTime"
+                    [max]="limits.maxTime"
+                    [step]="limits.timeStep"
+                    (valueChange)="timePerQuestion.set($event)"
+                  />
+                  <p class="field-hint">
+                    Picking who it's for sets a fair time. Change it if you like.
+                  </p>
+                </div>
+              } @else {
+                <div class="panel-parchment p-4">
+                  <p class="font-semibold">5 steps, from easy to master</p>
+                  <p class="read-text mt-1">
+                    Each step has a short study card and its own quiz. Clear a step to unlock the
+                    next one and win its reward.
+                  </p>
+                </div>
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
+              <button type="button" class="btn btn-primary btn-lg" (click)="continueFromSettings()">
+                @if (source() === 'MANUAL') {
+                  Next: write questions
+                } @else if (makeKind() === 'PATH') {
+                  Create my path
+                } @else {
+                  Create my quiz
+                }
+              </button>
+            </div>
+          </section>
+        }
+
+        @case ('questions') {
+          <section class="mt-8" aria-labelledby="questions-title" animate.enter="fade-enter">
+            <h2
+              #stepHeading
+              id="questions-title"
+              tabindex="-1"
+              class="text-2xl focus:outline-none md:text-3xl"
+            >
+              Write your questions
+            </h2>
+            <p class="mb-6 mt-2 text-muted">
+              For <span class="font-semibold text-parchment-100">{{ subject() }}</span
+              >. Tick the right answer for every question.
+            </p>
+
+            <app-manual-questions
+              [questions]="questionForms()"
+              (added)="addQuestion()"
+              (removed)="removeQuestion($event)"
+            />
+
+            @if (manualProblem(); as problem) {
+              <p class="form-alert mt-5" role="alert">
+                <app-pixel-icon name="cross" />
+                {{ problem }}
+              </p>
+            }
+
+            <div class="wizard-actions">
+              <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
+              <button type="button" class="btn btn-primary btn-lg" (click)="saveManualQuiz()">
+                Save my quiz
+              </button>
+            </div>
+          </section>
+        }
+      }
+    </div>
+  }
+}
