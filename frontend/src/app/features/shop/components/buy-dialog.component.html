@@ -1,0 +1,32 @@
+<app-modal [title]="title()" size="sm" (closed)="closed.emit()">
+  <div class="flex flex-col items-center gap-4">
+    <div class="buy-preview">
+      <ng-content />
+    </div>
+
+    @if (affordable()) {
+      <dl class="grid w-full grid-cols-[1fr_auto] gap-x-4 gap-y-2">
+        <dt class="text-muted">Price</dt>
+        <dd><app-coin-amount [amount]="price()" /></dd>
+        <dt class="text-muted">Coins left after</dt>
+        <dd><app-coin-amount [amount]="coinsLeft()" /></dd>
+      </dl>
+      <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" class="btn btn-ghost" (click)="closed.emit()">Not now</button>
+        <button type="button" class="btn btn-primary" (click)="confirmed.emit()">
+          Buy for {{ price() }} coins
+        </button>
+      </div>
+    } @else {
+      <p class="text-center text-lg">
+        {{ name() }} costs {{ price() }} coins. You need
+        <strong class="text-gold">{{ coinsMissing() }}</strong> more.
+      </p>
+      <p class="text-center text-muted">Play quizzes to earn more coins.</p>
+      <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" class="btn btn-ghost" (click)="closed.emit()">OK</button>
+        <a routerLink="/library" class="btn btn-primary">Find a quiz</a>
+      </div>
+    }
+  </div>
+</app-modal>

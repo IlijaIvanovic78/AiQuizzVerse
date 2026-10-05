@@ -1,0 +1,118 @@
+.coin-bag {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  padding: 1rem 1.25rem;
+}
+
+.level-note {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding-top: 0.75rem;
+  border-top: 3px dashed var(--night-600);
+}
+
+@media (min-width: 768px) {
+  .level-note {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    width: auto;
+    max-width: 14rem;
+    padding-top: 0;
+    border-top: none;
+    text-align: right;
+  }
+}
+
+/* Folder tabs: the selected one joins the panel below by covering its top border. */
+.shop-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.375rem;
+  margin-top: 1.5rem;
+  padding: 0 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .shop-tabs {
+    grid-template-columns: repeat(4, 9.5rem);
+  }
+}
+
+.shop-tab {
+  position: relative;
+  top: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.2rem;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.15rem 0.4rem;
+  border: 3px solid var(--outline);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background-color: var(--night-900);
+  color: var(--fog-300);
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.05);
+}
+
+.shop-tab:hover {
+  background-color: var(--night-700);
+}
+
+.shop-tab[aria-selected='true'] {
+  z-index: 1;
+  background-color: var(--night-800);
+  color: var(--torch-300);
+  box-shadow: inset 0 4px 0 var(--torch-400);
+}
+
+.tab-icon {
+  width: auto;
+  height: 2rem;
+}
+
+/* On phones "Power-ups" needs two lines; every label gets the same room so the icons line up. */
+.tab-label {
+  display: flex;
+  align-items: center;
+  min-height: 2.4em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .tab-label {
+    min-height: 0;
+  }
+}
+
+.shop-panel {
+  padding: 1rem;
+  border-top-left-radius: 0;
+}
+
+@media (min-width: 768px) {
+  .shop-panel {
+    padding: 1.5rem;
+  }
+}
+
+.grown-ups-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--outline);
+  border-left: 8px solid var(--mana-400);
+  border-radius: 4px;
+  background-color: var(--night-900);
+}

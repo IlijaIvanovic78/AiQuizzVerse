@@ -1,0 +1,9 @@
+.pack-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  height: 100%;
+  padding: 1.25rem;
+  text-align: center;
+}

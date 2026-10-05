@@ -1,0 +1,20 @@
+<article class="pack-card panel">
+  <app-pack-art [packageId]="pack().id" />
+
+  <h3 class="text-xl">{{ pack().name }}</h3>
+  <app-coin-amount [amount]="pack().coins" size="lg" />
+  @if (pack().bonusCoins > 0) {
+    <span class="badge badge-jade">+{{ pack().bonusCoins }} bonus coins</span>
+  } @else {
+    <span class="badge badge-fog">A handy top-up</span>
+  }
+
+  <button
+    type="button"
+    class="btn btn-primary mt-auto w-full"
+    [disabled]="busy()"
+    (click)="buy.emit(pack())"
+  >
+    Buy for {{ pack().priceCents | price: pack().currency }}
+  </button>
+</article>

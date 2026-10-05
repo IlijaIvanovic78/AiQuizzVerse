@@ -1,0 +1,71 @@
+.test-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.6rem 1rem;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background-color: var(--mana-400);
+  color: var(--night-950);
+  font-weight: 600;
+  text-align: center;
+  box-shadow: inset 0 -4px 0 var(--mana-600);
+}
+
+/* A paper receipt with a torn, zig-zag bottom edge. */
+.receipt {
+  padding: 1.5rem 1.25rem 2.25rem;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 12px),
+    95% 100%,
+    90% calc(100% - 12px),
+    85% 100%,
+    80% calc(100% - 12px),
+    75% 100%,
+    70% calc(100% - 12px),
+    65% 100%,
+    60% calc(100% - 12px),
+    55% 100%,
+    50% calc(100% - 12px),
+    45% 100%,
+    40% calc(100% - 12px),
+    35% 100%,
+    30% calc(100% - 12px),
+    25% 100%,
+    20% calc(100% - 12px),
+    15% 100%,
+    10% calc(100% - 12px),
+    5% 100%,
+    0 calc(100% - 12px)
+  );
+}
+
+@media (min-width: 640px) {
+  .receipt {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+}
+
+.receipt-lines {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem 1rem;
+  margin-top: 1.25rem;
+  padding: 1rem 0;
+  border-top: 3px dashed rgba(59, 42, 26, 0.4);
+  border-bottom: 3px dashed rgba(59, 42, 26, 0.4);
+  font-size: 1.05rem;
+}
+
+.receipt-lines dd {
+  text-align: right;
+}
+
+.receipt-total {
+  font-size: 1.25rem;
+  font-weight: 600;
+}

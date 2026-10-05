@@ -1,0 +1,175 @@
+<app-page-header title="Shop" subtitle="Spend the coins you earn by learning." />
+
+<section class="coin-bag panel" aria-label="Your coins">
+  <img
+    src="/assets/images/icons/treasure.webp"
+    alt=""
+    width="256"
+    height="150"
+    class="h-auto w-20 shrink-0 sm:w-28"
+  />
+  <div class="min-w-0 flex-1">
+    <p class="text-sm text-muted">Your coin bag</p>
+    <app-coin-amount [amount]="coins()" size="lg" />
+    <p class="mt-1 text-sm text-fog-200">Earn coins by playing quizzes and clearing path steps.</p>
+  </div>
+  <div class="level-note">
+    <app-level-badge [level]="level()" />
+    <p class="text-sm text-muted">Level up to unlock more heroes and pets.</p>
+  </div>
+</section>
+
+<div class="shop-tabs" role="tablist" aria-label="Shop sections">
+  @for (tab of tabs; track tab.id; let index = $index) {
+    <button
+      #tabButton
+      type="button"
+      role="tab"
+      class="shop-tab"
+      [id]="'shop-tab-' + tab.id"
+      [attr.aria-selected]="activeTab() === tab.id"
+      [attr.aria-controls]="'shop-panel-' + tab.id"
+      [tabIndex]="activeTab() === tab.id ? 0 : -1"
+      (click)="selectTab(tab.id)"
+      (keydown)="moveTab($event, index)"
+    >
+      <img [src]="tab.icon" alt="" class="tab-icon" [class.pixelated]="tab.pixelIcon" />
+      <span class="tab-label">{{ tab.label }}</span>
+    </button>
+  }
+</div>
+
+<section
+  class="shop-panel panel"
+  role="tabpanel"
+  [id]="'shop-panel-' + activeTab()"
+  [attr.aria-labelledby]="'shop-tab-' + activeTab()"
+>
+  @if (activeTab() === 'heroes' || activeTab() === 'pets') {
+    <p class="mb-4 text-fog-200">
+      @if (activeTab() === 'heroes') {
+        Pick the hero you play as. New heroes unlock as you level up.
+      } @else {
+        A pet follows your hero into every game.
+      }
+    </p>
+
+    @if (itemsLoaded()) {
+      <ul class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        @for (item of shelfItems(); track item.id) {
+          <li>
+            <app-item-card
+              [item]="item"
+              [level]="level()"
+              [coins]="coins()"
+              [busy]="busy()"
+              (buy)="itemToBuy.set($event)"
+              (equip)="equip($event)"
+              (unequip)="unequipPet()"
+            />
+          </li>
+        }
+      </ul>
+    } @else if (error()) {
+      <ng-container [ngTemplateOutlet]="loadFailed" />
+    } @else {
+      <ng-container [ngTemplateOutlet]="loadingShelf" />
+    }
+  } @else if (activeTab() === 'power-ups') {
+    <p class="mb-4 text-fog-200">
+      Use power-ups in solo and team games. Every game also gives you 2 free hints. Duels are always
+      a fair fight, so power-ups stay in your bag there.
+    </p>
+
+    @if (boosts().length > 0) {
+      <ul class="grid gap-3 md:grid-cols-2">
+        @for (offer of boosts(); track offer.type) {
+          <li>
+            <app-boost-card [offer]="offer" [busy]="busy()" (buy)="boostToBuy.set($event)" />
+          </li>
+        }
+      </ul>
+    } @else if (error()) {
+      <ng-container [ngTemplateOutlet]="loadFailed" />
+    } @else {
+      <ng-container [ngTemplateOutlet]="loadingShelf" />
+    }
+  } @else {
+    <div class="grown-ups-note">
+      <app-pixel-icon name="lock" [scale]="2" />
+      <div class="min-w-0 flex-1">
+        <p class="font-semibold">For grown-ups</p>
+        <p class="text-sm">
+          Test mode — no real money is charged. Every purchase asks a grown-up first, and spending
+          is capped at {{ monthlyLimitCents | price: 'eur' }} a month.
+        </p>
+        <a routerLink="/profile" class="link text-sm">See purchase history</a>
+      </div>
+    </div>
+
+    @if (packages().length > 0) {
+      <ul class="grid gap-4 sm:grid-cols-3">
+        @for (pack of packages(); track pack.id) {
+          <li>
+            <app-coin-pack-card [pack]="pack" [busy]="busy()" (buy)="packToBuy.set($event)" />
+          </li>
+        }
+      </ul>
+    } @else if (error()) {
+      <ng-container [ngTemplateOutlet]="loadFailed" />
+    } @else {
+      <ng-container [ngTemplateOutlet]="loadingShelf" />
+    }
+  }
+</section>
+
+<ng-template #loadingShelf>
+  <div class="flex justify-center py-12">
+    <app-spinner label="Stocking the shelves..." [showLabel]="true" />
+  </div>
+</ng-template>
+
+<ng-template #loadFailed>
+  <div class="flex flex-col items-center gap-3 py-10 text-center">
+    <p>The shopkeeper is away. Check your connection and try again.</p>
+    <button type="button" class="btn btn-secondary" (click)="loadShop()">Try again</button>
+  </div>
+</ng-template>
+
+@if (itemToBuy(); as item) {
+  <app-buy-dialog
+    [name]="item.name"
+    [price]="item.price"
+    [coins]="coins()"
+    (confirmed)="buyItem()"
+    (closed)="itemToBuy.set(null)"
+  >
+    @if (item.type === 'AVATAR') {
+      <app-hero-sprite [heroKey]="item.id" [scale]="4" [decorative]="true" />
+    } @else {
+      <app-pet-sprite [petKey]="item.id" [scale]="4" [decorative]="true" />
+    }
+  </app-buy-dialog>
+}
+
+@if (boostToBuy(); as boost) {
+  <app-buy-dialog
+    [name]="boost.name"
+    [price]="boost.price ?? 0"
+    [coins]="coins()"
+    (confirmed)="buyBoost()"
+    (closed)="boostToBuy.set(null)"
+  >
+    <app-boost-icon class="mb-3" [type]="boost.type" size="lg" />
+  </app-buy-dialog>
+}
+
+@if (packToBuy(); as pack) {
+  <app-grown-up-gate
+    [pack]="pack"
+    [busy]="busy()"
+    [error]="error()"
+    (passed)="openCheckout(pack)"
+    (closed)="packToBuy.set(null)"
+  />
+}

@@ -1,0 +1,54 @@
+<app-modal title="Grown-ups only" size="sm" [parchment]="true" (closed)="closed.emit()">
+  <div class="mb-4 flex items-center gap-3 rounded border-3 border-ink/30 px-3 py-2">
+    <app-pixel-icon name="coin" [scale]="2" />
+    <p class="min-w-0 flex-1">
+      <span class="block font-semibold">{{ pack().name }}: {{ totalCoins() }} coins</span>
+      <span class="block text-sm text-muted">{{ pack().priceCents | price: pack().currency }}</span>
+    </p>
+  </div>
+
+  @if (!answered()) {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <p>Buying coins is a job for a grown-up. Please ask one to solve this sum.</p>
+
+      <p id="gate-sum" class="my-5 text-center font-display text-2xl">
+        {{ question().left }} &times; {{ question().right }} = ?
+      </p>
+
+      <label for="gate-answer" class="field-label">Answer</label>
+      <input
+        id="gate-answer"
+        class="input text-center text-2xl"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        formControlName="answer"
+        aria-describedby="gate-sum gate-error"
+        [attr.aria-invalid]="wrongAnswer()"
+      />
+      <p id="gate-error" class="field-error" aria-live="polite">
+        @if (wrongAnswer()) {
+          <app-pixel-icon name="cross" [scale]="1" />
+          Not quite. Here is a new sum to try.
+        }
+      </p>
+
+      <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" class="btn btn-ghost" (click)="closed.emit()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Continue to checkout</button>
+      </div>
+    </form>
+  } @else if (error() && !busy()) {
+    <p class="form-alert" role="alert">
+      <app-pixel-icon name="cross" />
+      {{ error() }}
+    </p>
+    <div class="mt-5 flex justify-end">
+      <button type="button" class="btn btn-secondary" (click)="closed.emit()">Close</button>
+    </div>
+  } @else {
+    <div class="flex justify-center py-6">
+      <app-spinner label="Opening the checkout..." [showLabel]="true" />
+    </div>
+  }
+</app-modal>

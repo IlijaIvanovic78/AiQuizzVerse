@@ -1,0 +1,15 @@
+@switch (art()) {
+  @case ('coins') {
+    <span class="coin-pile">
+      <app-pixel-icon name="coin" [scale]="3" />
+      <app-pixel-icon name="coin" [scale]="3" />
+      <app-pixel-icon name="coin" [scale]="3" />
+    </span>
+  }
+  @case ('chest') {
+    <img src="/assets/images/icons/chest.webp" alt="" width="256" height="128" class="w-36" />
+  }
+  @default {
+    <img src="/assets/images/icons/treasure.webp" alt="" width="256" height="150" class="w-40" />
+  }
+}

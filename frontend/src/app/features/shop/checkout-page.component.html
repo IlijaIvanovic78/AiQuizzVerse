@@ -1,0 +1,64 @@
+<div class="mx-auto flex max-w-lg flex-col gap-4">
+  <p class="test-mode" role="note">
+    <app-pixel-icon name="lock" [scale]="2" />
+    Test mode — no real money is charged
+  </p>
+
+  @if (purchase(); as purchase) {
+    <section class="receipt panel-parchment" aria-labelledby="checkout-title">
+      <header class="text-center">
+        <p class="text-sm text-muted">QuizVerse demo checkout</p>
+        <h1 id="checkout-title" class="text-3xl">Checkout</h1>
+      </header>
+
+      <app-pack-art class="mt-4" [packageId]="purchase.packageId" />
+
+      <dl class="receipt-lines">
+        <dt>Item</dt>
+        <dd>{{ purchase.packageName }}</dd>
+        <dt>Coins</dt>
+        <dd class="flex justify-end">
+          <app-coin-amount [amount]="purchase.coins" tone="ink" />
+        </dd>
+        <dt class="receipt-total">Total</dt>
+        <dd class="receipt-total">{{ purchase.amountCents | price: purchase.currency }}</dd>
+      </dl>
+
+      @if (purchase.status === 'PENDING') {
+        <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+          <button type="button" class="btn btn-success btn-lg" (click)="pay()">
+            Pay {{ purchase.amountCents | price: purchase.currency }}
+          </button>
+        </div>
+        <p class="mt-4 text-center text-sm text-muted">
+          This page stands in for a real payment provider, so the shop can be tried safely.
+        </p>
+      } @else {
+        <p class="mt-6 text-center font-semibold">
+          @if (purchase.status === 'PAID') {
+            This order is already paid.
+          } @else {
+            This order was cancelled.
+          }
+        </p>
+        <div class="mt-4 flex justify-center">
+          <a routerLink="/shop" class="btn btn-secondary">Back to the shop</a>
+        </div>
+      }
+    </section>
+  } @else if (error() && !loading()) {
+    <app-empty-state
+      title="We couldn't find this order"
+      text="It may belong to someone else, or the connection dropped."
+      image="chest"
+    >
+      <button type="button" class="btn btn-secondary" (click)="reload()">Try again</button>
+      <a routerLink="/shop" class="btn btn-ghost">Back to the shop</a>
+    </app-empty-state>
+  } @else {
+    <div class="panel flex justify-center px-6 py-16">
+      <app-spinner label="Preparing your order..." [showLabel]="true" />
+    </div>
+  }
+</div>

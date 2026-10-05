@@ -1,0 +1,12 @@
+/* The same stone platform the shop cards use, so the item looks like it is on display. */
+.buy-preview {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 9rem;
+  padding-bottom: 0.5rem;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background: var(--night-900) url('/assets/images/arena-small.webp') 9% 66% / 330% auto;
+}

@@ -1,0 +1,93 @@
+<article class="item-card panel" [class.item-card-equipped]="state() === 'equipped'">
+  <div class="item-stage" [class.item-stage-locked]="state() === 'level-locked'">
+    @if (isHero()) {
+      <app-hero-sprite class="item-sprite" [heroKey]="item().id" [scale]="3" [decorative]="true" />
+    } @else {
+      <app-pet-sprite class="item-sprite" [petKey]="item().id" [scale]="3" [decorative]="true" />
+    }
+
+    @switch (state()) {
+      @case ('equipped') {
+        <span class="stage-badge badge badge-jade">
+          <app-pixel-icon name="check" [scale]="1" />
+          Equipped
+        </span>
+      }
+      @case ('owned') {
+        <span class="stage-badge badge badge-fog">Owned</span>
+      }
+      @case ('level-locked') {
+        <span class="stage-lock">
+          <app-pixel-icon name="lock" [scale]="2" />
+          <span class="font-semibold">Level {{ item().minLevel }}</span>
+        </span>
+      }
+    }
+  </div>
+
+  <div class="flex flex-1 flex-col gap-2 p-3">
+    <h3 class="break-words text-sm leading-tight sm:text-lg">{{ item().name }}</h3>
+
+    @switch (state()) {
+      @case ('equipped') {
+        <p class="text-sm text-jade-400">
+          @if (isHero()) {
+            Your hero right now
+          } @else {
+            Follows you everywhere
+          }
+        </p>
+        @if (!isHero()) {
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm mt-auto w-full"
+            [disabled]="busy()"
+            (click)="unequip.emit()"
+          >
+            Send home
+          </button>
+        }
+      }
+      @case ('owned') {
+        <p class="text-sm text-muted">Yours to keep</p>
+        <button
+          type="button"
+          class="btn btn-success btn-sm mt-auto w-full"
+          [disabled]="busy()"
+          (click)="equip.emit(item())"
+        >
+          Equip
+        </button>
+      }
+      @case ('level-locked') {
+        <app-coin-amount [amount]="item().price" size="sm" />
+        <p class="locked-plate mt-auto">
+          <app-pixel-icon name="lock" [scale]="1" />
+          Reach level {{ item().minLevel }}
+        </p>
+      }
+      @case ('too-expensive') {
+        <app-coin-amount [amount]="item().price" size="sm" />
+        <p class="text-sm text-muted">Need {{ coinsMissing() }} more coins</p>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm mt-auto w-full"
+          (click)="buy.emit(item())"
+        >
+          Buy
+        </button>
+      }
+      @default {
+        <app-coin-amount [amount]="item().price" size="sm" />
+        <button
+          type="button"
+          class="btn btn-primary btn-sm mt-auto w-full"
+          [disabled]="busy()"
+          (click)="buy.emit(item())"
+        >
+          Buy
+        </button>
+      }
+    }
+  </div>
+</article>
