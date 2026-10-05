@@ -1,50 +1,62 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [
-    "./src/**/*.{html,ts}",
-  ],
+  content: ['./src/**/*.{html,ts}'],
   theme: {
     extend: {
-      fontFamily: {
-        pixel: ['"Press Start 2P"', 'cursive'],
-        retro: ['"VT323"', 'monospace'],
-      },
       colors: {
-        primary: {
-          50: '#faf5ff',
-          100: '#f3e8ff',
-          200: '#e9d5ff',
-          300: '#d8b4fe',
-          400: '#c084fc',
-          500: '#a855f7',
-          600: '#9333ea',
-          700: '#7c3aed',
-          800: '#6b21a8',
-          900: '#581c87',
-          950: '#3b0764',
+        night: {
+          500: '#5d5189',
+          600: '#44386b',
+          700: '#30254f',
+          800: '#241b3f',
+          900: '#1a1330',
+          950: '#120d1f',
         },
-        accent: {
-          50: '#fefce8',
-          100: '#fef9c3',
-          200: '#fef08a',
-          300: '#fde047',
-          400: '#facc15',
-          500: '#eab308',
-          600: '#ca8a04',
-          700: '#a16207',
-          800: '#854d0e',
-          900: '#713f12',
-          950: '#422006',
+        fog: {
+          200: '#ddd8ef',
+          300: '#bdb7d4',
+          400: '#9a93b5',
         },
-        dark: {
-          700: '#1f1f3a',
-          800: '#1a1a2e',
-          900: '#0f0f23',
-          950: '#0a0a15',
+        parchment: {
+          100: '#fbf2dc',
+          200: '#f1e2bd',
+          300: '#e3cc94',
         },
+        ink: '#3b2a1a',
+        torch: {
+          300: '#ffd37a',
+          400: '#f5b041',
+          500: '#e8912d',
+          600: '#c46f1c',
+        },
+        jade: {
+          400: '#6cd47e',
+          600: '#3b9c4f',
+        },
+        ruby: {
+          400: '#f0716a',
+          600: '#c7423a',
+        },
+        mana: {
+          400: '#6ec3f2',
+          600: '#3c8fc4',
+        },
+        gold: '#ffcf3f',
+        outline: '#0b0814',
+      },
+      fontFamily: {
+        ui: ['"Pixelify Sans"', 'system-ui', 'sans-serif'],
+        display: ['"Press Start 2P"', 'monospace'],
+        read: ['"Atkinson Hyperlegible"', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        // The root size is 18px, so the default 0.75rem would drop below 14px.
+        xs: ['0.8rem', { lineHeight: '1.15rem' }],
+      },
+      borderWidth: {
+        3: '3px',
       },
     },
   },
   plugins: [],
-}
-
+};
