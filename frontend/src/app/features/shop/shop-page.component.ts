@@ -19,8 +19,10 @@ import { LevelBadgeComponent } from '../../shared/components/level-badge.compone
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { PetSpriteComponent } from '../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
+import { SabotageIconComponent } from '../../shared/components/sabotage-icon.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { PricePipe } from '../../shared/pipes/price.pipe';
+import { sabotageOfItem } from '../../shared/sabotages';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { FREE_HINTS_PER_MATCH } from '../../store/match/match.constants';
 import { PaymentsActions } from '../../store/shop/payments.actions';
@@ -32,7 +34,7 @@ import { CoinPackCardComponent } from './components/coin-pack-card.component';
 import { GrownUpGateComponent } from './components/grown-up-gate.component';
 import { ItemCardComponent } from './components/item-card.component';
 import { isShownInShop } from './item-state';
-import { MONTHLY_LIMIT_CENTS, SHOP_TABS, ShopTab } from './shop.constants';
+import { FREE_INK, ITEM_TABS, MONTHLY_LIMIT_CENTS, SHOP_TABS, ShopTab } from './shop.constants';
 
 const TAB_KEY_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
 
@@ -49,6 +51,7 @@ const TAB_KEY_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
     PageHeaderComponent,
     PetSpriteComponent,
     PixelIconComponent,
+    SabotageIconComponent,
     SpinnerComponent,
     BoostCardComponent,
     BuyDialogComponent,
@@ -68,6 +71,7 @@ export class ShopPageComponent {
   protected readonly activeTab = signal<ShopTab>('heroes');
   protected readonly monthlyLimitCents = MONTHLY_LIMIT_CENTS;
   protected readonly freeHints = FREE_HINTS_PER_MATCH;
+  protected readonly sabotageOfItem = sabotageOfItem;
 
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   protected readonly coins = this.store.selectSignal(authFeature.selectCoins);
@@ -76,9 +80,16 @@ export class ShopPageComponent {
   private readonly allHeroes = this.store.selectSignal(shopFeature.selectHeroItems);
   protected readonly heroes = computed(() => this.allHeroes().filter(isShownInShop));
   protected readonly pets = this.store.selectSignal(shopFeature.selectPetItems);
-  protected readonly shelfItems = computed(() =>
-    this.activeTab() === 'pets' ? this.pets() : this.heroes(),
-  );
+  private readonly soldSabotages = this.store.selectSignal(shopFeature.selectSabotageItems);
+  protected readonly sabotages = computed(() => [FREE_INK, ...this.soldSabotages()]);
+  protected readonly showsItems = computed(() => ITEM_TABS.includes(this.activeTab()));
+  protected readonly shelfItems = computed(() => {
+    const tab = this.activeTab();
+    if (tab === 'pets') {
+      return this.pets();
+    }
+    return tab === 'sabotages' ? this.sabotages() : this.heroes();
+  });
   protected readonly boosts = this.store.selectSignal(shopFeature.selectBoosts);
   protected readonly packages = this.store.selectSignal(shopFeature.selectPackages);
   protected readonly itemsLoaded = this.store.selectSignal(shopFeature.selectItemsLoaded);

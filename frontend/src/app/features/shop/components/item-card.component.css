@@ -25,6 +25,11 @@
   margin-bottom: 0.4rem;
 }
 
+/* A sabotage is a small icon, so it floats above the platform instead of standing on it. */
+.item-sprite-icon {
+  margin-bottom: 1.5rem;
+}
+
 /* Heroes above the player's level are shown as a dark silhouette until they unlock. */
 .item-stage-locked .item-sprite {
   filter: brightness(0);

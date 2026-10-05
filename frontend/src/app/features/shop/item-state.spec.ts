@@ -6,6 +6,7 @@ function item(changes: Partial<ShopItem>): ShopItem {
     id: 'mini-king-man',
     name: 'King',
     type: 'AVATAR',
+    description: '',
     price: 250,
     minLevel: 5,
     isStarter: false,

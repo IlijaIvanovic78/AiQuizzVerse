@@ -1,6 +1,8 @@
 <article class="item-card panel" [class.item-card-equipped]="state() === 'equipped'">
   <div class="item-stage" [class.item-stage-locked]="state() === 'level-locked'">
-    @if (isHero()) {
+    @if (sabotageType(); as type) {
+      <app-sabotage-icon class="item-sprite item-sprite-icon" [type]="type" [scale]="4" />
+    } @else if (isHero()) {
       <app-hero-sprite class="item-sprite" [heroKey]="item().id" [scale]="3" [decorative]="true" />
     } @else {
       <app-pet-sprite class="item-sprite" [petKey]="item().id" [scale]="3" [decorative]="true" />
@@ -14,7 +16,7 @@
         </span>
       }
       @case ('owned') {
-        <span class="stage-badge badge badge-fog">Owned</span>
+        <span class="stage-badge badge badge-fog">{{ isFreeSabotage() ? 'Free' : 'Owned' }}</span>
       }
       @case ('chest-only') {
         <span class="stage-badge badge badge-mana">
@@ -33,6 +35,9 @@
 
   <div class="flex flex-1 flex-col gap-2 p-3">
     <h3 class="break-words text-sm leading-tight sm:text-lg">{{ item().name }}</h3>
+    @if (item().description) {
+      <p class="text-sm leading-snug text-fog-200">{{ item().description }}</p>
+    }
 
     @switch (state()) {
       @case ('equipped') {
@@ -55,15 +60,21 @@
         }
       }
       @case ('owned') {
-        <p class="text-sm text-muted">Yours to keep</p>
-        <button
-          type="button"
-          class="btn btn-success btn-sm mt-auto w-full"
-          [disabled]="busy()"
-          (click)="equip.emit(item())"
-        >
-          Equip
-        </button>
+        @if (isFreeSabotage()) {
+          <p class="mt-auto text-sm text-jade-400">Free for everyone</p>
+        } @else if (sabotageType()) {
+          <p class="mt-auto text-sm text-jade-400">Ready for your next party</p>
+        } @else {
+          <p class="text-sm text-muted">Yours to keep</p>
+          <button
+            type="button"
+            class="btn btn-success btn-sm mt-auto w-full"
+            [disabled]="busy()"
+            (click)="equip.emit(item())"
+          >
+            Equip
+          </button>
+        }
       }
       @case ('chest-only') {
         <p class="text-sm text-muted">Can't be bought. Open chests to find it!</p>

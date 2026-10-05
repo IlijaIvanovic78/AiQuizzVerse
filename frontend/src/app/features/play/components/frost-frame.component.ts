@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { SabotageIconComponent } from './sabotage-icon.component';
+import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
 
 // FREEZE sabotage: ice over the answer buttons with a countdown. The buttons themselves are
 // disabled by the answer grid, because the server rejects answers until the ice melts.

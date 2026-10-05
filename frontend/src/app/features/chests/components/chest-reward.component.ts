@@ -5,11 +5,20 @@ import { BOOST_LABELS, BoostIconComponent } from '../../../shared/components/boo
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PetSpriteComponent } from '../../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
+import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
+import { sabotageOfItem } from '../../../shared/sabotages';
 
-// What came out of a chest: coins, power-ups, or a hero or pet shown as its animated sprite.
+// What came out of a chest: coins, power-ups, a hero or pet shown as its animated sprite,
+// or a new sabotage for party matches.
 @Component({
   selector: 'app-chest-reward',
-  imports: [BoostIconComponent, HeroSpriteComponent, PetSpriteComponent, PixelIconComponent],
+  imports: [
+    BoostIconComponent,
+    HeroSpriteComponent,
+    PetSpriteComponent,
+    PixelIconComponent,
+    SabotageIconComponent,
+  ],
   templateUrl: './chest-reward.component.html',
   styleUrl: './chest-reward.component.css',
   host: { class: 'flex flex-col items-center gap-2 text-center' },
@@ -22,4 +31,5 @@ export class ChestRewardComponent {
   readonly equip = output<ShopItem>();
 
   protected readonly boostLabels = BOOST_LABELS;
+  protected readonly sabotageOfItem = sabotageOfItem;
 }

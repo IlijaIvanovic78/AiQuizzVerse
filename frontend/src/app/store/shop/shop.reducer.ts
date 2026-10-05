@@ -119,6 +119,9 @@ export const shopFeature = createFeature({
       selectPetItems: createSelector(selectAllShopItems, (items) =>
         items.filter((item) => item.type === 'PET'),
       ),
+      selectSabotageItems: createSelector(selectAllShopItems, (items) =>
+        items.filter((item) => item.type === 'SABOTAGE'),
+      ),
       selectStarterItems: createSelector(selectAllShopItems, (items) =>
         items.filter((item) => item.isStarter),
       ),

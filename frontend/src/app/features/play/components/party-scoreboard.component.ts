@@ -11,11 +11,11 @@ import {
 } from '@angular/core';
 import { AttackType, SabotageType } from '../../../core/models/match.model';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
+import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar.component';
 import { ArenaFighter } from '../arena-fighter';
 import { SABOTAGES } from '../play.constants';
 import { ChargeMeterComponent } from './charge-meter.component';
-import { SabotageIconComponent } from './sabotage-icon.component';
 
 interface SeatStatus {
   text: string;

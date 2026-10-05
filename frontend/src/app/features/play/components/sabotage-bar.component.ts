@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { AttackType } from '../../../core/models/match.model';
+import { AttackType, SabotageType } from '../../../core/models/match.model';
+import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
+import { missesSabotages, ownedAttacks } from '../party-round';
 import { SABOTAGES } from '../play.constants';
 import { ChargeMeterComponent } from './charge-meter.component';
-import { SabotageIconComponent } from './sabotage-icon.component';
-
-const ATTACKS: AttackType[] = ['INK', 'FREEZE', 'SCRAMBLE', 'FOG', 'QUAKE', 'MIRROR'];
 
 // Party only: spend a charge to slow down another player, or to raise a shield for yourself.
 // Picking an attack here lights up the players who can be hit on the scoreboard.
+// Only the sabotages the player owns are shown; the others are bought in the shop.
 @Component({
   selector: 'app-sabotage-bar',
   imports: [ChargeMeterComponent, SabotageIconComponent],
@@ -17,6 +17,7 @@ const ATTACKS: AttackType[] = ['INK', 'FREEZE', 'SCRAMBLE', 'FOG', 'QUAKE', 'MIR
 })
 export class SabotageBarComponent {
   readonly charges = input.required<number>();
+  readonly owned = input.required<SabotageType[]>();
   readonly chosen = input<AttackType | null>(null);
   readonly canSabotage = input(false);
   readonly canShield = input(false);
@@ -27,7 +28,9 @@ export class SabotageBarComponent {
   readonly cancel = output<void>();
   readonly shield = output<void>();
 
-  protected readonly attacks = ATTACKS;
+  protected readonly attacks = computed(() => ownedAttacks(this.owned()));
+  protected readonly hasShield = computed(() => this.owned().includes('SHIELD'));
+  protected readonly moreInShop = computed(() => missesSabotages(this.owned()));
   protected readonly sabotages = SABOTAGES;
   protected readonly prompt = computed(() => {
     const type = this.chosen();
@@ -46,6 +49,7 @@ export class SabotageBarComponent {
     if (!this.hasTargets()) {
       return 'Nobody can be hit right now.';
     }
-    return 'Pick one, then tap the player you want to hit. Or raise a shield.';
+    const pickTarget = 'Pick one, then tap the player you want to hit.';
+    return this.hasShield() ? `${pickTarget} Or raise a shield.` : pickTarget;
   });
 }

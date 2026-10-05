@@ -1,5 +1,7 @@
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
+import { ShopItem } from '../../core/models/shop.model';
 import { CurrentUser } from '../../core/models/user.model';
+import { withUnlockedSabotage } from '../../shared/sabotages';
 import { ChestsActions } from '../chests/chests.actions';
 import { PaymentsActions } from '../shop/payments.actions';
 import { ShopActions } from '../shop/shop.actions';
@@ -78,11 +80,18 @@ export const authFeature = createFeature({
     ),
     on(
       AuthActions.coinsUpdated,
-      ShopActions.itemBought,
       ShopActions.boostBought,
       PaymentsActions.purchaseConfirmed,
-      ChestsActions.opened,
       (state, { coins }): AuthState => withCoins(state, coins),
+    ),
+    // A sabotage belongs to the hero, so the party sabotage bar shows a new one right away.
+    on(
+      ShopActions.itemBought,
+      (state, { coins, item }): AuthState => withNewItem(withCoins(state, coins), item),
+    ),
+    on(
+      ChestsActions.opened,
+      (state, { coins, reward }): AuthState => withNewItem(withCoins(state, coins), reward.item),
     ),
   ),
   extraSelectors: ({ selectUser, selectStatus }) => ({
@@ -96,4 +105,12 @@ function withCoins(state: AuthState, coins: number): AuthState {
     return state;
   }
   return { ...state, user: { ...state.user, coins } };
+}
+
+function withNewItem(state: AuthState, item: ShopItem | null): AuthState {
+  if (!state.user || !item) {
+    return state;
+  }
+  const sabotages = withUnlockedSabotage(state.user.sabotages, item);
+  return { ...state, user: { ...state.user, sabotages } };
 }

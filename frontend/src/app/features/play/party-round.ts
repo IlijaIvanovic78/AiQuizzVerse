@@ -1,4 +1,5 @@
-import { AttackType, MatchPlayerView } from '../../core/models/match.model';
+import { AttackType, MatchPlayerView, SabotageType } from '../../core/models/match.model';
+import { ATTACKS, SABOTAGE_TYPES } from '../../shared/sabotages';
 import { SabotageBlock, SabotageHit } from '../../store/match/match.reducer';
 import { MS_PER_SECOND, SABOTAGES } from './play.constants';
 
@@ -73,4 +74,14 @@ export function sabotageTargets(
       (userId) =>
         userId !== meId && !answeredUserIds.includes(userId) && !awayUserIds.includes(userId),
     );
+}
+
+// The attacks this player can pick: only the ones they own, in the usual order.
+export function ownedAttacks(owned: SabotageType[]): AttackType[] {
+  return ATTACKS.filter((type) => owned.includes(type));
+}
+
+// True while the shop still sells a sabotage this player does not have.
+export function missesSabotages(owned: SabotageType[]): boolean {
+  return SABOTAGE_TYPES.some((type) => !owned.includes(type));
 }

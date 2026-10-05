@@ -1,6 +1,7 @@
+import { ShopItem } from '../../core/models/shop.model';
 import { ICONS_URL, itemIconUrl } from '../../shared/icons';
 
-export type ShopTab = 'heroes' | 'pets' | 'power-ups' | 'coins';
+export type ShopTab = 'heroes' | 'pets' | 'power-ups' | 'sabotages' | 'coins';
 
 interface ShopTabOption {
   id: ShopTab;
@@ -13,8 +14,28 @@ export const SHOP_TABS: ShopTabOption[] = [
   { id: 'heroes', label: 'Heroes', icon: itemIconUrl('sword'), pixelated: false },
   { id: 'pets', label: 'Pets', icon: `${ICONS_URL}heart.png`, pixelated: true },
   { id: 'power-ups', label: 'Power-ups', icon: itemIconUrl('potion'), pixelated: false },
+  // \u00AD is a soft hyphen: the word can break on narrow phones, like Power-ups does.
+  { id: 'sabotages', label: 'Sabo\u00ADtages', icon: `${ICONS_URL}fog.png`, pixelated: true },
   { id: 'coins', label: 'Coins', icon: `${ICONS_URL}coin.png`, pixelated: true },
 ];
+
+// The tabs that show a shelf of item cards.
+export const ITEM_TABS: ShopTab[] = ['heroes', 'pets', 'sabotages'];
+
+// Ink is free for everyone, so the server does not sell it. The shop still shows it first, as
+// an item every player already owns, so nobody thinks they start a party without a sabotage.
+export const FREE_INK: ShopItem = {
+  id: 'sabotage-ink',
+  name: 'Ink',
+  type: 'SABOTAGE',
+  description: "Splash ink over a rival's question for 4 seconds.",
+  price: 0,
+  minLevel: 1,
+  isStarter: true,
+  isChestOnly: false,
+  owned: true,
+  equipped: false,
+};
 
 type PackArt = 'coins' | 'chest' | 'treasure';
 

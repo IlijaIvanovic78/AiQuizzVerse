@@ -5,6 +5,8 @@ import { CoinAmountComponent } from '../../../shared/components/coin-amount.comp
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PetSpriteComponent } from '../../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
+import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
+import { sabotageOfItem } from '../../../shared/sabotages';
 import { itemState } from '../item-state';
 
 @Component({
@@ -15,6 +17,7 @@ import { itemState } from '../item-state';
     HeroSpriteComponent,
     PetSpriteComponent,
     PixelIconComponent,
+    SabotageIconComponent,
   ],
   templateUrl: './item-card.component.html',
   styleUrl: './item-card.component.css',
@@ -32,5 +35,10 @@ export class ItemCardComponent {
 
   protected readonly state = computed(() => itemState(this.item(), this.level(), this.coins()));
   protected readonly isHero = computed(() => this.item().type === 'AVATAR');
+  protected readonly sabotageType = computed(() => sabotageOfItem(this.item()));
+  // Ink is the one sabotage every player starts with.
+  protected readonly isFreeSabotage = computed(
+    () => this.sabotageType() !== null && this.item().isStarter,
+  );
   protected readonly coinsMissing = computed(() => this.item().price - this.coins());
 }

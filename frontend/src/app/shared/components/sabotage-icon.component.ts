@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { SabotageType } from '../../../core/models/match.model';
-import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
+import { SabotageType } from '../../core/models/match.model';
 import { PixelArtComponent } from './pixel-art.component';
+import { PixelIconComponent, PixelIconName } from './pixel-icon.component';
 
 interface IconArt {
   rows: string[];

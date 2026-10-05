@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { PixelArtComponent } from './pixel-art.component';
+import { PixelArtComponent } from '../../../shared/components/pixel-art.component';
 
 // The splash is a small pixel picture stretched over the question and the answers:
 // '#' is ink and '+' a wet shine on it.

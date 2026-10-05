@@ -1,3 +1,5 @@
+import { SabotageType } from './match.model';
+
 export interface PublicUser {
   id: string;
   username: string;
@@ -16,4 +18,6 @@ export interface CurrentUser extends PublicUser {
   twoFaEnabled: boolean;
   xpIntoLevel: number;
   xpForNextLevel: number;
+  // Ink is free for everyone, so it is always here; the others come from the shop or a chest.
+  sabotages: SabotageType[];
 }

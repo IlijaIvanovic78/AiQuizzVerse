@@ -73,6 +73,8 @@ export class PartyRoundService {
   readonly roundWinnerId = computed(() => (this.phase() === 'reveal' ? this.winnerId() : null));
 
   readonly myCharges = computed(() => this.charges()[this.meId()] ?? 0);
+  // Ink is free; the other sabotages are bought in the shop, so each player has their own set.
+  readonly ownedSabotages = computed(() => this.user()?.sabotages ?? []);
   readonly lockedOut = computed(() => this.lockedOutUserIds().includes(this.meId()));
   // A shield counts as the one sabotage move of the round, and so does an attack that was blocked.
   readonly usedThisRound = computed(
@@ -88,10 +90,11 @@ export class PartyRoundService {
     () => this.questionOpen() && this.myCharges() > 0 && !this.usedThisRound(),
   );
   readonly canSabotage = computed(() => this.canAct() && this.targetIds().length > 0);
-  // The server takes a shield only from a player who can still answer.
+  // The server takes a shield only from a player who owns one and can still answer.
   readonly canShield = computed(
     () =>
       this.canAct() &&
+      this.ownedSabotages().includes('SHIELD') &&
       this.myAnswer() === null &&
       !this.lockedOut() &&
       !this.answeredUserIds().includes(this.meId()),

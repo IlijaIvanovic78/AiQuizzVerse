@@ -14,6 +14,9 @@
               }
             </span>
           </span>
+          @if (row.sabotage; as sabotage) {
+            <app-sabotage-icon [type]="sabotage" />
+          }
         </li>
       }
     </ul>

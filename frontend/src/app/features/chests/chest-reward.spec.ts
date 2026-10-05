@@ -6,12 +6,23 @@ const goldenKing: ShopItem = {
   id: 'hero-golden-king',
   name: 'Golden King',
   type: 'AVATAR',
+  description: '',
   price: 0,
   minLevel: 1,
   isStarter: false,
   isChestOnly: true,
   owned: true,
   equipped: false,
+};
+
+const fog: ShopItem = {
+  ...goldenKing,
+  id: 'sabotage-fog',
+  name: 'Fog',
+  type: 'SABOTAGE',
+  description: "Blur a rival's question for 4 seconds.",
+  price: 100,
+  isChestOnly: false,
 };
 
 function reward(changes: Partial<ChestReward>): ChestReward {
@@ -40,5 +51,12 @@ describe('rewardSummary', () => {
     expect(
       rewardSummary(reward({ kind: 'ITEM', item: goldenKing, duplicate: true, coins: 150 })),
     ).toBe('Golden King, turned into 150 coins');
+  });
+
+  it('announces a new sabotage, and its coins when the player already had it', () => {
+    expect(rewardSummary(reward({ kind: 'ITEM', item: fog }))).toBe('New sabotage: Fog!');
+    expect(rewardSummary(reward({ kind: 'ITEM', item: fog, duplicate: true, coins: 100 }))).toBe(
+      'Fog, turned into 100 coins',
+    );
   });
 });

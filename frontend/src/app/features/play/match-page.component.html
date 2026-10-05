@@ -117,10 +117,9 @@
             [targetIds]="party.targetIds()"
             (target)="party.hit($event)"
           />
-        } @else if (mode() !== 'SOLO' && meFirst().length > 1) {
+        } @else if (mode() === 'TEAM' && meFirst().length > 1) {
           <app-scoreboard
             class="order-last lg:order-none"
-            [mode]="mode()"
             [fighters]="meFirst()"
             [showAnswered]="phase() === 'question'"
           />
@@ -200,11 +199,10 @@
         }
 
         @if (phase() === 'question') {
-          @if (mode() === 'DUEL') {
-            <p class="text-sm text-muted">Power-ups are off in duels. Fair fight!</p>
-          } @else if (isParty()) {
+          @if (isParty()) {
             <app-sabotage-bar
               [charges]="party.myCharges()"
+              [owned]="party.ownedSabotages()"
               [chosen]="party.chosenType()"
               [canSabotage]="party.canSabotage()"
               [canShield]="party.canShield()"

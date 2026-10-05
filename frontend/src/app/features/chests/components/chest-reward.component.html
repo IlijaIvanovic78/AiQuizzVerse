@@ -24,34 +24,51 @@
 
   @case ('ITEM') {
     @if (reward().item; as item) {
-      <div class="reward-stage">
-        @if (item.type === 'AVATAR') {
-          <app-hero-sprite [heroKey]="item.id" [scale]="4" [decorative]="true" />
+      @if (sabotageOfItem(item); as sabotage) {
+        <div class="reward-stage">
+          <app-sabotage-icon class="mb-6" [type]="sabotage" [scale]="5" />
+        </div>
+        @if (reward().duplicate) {
+          <p class="text-2xl font-semibold text-torch-300">{{ item.name }}</p>
+          <p class="flex items-center gap-2">
+            <app-pixel-icon name="coin" />
+            You already have it — converted to {{ reward().coins }} coins
+          </p>
         } @else {
-          <app-pet-sprite [petKey]="item.id" [scale]="4" [decorative]="true" />
+          <p class="text-2xl font-semibold text-torch-300">New sabotage: {{ item.name }}!</p>
+          <p class="text-fog-200">{{ item.description }}</p>
+          <p class="text-sm text-muted">It is yours for every party match from now on.</p>
         }
-      </div>
-      <p class="text-sm font-semibold text-muted">
-        {{ item.type === 'AVATAR' ? 'A hero' : 'A pet' }}
-        @if (item.isChestOnly) {
-          <span class="badge badge-mana ml-1">Chest only</span>
-        }
-      </p>
-      <p class="text-2xl font-semibold text-torch-300">{{ item.name }}</p>
-      @if (reward().duplicate) {
-        <p class="flex items-center gap-2">
-          <app-pixel-icon name="coin" />
-          You already have it — converted to {{ reward().coins }} coins
-        </p>
-      } @else if (equipped()) {
-        <span class="badge badge-jade">
-          <app-pixel-icon name="check" [scale]="1" />
-          Equipped
-        </span>
       } @else {
-        <button type="button" class="btn btn-success btn-sm" (click)="equip.emit(item)">
-          Equip now
-        </button>
+        <div class="reward-stage">
+          @if (item.type === 'AVATAR') {
+            <app-hero-sprite [heroKey]="item.id" [scale]="4" [decorative]="true" />
+          } @else {
+            <app-pet-sprite [petKey]="item.id" [scale]="4" [decorative]="true" />
+          }
+        </div>
+        <p class="text-sm font-semibold text-muted">
+          {{ item.type === 'AVATAR' ? 'A hero' : 'A pet' }}
+          @if (item.isChestOnly) {
+            <span class="badge badge-mana ml-1">Chest only</span>
+          }
+        </p>
+        <p class="text-2xl font-semibold text-torch-300">{{ item.name }}</p>
+        @if (reward().duplicate) {
+          <p class="flex items-center gap-2">
+            <app-pixel-icon name="coin" />
+            You already have it — converted to {{ reward().coins }} coins
+          </p>
+        } @else if (equipped()) {
+          <span class="badge badge-jade">
+            <app-pixel-icon name="check" [scale]="1" />
+            Equipped
+          </span>
+        } @else {
+          <button type="button" class="btn btn-success btn-sm" (click)="equip.emit(item)">
+            Equip now
+          </button>
+        }
       }
     }
   }

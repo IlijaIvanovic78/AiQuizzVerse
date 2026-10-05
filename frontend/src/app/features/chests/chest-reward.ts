@@ -12,5 +12,8 @@ export function rewardSummary(reward: ChestReward): string {
       .join(', ');
   }
   const name = reward.item?.name ?? 'A new friend';
-  return reward.duplicate ? `${name}, turned into ${reward.coins} coins` : name;
+  if (reward.duplicate) {
+    return `${name}, turned into ${reward.coins} coins`;
+  }
+  return reward.item?.type === 'SABOTAGE' ? `New sabotage: ${name}!` : name;
 }

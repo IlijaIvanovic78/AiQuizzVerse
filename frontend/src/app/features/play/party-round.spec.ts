@@ -1,9 +1,11 @@
-import { MatchPlayerView } from '../../core/models/match.model';
+import { MatchPlayerView, SabotageType } from '../../core/models/match.model';
 import { SabotageBlock, SabotageHit } from '../../store/match/match.reducer';
 import {
   blockNotice,
   effectEndsAt,
   lastingHits,
+  missesSabotages,
+  ownedAttacks,
   sabotageNotice,
   sabotageTargets,
   secondsLeft,
@@ -137,5 +139,36 @@ describe('sabotageTargets', () => {
     const players = ['hero', 'fox', 'owl', 'cat'].map(player);
 
     expect(sabotageTargets(players, 'hero', ['fox'], ['owl'])).toEqual(['cat']);
+  });
+});
+
+describe('ownedAttacks', () => {
+  it('offers only free ink to a player who bought nothing yet', () => {
+    expect(ownedAttacks(['INK'])).toEqual(['INK']);
+  });
+
+  it('keeps the usual order and leaves the shield out', () => {
+    expect(ownedAttacks(['INK', 'SHIELD', 'FOG', 'FREEZE'])).toEqual(['INK', 'FREEZE', 'FOG']);
+  });
+});
+
+describe('missesSabotages', () => {
+  it('points to the shop while a sabotage is missing', () => {
+    expect(missesSabotages(['INK'])).toBe(true);
+    expect(missesSabotages(['INK', 'FREEZE', 'SCRAMBLE', 'FOG', 'QUAKE', 'MIRROR'])).toBe(true);
+  });
+
+  it('stays quiet once the player owns every sabotage', () => {
+    const everything: SabotageType[] = [
+      'SHIELD',
+      'MIRROR',
+      'QUAKE',
+      'FOG',
+      'SCRAMBLE',
+      'FREEZE',
+      'INK',
+    ];
+
+    expect(missesSabotages(everything)).toBe(false);
   });
 });

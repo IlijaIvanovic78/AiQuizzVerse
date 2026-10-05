@@ -15,7 +15,7 @@
   </div>
   <div class="level-note">
     <app-level-badge [level]="level()" />
-    <p class="text-sm text-muted">Level up to unlock more heroes and pets.</p>
+    <p class="text-sm text-muted">Level up to unlock more heroes, pets and sabotages.</p>
   </div>
 </section>
 
@@ -45,13 +45,19 @@
   [id]="'shop-panel-' + activeTab()"
   [attr.aria-labelledby]="'shop-tab-' + activeTab()"
 >
-  @if (activeTab() === 'heroes' || activeTab() === 'pets') {
+  @if (showsItems()) {
     <p class="mb-4 text-fog-200">
-      @if (activeTab() === 'heroes') {
-        Pick the hero you play as. New heroes unlock as you level up, and the rarest ones hide in
-        chests.
-      } @else {
-        A pet follows your hero into every game. The rarest pets hide in chests.
+      @switch (activeTab()) {
+        @case ('heroes') {
+          Pick the hero you play as. New heroes unlock as you level up, and the rarest ones hide in
+          chests.
+        }
+        @case ('pets') {
+          A pet follows your hero into every game. The rarest pets hide in chests.
+        }
+        @default {
+          Sabotages work in Party matches. You still need charges — win rounds to earn them.
+        }
       }
     </p>
 
@@ -79,7 +85,7 @@
   } @else if (activeTab() === 'power-ups') {
     <p class="mb-4 text-fog-200">
       Use power-ups in solo and team games. Every game also gives you {{ freeHints }} free hints.
-      Duels and parties are fair fights, so power-ups stay in your bag there.
+      Party matches are fair fights, so power-ups stay in your bag there.
     </p>
 
     @if (boosts().length > 0) {
@@ -145,7 +151,9 @@
     (confirmed)="buyItem()"
     (closed)="itemToBuy.set(null)"
   >
-    @if (item.type === 'AVATAR') {
+    @if (sabotageOfItem(item); as sabotage) {
+      <app-sabotage-icon class="mb-6" [type]="sabotage" [scale]="4" />
+    } @else if (item.type === 'AVATAR') {
       <app-hero-sprite [heroKey]="item.id" [scale]="4" [decorative]="true" />
     } @else {
       <app-pet-sprite [petKey]="item.id" [scale]="4" [decorative]="true" />
