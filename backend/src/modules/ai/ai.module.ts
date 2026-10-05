@@ -1,4 +1,8 @@
 import { Module } from '@nestjs/common';
+import { QuizWriterService } from './quiz-writer.service';
 
-@Module({})
+@Module({
+  providers: [QuizWriterService],
+  exports: [QuizWriterService],
+})
 export class AiModule {}
