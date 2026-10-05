@@ -2,16 +2,19 @@ import { Injectable, inject } from '@angular/core';
 import { fromEvent } from 'rxjs';
 import { TokenRefreshService } from '../auth/token-refresh.service';
 import { TokenStorageService } from '../auth/token-storage.service';
-import { MatchResult, MatchView } from '../models/match.model';
+import { MatchResult, MatchView, SabotageType } from '../models/match.model';
 import {
   BoostUsedEvent,
+  LockedOutEvent,
   MatchDeadlineEvent,
   MatchErrorEvent,
+  MatchOptionsEvent,
   MatchQuestionEvent,
   MatchStartingEvent,
   PlayerAnsweredEvent,
   PlayerLeftEvent,
   RoundResultEvent,
+  SabotagedEvent,
   WaitingNextEvent,
 } from '../models/realtime-events.model';
 import { MatchBoostType } from '../models/shop.model';
@@ -35,6 +38,9 @@ export class MatchSocketService {
   readonly roundResult$ = fromEvent<RoundResultEvent>(this.socket, 'match:round-result');
   readonly waitingNext$ = fromEvent<WaitingNextEvent>(this.socket, 'match:waiting-next');
   readonly boostUsed$ = fromEvent<BoostUsedEvent>(this.socket, 'match:boost-used');
+  readonly lockedOut$ = fromEvent<LockedOutEvent>(this.socket, 'match:locked-out');
+  readonly options$ = fromEvent<MatchOptionsEvent>(this.socket, 'match:options');
+  readonly sabotaged$ = fromEvent<SabotagedEvent>(this.socket, 'match:sabotaged');
   readonly finished$ = fromEvent<MatchResult>(this.socket, 'match:finished');
   readonly playerLeft$ = fromEvent<PlayerLeftEvent>(this.socket, 'match:player-left');
   readonly error$ = fromEvent<MatchErrorEvent>(this.socket, 'match:error');
@@ -83,6 +89,10 @@ export class MatchSocketService {
 
   useBoost(matchId: string, type: MatchBoostType): void {
     this.socket.emit('match:boost', { matchId, type });
+  }
+
+  sabotage(matchId: string, targetUserId: string, type: SabotageType): void {
+    this.socket.emit('match:sabotage', { matchId, targetUserId, type });
   }
 
   private joinCurrentMatch(): void {

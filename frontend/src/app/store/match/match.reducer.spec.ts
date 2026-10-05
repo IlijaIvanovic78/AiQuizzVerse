@@ -1,4 +1,11 @@
-import { DuelInvite, MatchQuestionEvent } from '../../core/models/realtime-events.model';
+import { MatchView } from '../../core/models/match.model';
+import {
+  DuelInvite,
+  MatchQuestionEvent,
+  RoundResultEvent,
+  SabotagedEvent,
+} from '../../core/models/realtime-events.model';
+import { PublicUser } from '../../core/models/user.model';
 import { ShopActions } from '../shop/shop.actions';
 import { MatchSocketActions } from './match-socket.actions';
 import { MatchActions } from './match.actions';
@@ -53,7 +60,10 @@ describe('match reducer', () => {
           index: 0,
           correctIndex: 1,
           explanation: 'Jupiter is the largest planet.',
-          players: [{ userId: 'hero', optionIndex: 1, correct: true, points: 140, score: 140 }],
+          winnerUserId: null,
+          players: [
+            { userId: 'hero', optionIndex: 1, correct: true, points: 140, score: 140, charges: 0 },
+          ],
           teamCorrect: 1,
         },
       }),
@@ -112,5 +122,166 @@ describe('match reducer', () => {
 
     expect(state.phase).toBe('idle');
     expect(state.invite).toEqual(invite);
+  });
+});
+
+describe('match reducer in a party', () => {
+  const LANDED_AT = 5_000;
+
+  function partyPlayer(id: string, isConnected = true) {
+    const user: PublicUser = { id, username: id, avatarKey: null, petKey: null, level: 1 };
+    return { user, score: 0, correctCount: 0, isConnected, charges: 1 };
+  }
+
+  const party: MatchView = {
+    id: MATCH_ID,
+    mode: 'PARTY',
+    status: 'IN_PROGRESS',
+    inviteCode: 'ABC234',
+    hostId: 'hero',
+    quiz: {
+      id: 'quiz-1',
+      title: 'The Solar System',
+      theme: 'SPACE',
+      language: 'EN',
+      questionCount: 5,
+      timePerQuestion: 45,
+      kind: 'STANDARD',
+    },
+    players: [partyPlayer('hero'), partyPlayer('fox'), partyPlayer('owl', false)],
+  };
+
+  function sabotage(changes: Partial<SabotagedEvent>): SabotagedEvent {
+    return {
+      matchId: MATCH_ID,
+      index: 0,
+      type: 'INK',
+      fromUserId: 'fox',
+      targetUserId: 'hero',
+      durationMs: 4000,
+      fromCharges: 0,
+      ...changes,
+    };
+  }
+
+  function partyRound(changes: Partial<RoundResultEvent>): RoundResultEvent {
+    return {
+      matchId: MATCH_ID,
+      index: 0,
+      correctIndex: 1,
+      explanation: 'Jupiter is the largest planet.',
+      winnerUserId: 'fox',
+      players: [
+        { userId: 'hero', optionIndex: 2, correct: false, points: 0, score: 0, charges: 1 },
+        { userId: 'fox', optionIndex: 1, correct: true, points: 140, score: 140, charges: 2 },
+      ],
+      teamCorrect: 1,
+      ...changes,
+    };
+  }
+
+  function partyQuestionOpen(): MatchState {
+    return reducer(questionOpen(), MatchSocketActions.lobbyUpdated({ match: party }));
+  }
+
+  it('takes the charges and the away players from the live lobby', () => {
+    const state = partyQuestionOpen();
+
+    expect(state.charges).toEqual({ hero: 1, fox: 1, owl: 1 });
+    expect(state.leftUserIds).toEqual(['owl']);
+  });
+
+  it('locks out a player for the open question only', () => {
+    const lockedOut = reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.playerLockedOut({ index: 0, userId: 'fox' }),
+    );
+    const late = reducer(
+      lockedOut,
+      MatchSocketActions.playerLockedOut({ index: 3, userId: 'owl' }),
+    );
+
+    expect(late.lockedOutUserIds).toEqual(['fox']);
+  });
+
+  it('remembers a sabotage with the time it landed and the attacker charges', () => {
+    const state = reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.playerSabotaged({ sabotage: sabotage({}), landedAt: LANDED_AT }),
+    );
+
+    expect(state.sabotages).toEqual([{ ...sabotage({}), landedAt: LANDED_AT }]);
+    expect(state.charges['fox']).toBe(0);
+  });
+
+  it('ignores a sabotage of a question that is already over, but keeps the charges', () => {
+    const state = reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.playerSabotaged({
+        sabotage: sabotage({ index: 4, fromCharges: 1 }),
+        landedAt: LANDED_AT,
+      }),
+    );
+
+    expect(state.sabotages).toEqual([]);
+    expect(state.charges['fox']).toBe(1);
+  });
+
+  it('shows my options in the scrambled order and keeps my pick', () => {
+    const answered = reducer(partyQuestionOpen(), MatchActions.answer({ optionIndex: 2 }));
+    const scrambled = ['Earth', 'Venus', 'Jupiter', 'Mars'];
+
+    const state = reducer(
+      answered,
+      MatchSocketActions.optionsScrambled({ index: 0, options: scrambled }),
+    );
+
+    expect(state.question?.options).toEqual(scrambled);
+    expect(state.question?.text).toBe(firstQuestion.text);
+    expect(state.myAnswer).toBe(2);
+  });
+
+  it('opens the answers again when the server refused my answer for this question', () => {
+    const answered = reducer(partyQuestionOpen(), MatchActions.answer({ optionIndex: 2 }));
+
+    const refused = reducer(answered, MatchActions.answerRefused({ index: 0 }));
+    const stale = reducer(answered, MatchActions.answerRefused({ index: 3 }));
+
+    expect(refused.myAnswer).toBeNull();
+    expect(stale.myAnswer).toBe(2);
+  });
+
+  it('keeps the round winner and the new charges from the round result', () => {
+    const state = reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.roundFinished({ round: partyRound({}) }),
+    );
+
+    expect(matchFeature.selectRoundWinnerId.projector(state.round)).toBe('fox');
+    expect(state.charges).toEqual({ hero: 1, fox: 2, owl: 1 });
+    expect(state.scores['fox']).toBe(140);
+  });
+
+  it('starts the next question without lockouts or sabotages', () => {
+    const lockedOut = reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.playerLockedOut({ index: 0, userId: 'hero' }),
+    );
+    const sabotaged = reducer(
+      lockedOut,
+      MatchSocketActions.playerSabotaged({ sabotage: sabotage({}), landedAt: LANDED_AT }),
+    );
+
+    const state = reducer(
+      sabotaged,
+      MatchSocketActions.questionReceived({
+        question: { ...firstQuestion, index: 1 },
+        deadlineAt: DEADLINE_AT,
+      }),
+    );
+
+    expect(state.lockedOutUserIds).toEqual([]);
+    expect(state.sabotages).toEqual([]);
+    expect(state.charges['fox']).toBe(0);
   });
 });

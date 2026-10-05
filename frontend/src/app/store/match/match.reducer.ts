@@ -5,6 +5,7 @@ import {
   DuelInvite,
   MatchQuestionEvent,
   RoundResultEvent,
+  SabotagedEvent,
 } from '../../core/models/realtime-events.model';
 import { BoostOffer, MatchBoostType } from '../../core/models/shop.model';
 import { ShopActions } from '../shop/shop.actions';
@@ -21,6 +22,11 @@ export type MatchPhase =
   | 'reveal'
   | 'finished'
   | 'interrupted';
+
+// A party sabotage of the open question. landedAt is on this device's clock, like deadlineAt.
+export interface SabotageHit extends SabotagedEvent {
+  landedAt: number;
+}
 
 export interface MatchState {
   matchId: string | null;
@@ -42,6 +48,9 @@ export interface MatchState {
   eliminatedOptions: number[];
   hint: string | null;
   leftUserIds: string[];
+  lockedOutUserIds: string[];
+  charges: Record<string, number>;
+  sabotages: SabotageHit[];
   result: MatchResult | null;
   busy: boolean;
   error: string | null;
@@ -68,6 +77,9 @@ export const initialMatchState: MatchState = {
   eliminatedOptions: [],
   hint: null,
   leftUserIds: [],
+  lockedOutUserIds: [],
+  charges: {},
+  sabotages: [],
   result: null,
   busy: false,
   error: null,
@@ -105,9 +117,8 @@ export const matchFeature = createFeature({
       }),
     ),
     on(MatchActions.left, (state): MatchState => ({ ...initialMatchState, invite: state.invite })),
-    on(MatchActions.loaded, MatchSocketActions.lobbyUpdated, (state, { match }) =>
-      withMatchView(state, match),
-    ),
+    on(MatchActions.loaded, (state, { match }) => withMatchView(state, match)),
+    on(MatchSocketActions.lobbyUpdated, (state, { match }) => withLiveView(state, match)),
     on(
       MatchActions.resultLoaded,
       MatchSocketActions.finished,
@@ -119,6 +130,11 @@ export const matchFeature = createFeature({
       }),
     ),
     on(MatchActions.answer, (state, { optionIndex }) => withMyAnswer(state, optionIndex)),
+    on(
+      MatchActions.answerRefused,
+      (state, { index }): MatchState =>
+        isOpenQuestion(state, index) ? { ...state, myAnswer: null } : state,
+    ),
     on(MatchActions.next, (state): MatchState => ({ ...state, nextPressed: true })),
     on(
       MatchSocketActions.countdownStarted,
@@ -151,6 +167,19 @@ export const matchFeature = createFeature({
       withBoost(state, boost, deadlineAt),
     ),
     on(
+      MatchSocketActions.playerLockedOut,
+      (state, { index, userId }): MatchState =>
+        isOpenQuestion(state, index)
+          ? { ...state, lockedOutUserIds: addOnce(state.lockedOutUserIds, userId) }
+          : state,
+    ),
+    on(MatchSocketActions.optionsScrambled, (state, { index, options }) =>
+      withScrambledOptions(state, index, options),
+    ),
+    on(MatchSocketActions.playerSabotaged, (state, { sabotage, landedAt }) =>
+      withSabotage(state, sabotage, landedAt),
+    ),
+    on(
       ShopActions.boostsLoaded,
       (state, { boosts }): MatchState => ({
         ...state,
@@ -171,8 +200,9 @@ export const matchFeature = createFeature({
       (state): MatchState => ({ ...state, invite: null }),
     ),
   ),
-  extraSelectors: ({ selectMatch }) => ({
+  extraSelectors: ({ selectMatch, selectRound }) => ({
     selectMode: createSelector(selectMatch, (match) => match?.mode ?? null),
+    selectRoundWinnerId: createSelector(selectRound, (round) => round?.winnerUserId ?? null),
   }),
 });
 
@@ -188,15 +218,28 @@ function phaseForStatus(status: MatchStatus, currentPhase: MatchPhase): MatchPha
 
 function withMatchView(state: MatchState, match: MatchView): MatchState {
   const scores: Record<string, number> = {};
-  match.players.forEach((player) => (scores[player.user.id] = player.score));
+  const charges: Record<string, number> = {};
+  match.players.forEach((player) => {
+    scores[player.user.id] = player.score;
+    charges[player.user.id] = player.charges;
+  });
   const teamCorrect = match.players.reduce((sum, player) => sum + player.correctCount, 0);
   return {
     ...state,
     match,
     scores,
+    charges,
     teamCorrect,
     phase: phaseForStatus(match.status, state.phase),
   };
+}
+
+// Only the socket view knows who is connected; the REST view reports nobody as connected.
+function withLiveView(state: MatchState, match: MatchView): MatchState {
+  const awayUserIds = match.players
+    .filter((player) => !player.isConnected)
+    .map((player) => player.user.id);
+  return { ...withMatchView(state, match), leftUserIds: awayUserIds };
 }
 
 function withNewQuestion(
@@ -217,6 +260,8 @@ function withNewQuestion(
     boostsUsedThisRound: [],
     eliminatedOptions: [],
     hint: null,
+    lockedOutUserIds: [],
+    sabotages: [],
   };
 }
 
@@ -229,15 +274,41 @@ function withMyAnswer(state: MatchState, optionIndex: number): MatchState {
 
 function withRoundResult(state: MatchState, round: RoundResultEvent): MatchState {
   const scores = { ...state.scores };
-  round.players.forEach((player) => (scores[player.userId] = player.score));
+  const charges = { ...state.charges };
+  round.players.forEach((player) => {
+    scores[player.userId] = player.score;
+    charges[player.userId] = player.charges;
+  });
   return {
     ...state,
     phase: 'reveal',
     round,
     scores,
+    charges,
     teamCorrect: round.teamCorrect,
     deadlineAt: null,
+    sabotages: [],
   };
+}
+
+function isOpenQuestion(state: MatchState, index: number): boolean {
+  return state.phase === 'question' && state.question?.index === index;
+}
+
+// A scramble only reorders the options; the round and my pick stay as they are.
+function withScrambledOptions(state: MatchState, index: number, options: string[]): MatchState {
+  if (!state.question || !isOpenQuestion(state, index)) {
+    return state;
+  }
+  return { ...state, question: { ...state.question, options } };
+}
+
+function withSabotage(state: MatchState, sabotage: SabotagedEvent, landedAt: number): MatchState {
+  const charges = { ...state.charges, [sabotage.fromUserId]: sabotage.fromCharges };
+  if (!isOpenQuestion(state, sabotage.index)) {
+    return { ...state, charges };
+  }
+  return { ...state, charges, sabotages: [...state.sabotages, { ...sabotage, landedAt }] };
 }
 
 function withBoost(

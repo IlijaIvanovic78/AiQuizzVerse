@@ -1,17 +1,20 @@
 import { PathResult } from './path.model';
-import { QuizKind, QuizTheme } from './quiz.model';
+import { QuizKind, QuizLanguage, QuizTheme } from './quiz.model';
 import { PublicUser } from './user.model';
 
-export type MatchMode = 'SOLO' | 'DUEL' | 'TEAM';
+export type MatchMode = 'SOLO' | 'DUEL' | 'TEAM' | 'PARTY';
 
 export type MatchStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED' | 'ABANDONED';
 
 export type MatchOutcome = 'WIN' | 'LOSS' | 'DRAW' | 'DONE';
 
+export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE';
+
 export interface MatchQuizInfo {
   id: string;
   title: string;
   theme: QuizTheme;
+  language: QuizLanguage;
   questionCount: number;
   timePerQuestion: number;
   kind: QuizKind;
@@ -22,6 +25,8 @@ export interface MatchPlayerView {
   score: number;
   correctCount: number;
   isConnected: boolean;
+  // Sabotage charges in a party; always 0 in the other modes.
+  charges: number;
 }
 
 export interface MatchView {

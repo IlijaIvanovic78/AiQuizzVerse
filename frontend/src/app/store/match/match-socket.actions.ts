@@ -4,6 +4,7 @@ import {
   BoostUsedEvent,
   MatchQuestionEvent,
   RoundResultEvent,
+  SabotagedEvent,
 } from '../../core/models/realtime-events.model';
 
 export const MatchSocketActions = createActionGroup({
@@ -17,6 +18,9 @@ export const MatchSocketActions = createActionGroup({
     'Round Finished': props<{ round: RoundResultEvent }>(),
     'Waiting For Next': props<{ userIds: string[] }>(),
     'Boost Used': props<{ boost: BoostUsedEvent; deadlineAt: number | null }>(),
+    'Player Locked Out': props<{ index: number; userId: string }>(),
+    'Options Scrambled': props<{ index: number; options: string[] }>(),
+    'Player Sabotaged': props<{ sabotage: SabotagedEvent; landedAt: number }>(),
     Finished: props<{ result: MatchResult }>(),
     'Player Left': props<{ userId: string }>(),
     'Error Received': props<{ error: string }>(),

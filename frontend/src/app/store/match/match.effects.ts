@@ -18,9 +18,10 @@ import {
 } from 'rxjs';
 import { readErrorMessage } from '../../core/api/api-error';
 import { MatchesApiService } from '../../core/api/matches-api.service';
-import { MatchView } from '../../core/models/match.model';
+import { MatchMode, MatchView } from '../../core/models/match.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { MatchSocketService } from '../../core/realtime/match-socket.service';
+import { authFeature } from '../auth/auth.reducer';
 import { ShopActions } from '../shop/shop.actions';
 import { MatchSocketActions } from './match-socket.actions';
 import { MatchActions } from './match.actions';
@@ -128,7 +129,7 @@ export class MatchEffects {
   readonly loadBoosts$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MatchActions.loaded),
-      filter(({ match }) => isStillPlaying(match) && match.mode !== 'DUEL'),
+      filter(({ match }) => isStillPlaying(match) && hasPowerUps(match.mode)),
       map(() => ShopActions.loadBoosts()),
     ),
   );
@@ -181,6 +182,19 @@ export class MatchEffects {
     { dispatch: false },
   );
 
+  // The server accepts a freeze only on a player who has not answered yet. So when a freeze on
+  // me arrives, my answer that was still on its way was refused, and I can pick again later.
+  readonly refuseFrozenAnswer$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(MatchSocketActions.playerSabotaged),
+      withLatestFrom(this.store.select(authFeature.selectUser)),
+      filter(
+        ([{ sabotage }, user]) => sabotage.type === 'FREEZE' && sabotage.targetUserId === user?.id,
+      ),
+      map(([{ sabotage }]) => MatchActions.answerRefused({ index: sabotage.index })),
+    ),
+  );
+
   readonly next$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -203,6 +217,20 @@ export class MatchEffects {
         tap(([{ boostType }, matchId]) => {
           if (matchId) {
             this.matchSocket.useBoost(matchId, boostType);
+          }
+        }),
+      ),
+    { dispatch: false },
+  );
+
+  readonly sabotage$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(MatchActions.sabotage),
+        withLatestFrom(this.store.select(matchFeature.selectMatchId)),
+        tap(([{ targetUserId, sabotageType }, matchId]) => {
+          if (matchId) {
+            this.matchSocket.sabotage(matchId, targetUserId, sabotageType);
           }
         }),
       ),
@@ -286,6 +314,18 @@ export class MatchEffects {
         }),
       ),
     );
+    const lockedOut$ = socket.lockedOut$.pipe(
+      filter((event) => event.matchId === matchId),
+      map(({ index, userId }) => MatchSocketActions.playerLockedOut({ index, userId })),
+    );
+    const options$ = socket.options$.pipe(
+      filter((event) => event.matchId === matchId),
+      map(({ index, options }) => MatchSocketActions.optionsScrambled({ index, options })),
+    );
+    const sabotaged$ = socket.sabotaged$.pipe(
+      filter((event) => event.matchId === matchId),
+      map((sabotage) => MatchSocketActions.playerSabotaged({ sabotage, landedAt: Date.now() })),
+    );
     const finished$ = socket.finished$.pipe(
       filter((event) => event.matchId === matchId),
       map((result) => MatchSocketActions.finished({ result })),
@@ -307,6 +347,9 @@ export class MatchEffects {
       roundResult$,
       waitingNext$,
       boostUsed$,
+      lockedOut$,
+      options$,
+      sabotaged$,
       finished$,
       playerLeft$,
       error$,
@@ -321,6 +364,11 @@ export class MatchEffects {
 // The reducer keeps only the first pick of a round, so clicks on other options are not sent.
 function isAcceptedAnswer(state: MatchState, optionIndex: number): boolean {
   return state.phase === 'question' && state.myAnswer === optionIndex;
+}
+
+// Duels and parties are fair fights, so the power-ups are off there.
+function hasPowerUps(mode: MatchMode): boolean {
+  return mode === 'SOLO' || mode === 'TEAM';
 }
 
 function isStillPlaying(match: MatchView): boolean {

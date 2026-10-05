@@ -1,4 +1,4 @@
-import { MatchMode } from './match.model';
+import { MatchMode, SabotageType } from './match.model';
 import { MatchBoostType } from './shop.model';
 import { PublicUser } from './user.model';
 
@@ -66,15 +66,43 @@ export interface RoundPlayerResult {
   correct: boolean;
   points: number;
   score: number;
+  charges: number;
 }
 
+// Option indexes are in the order this player saw, which a scramble can change.
 export interface RoundResultEvent {
   matchId: string;
   index: number;
   correctIndex: number;
   explanation: string;
+  // Party only: who answered correctly first. Always null in the other modes.
+  winnerUserId: string | null;
   players: RoundPlayerResult[];
   teamCorrect: number;
+}
+
+export interface LockedOutEvent {
+  matchId: string;
+  index: number;
+  userId: string;
+}
+
+// Sent only to the scrambled player, with the options in their new order.
+export interface MatchOptionsEvent {
+  matchId: string;
+  index: number;
+  options: string[];
+}
+
+export interface SabotagedEvent {
+  matchId: string;
+  index: number;
+  type: SabotageType;
+  fromUserId: string;
+  targetUserId: string;
+  // 0 for a scramble, which lasts until the question ends.
+  durationMs: number;
+  fromCharges: number;
 }
 
 export interface WaitingNextEvent {

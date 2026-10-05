@@ -1,5 +1,10 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { CreateMatchRequest, MatchResult, MatchView } from '../../core/models/match.model';
+import {
+  CreateMatchRequest,
+  MatchResult,
+  MatchView,
+  SabotageType,
+} from '../../core/models/match.model';
 import { DuelInvite } from '../../core/models/realtime-events.model';
 import { MatchBoostType } from '../../core/models/shop.model';
 
@@ -16,8 +21,10 @@ export const MatchActions = createActionGroup({
     Left: emptyProps(),
     Start: emptyProps(),
     Answer: props<{ optionIndex: number }>(),
+    'Answer Refused': props<{ index: number }>(),
     Next: emptyProps(),
     'Use Boost': props<{ boostType: MatchBoostType }>(),
+    Sabotage: props<{ targetUserId: string; sabotageType: SabotageType }>(),
     'Invite Friend': props<{ matchId: string; friendId: string }>(),
     'Friend Invited': emptyProps(),
     'Invite Received': props<{ invite: DuelInvite }>(),
