@@ -1,23 +1,19 @@
 @if (invite(); as invite) {
-  <app-modal [title]="title()" size="sm" (closed)="decline()">
+  <app-modal [title]="wording().title" size="sm" (closed)="decline()">
     <div class="flex flex-col items-center gap-3 text-center">
       <div class="flex h-32 items-end justify-center">
         <app-hero-sprite [heroKey]="invite.from.avatarKey" [scale]="4" />
       </div>
       <p class="text-lg">
         <span class="font-semibold text-torch-300">{{ invite.from.username }}</span>
-        @if (invite.mode === 'TEAM') {
-          wants to team up with you on
-        } @else {
-          challenges you to a duel on
-        }
+        {{ wording().text }}
       </p>
       <p class="read-text panel-parchment w-full px-4 py-3 font-bold">{{ invite.quizTitle }}</p>
     </div>
     <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
       <button type="button" class="btn btn-secondary" (click)="decline()">Not now</button>
       <button type="button" class="btn btn-primary" (click)="accept(invite)">
-        {{ invite.mode === 'TEAM' ? 'Team up' : 'Accept' }}
+        {{ wording().accept }}
       </button>
     </div>
   </app-modal>

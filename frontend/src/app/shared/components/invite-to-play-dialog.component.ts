@@ -9,7 +9,7 @@ import { SpinnerComponent } from './spinner.component';
 import { ThemeBadgeComponent } from './theme-badge.component';
 import { UserAvatarComponent } from './user-avatar.component';
 
-type InviteMode = Extract<MatchMode, 'DUEL' | 'TEAM'>;
+type InviteMode = Exclude<MatchMode, 'SOLO'>;
 
 export interface PlayInvite {
   quizId: string;
@@ -24,6 +24,7 @@ interface QuizChoice {
 const MODE_CHOICES: { mode: InviteMode; label: string; text: string }[] = [
   { mode: 'DUEL', label: 'Duel', text: 'Face each other. No power-ups, a fair fight.' },
   { mode: 'TEAM', label: 'Team up', text: 'Answer side by side and fill one team chest.' },
+  { mode: 'PARTY', label: 'Party', text: 'Up to 4 players. The first right answer wins!' },
 ];
 
 @Component({

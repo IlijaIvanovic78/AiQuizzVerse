@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { QuizSummary } from '../../core/models/quiz.model';
 import { PublicUser } from '../../core/models/user.model';
 import {
   InviteToPlayDialogComponent,
   PlayInvite,
 } from '../../shared/components/invite-to-play-dialog.component';
+import { PlayChoice, PlayModalComponent } from '../../shared/components/play-modal.component';
 import { QuizCardComponent } from '../../shared/components/quiz-card.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { authFeature } from '../../store/auth/auth.reducer';
@@ -39,6 +41,7 @@ import { newestOpenPath, sectionStatus } from './home.rules';
   imports: [
     RouterLink,
     InviteToPlayDialogComponent,
+    PlayModalComponent,
     QuizCardComponent,
     SpinnerComponent,
     ContinuePathCardComponent,
@@ -90,7 +93,8 @@ export class HomePageComponent {
   );
 
   private readonly friends = this.store.selectSignal(friendsFeature.selectAllFriends);
-  private readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
+  protected readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
+  protected readonly friendsLoading = this.store.selectSignal(friendsFeature.selectLoading);
   private readonly friendsLoaded = this.store.selectSignal(friendsFeature.selectLoaded);
   private readonly friendsError = this.store.selectSignal(friendsFeature.selectError);
   protected readonly friendsStatus = computed(() =>
@@ -123,6 +127,7 @@ export class HomePageComponent {
   );
 
   protected readonly invitedFriend = signal<PublicUser | null>(null);
+  protected readonly playing = signal<QuizSummary | null>(null);
 
   constructor() {
     this.loadEverything();
@@ -137,8 +142,8 @@ export class HomePageComponent {
     this.store.dispatch(LeaderboardActions.load({ scope: 'friends' }));
   }
 
-  protected playSolo(quizId: string): void {
-    this.store.dispatch(MatchActions.create({ request: { quizId, mode: 'SOLO' } }));
+  protected play(quiz: QuizSummary, choice: PlayChoice): void {
+    this.store.dispatch(MatchActions.create({ request: { quizId: quiz.id, ...choice } }));
   }
 
   protected joinWithCode(inviteCode: string): void {

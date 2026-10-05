@@ -19,9 +19,13 @@
 
   @if (user(); as user) {
     @if (entries().length > 0) {
-      <section class="podium-stage panel" aria-label="Podium">
-        <app-podium [entries]="podium()" [myUserId]="user.id" />
-      </section>
+      <app-podium
+        class="panel"
+        label="Top three this week"
+        unit="XP"
+        [places]="podium()"
+        [myUserId]="user.id"
+      />
       @if (others().length > 0) {
         <app-leaderboard-list class="mt-4" [entries]="others()" [myUserId]="user.id" />
       }

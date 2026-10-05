@@ -1,4 +1,21 @@
+/* The podium stands in the arena, which is dimmed so the names stay readable. */
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 1.5rem 0.75rem 0;
+  background: var(--night-900) url('/assets/images/arena-small.webp') center 35% / cover;
+}
+
+:host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: rgba(18, 13, 31, 0.6);
+}
+
 .podium {
+  position: relative;
   display: grid;
   max-width: 40rem;
   margin: 0 auto;

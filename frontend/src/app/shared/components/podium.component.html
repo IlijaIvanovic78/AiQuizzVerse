@@ -1,5 +1,5 @@
-<ol class="podium" aria-label="Top three this week">
-  @for (spot of places(); track spot.place) {
+<ol class="podium" [attr.aria-label]="label()">
+  @for (spot of spots(); track spot.place) {
     <li class="podium-spot" [class]="'podium-spot-' + spot.place">
       @if (spot.entry; as entry) {
         <div class="flex min-w-0 max-w-full flex-col items-center px-1 text-center">
@@ -13,7 +13,9 @@
           >
             {{ entry.user.username }}
           </a>
-          <span class="text-sm font-semibold text-mana-400">{{ entry.weeklyXp | number }} XP</span>
+          <span class="text-sm font-semibold text-mana-400">
+            {{ entry.value | number }} {{ unit() }}
+          </span>
         </div>
         <app-hero-sprite
           class="podium-hero animate-banner-in"

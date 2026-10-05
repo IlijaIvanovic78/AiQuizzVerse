@@ -2,9 +2,10 @@
   <p class="read-text panel-parchment px-4 py-3 font-bold">{{ quizTitle() }}</p>
 
   @if (chosenMode(); as mode) {
-    <p class="mt-5 text-lg font-semibold">
-      {{ mode === 'DUEL' ? 'Who do you want to challenge?' : 'Who do you want to team up with?' }}
-    </p>
+    <p class="mt-5 text-lg font-semibold">{{ friendQuestion() }}</p>
+    @if (mode === 'PARTY') {
+      <p class="text-sm text-muted">Up to 4 players. You can invite more friends in the lobby.</p>
+    }
 
     @if (onlineFriends().length > 0) {
       <ul class="mt-3 flex flex-col gap-2">
@@ -54,7 +55,7 @@
       <button type="button" class="btn btn-ghost mt-3" (click)="chosenMode.set(null)">Back</button>
     }
   } @else {
-    <ul class="mt-5 grid gap-3 sm:grid-cols-3">
+    <ul class="mt-5 grid gap-3 sm:grid-cols-2">
       @for (choice of modeChoices; track choice.mode) {
         <li>
           <app-choice-card

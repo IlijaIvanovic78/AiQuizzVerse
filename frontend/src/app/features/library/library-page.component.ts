@@ -7,6 +7,7 @@ import { QuizSummary, QuizTheme } from '../../core/models/quiz.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
+import { PlayChoice, PlayModalComponent } from '../../shared/components/play-modal.component';
 import { QuizCardComponent } from '../../shared/components/quiz-card.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { FriendsActions } from '../../store/friends/friends.actions';
@@ -15,7 +16,6 @@ import { MatchActions } from '../../store/match/match.actions';
 import { matchFeature } from '../../store/match/match.reducer';
 import { QuizzesActions } from '../../store/quizzes/quizzes.actions';
 import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
-import { PlayChoice, PlayModalComponent } from './components/play-modal.component';
 import { ThemeFilterComponent } from './components/theme-filter.component';
 import { countByTheme, filterQuizzes, notInLibrary } from './quiz-filters';
 

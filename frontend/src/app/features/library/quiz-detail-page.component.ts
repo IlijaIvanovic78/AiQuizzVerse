@@ -21,11 +21,13 @@ import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.c
 import { DifficultyBadgeComponent } from '../../shared/components/difficulty-badge.component';
 import { HeroSpriteComponent } from '../../shared/components/hero-sprite.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
+import { PlayChoice, PlayModalComponent } from '../../shared/components/play-modal.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { ThemeBadgeComponent } from '../../shared/components/theme-badge.component';
 import { MAX_QUESTIONS, MIN_QUESTIONS } from '../../shared/forms/quiz-form';
 import { AudienceLabelPipe } from '../../shared/pipes/audience-label.pipe';
 import { LanguageLabelPipe } from '../../shared/pipes/language-label.pipe';
+import { MODE_CHOICES } from '../../shared/play-modes';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
@@ -34,10 +36,9 @@ import { matchFeature } from '../../store/match/match.reducer';
 import { QuizzesActions } from '../../store/quizzes/quizzes.actions';
 import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
 import { EditableQuestionComponent } from './components/editable-question.component';
-import { PlayChoice, PlayModalComponent } from './components/play-modal.component';
 import { QuestionModalComponent } from './components/question-modal.component';
 import { QuizSettingsModalComponent } from './components/quiz-settings-modal.component';
-import { MODE_CHOICES, SOURCE_LABELS } from './library.constants';
+import { SOURCE_LABELS } from './library.constants';
 
 // The question being written in the modal: an existing one, or null for a new one.
 interface QuestionDraft {

@@ -18,6 +18,7 @@ const MODE_LABELS: Record<MatchMode, string> = {
   SOLO: 'Solo',
   DUEL: 'Duel',
   TEAM: 'Team',
+  PARTY: 'Party',
 };
 
 @Component({

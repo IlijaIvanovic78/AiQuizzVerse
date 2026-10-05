@@ -5,13 +5,13 @@ import { Store } from '@ngrx/store';
 import { LeaderboardScope } from '../../core/models/leaderboard.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
+import { PodiumComponent, PodiumPlace } from '../../shared/components/podium.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar.component';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { LeaderboardActions } from '../../store/leaderboard/leaderboard.actions';
 import { leaderboardFeature } from '../../store/leaderboard/leaderboard.reducer';
 import { LeaderboardListComponent } from './components/leaderboard-list.component';
-import { PodiumComponent } from './components/podium.component';
 
 const PODIUM_SIZE = 3;
 
@@ -47,7 +47,11 @@ export class LeaderboardPageComponent {
   protected readonly loaded = this.store.selectSignal(leaderboardFeature.selectLoaded);
   protected readonly error = this.store.selectSignal(leaderboardFeature.selectError);
 
-  protected readonly podium = computed(() => this.entries().slice(0, PODIUM_SIZE));
+  protected readonly podium = computed(() =>
+    this.entries()
+      .slice(0, PODIUM_SIZE)
+      .map((entry): PodiumPlace => ({ rank: entry.rank, user: entry.user, value: entry.weeklyXp })),
+  );
   protected readonly others = computed(() => this.entries().slice(PODIUM_SIZE));
 
   constructor() {

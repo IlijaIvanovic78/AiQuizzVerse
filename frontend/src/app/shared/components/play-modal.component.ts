@@ -7,14 +7,14 @@ import {
   output,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Friend } from '../../../core/models/friend.model';
-import { CreateMatchRequest, MatchMode } from '../../../core/models/match.model';
-import { ChoiceCardComponent } from '../../../shared/components/choice-card.component';
-import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
-import { ModalComponent } from '../../../shared/components/modal.component';
-import { SpinnerComponent } from '../../../shared/components/spinner.component';
-import { UserAvatarComponent } from '../../../shared/components/user-avatar.component';
-import { MODE_CHOICES } from '../library.constants';
+import { Friend } from '../../core/models/friend.model';
+import { CreateMatchRequest, MatchMode } from '../../core/models/match.model';
+import { MODE_CHOICES } from '../play-modes';
+import { ChoiceCardComponent } from './choice-card.component';
+import { LevelBadgeComponent } from './level-badge.component';
+import { ModalComponent } from './modal.component';
+import { SpinnerComponent } from './spinner.component';
+import { UserAvatarComponent } from './user-avatar.component';
 
 // Everything a new match needs except the quiz, which the page knows.
 export type PlayChoice = Omit<CreateMatchRequest, 'quizId'>;
@@ -23,9 +23,17 @@ const MODAL_TITLES: Record<MatchMode, string> = {
   SOLO: 'Play solo',
   DUEL: 'Duel a friend',
   TEAM: 'Team up',
+  PARTY: 'Start a party',
 };
 
-// Picks how to play a quiz. Duels and teams then pick an online friend, or get a code to share.
+const FRIEND_QUESTIONS: Record<MatchMode, string> = {
+  SOLO: '',
+  DUEL: 'Who do you want to challenge?',
+  TEAM: 'Who do you want to team up with?',
+  PARTY: 'Who do you want to invite first?',
+};
+
+// Picks how to play a quiz. Games with friends then pick an online friend, or get a code to share.
 @Component({
   selector: 'app-play-modal',
   imports: [
@@ -42,7 +50,7 @@ const MODAL_TITLES: Record<MatchMode, string> = {
 })
 export class PlayModalComponent {
   readonly quizTitle = input.required<string>();
-  // null starts with the choice between solo, duel and team.
+  // null starts with the choice of how to play.
   readonly startMode = input<MatchMode | null>(null);
   readonly onlineFriends = input.required<Friend[]>();
   readonly friendsLoading = input(false);
@@ -55,6 +63,10 @@ export class PlayModalComponent {
   protected readonly title = computed(() => {
     const mode = this.chosenMode();
     return mode ? MODAL_TITLES[mode] : 'How do you want to play?';
+  });
+  protected readonly friendQuestion = computed(() => {
+    const mode = this.chosenMode();
+    return mode ? FRIEND_QUESTIONS[mode] : '';
   });
 
   protected chooseMode(mode: MatchMode): void {

@@ -52,7 +52,7 @@
                   [quiz]="quiz"
                   [link]="showsFeatured() ? null : ['/library', quiz.id]"
                   [busy]="matchBusy()"
-                  (play)="playSolo(quiz.id)"
+                  (play)="playing.set(quiz)"
                 />
               </li>
             }
@@ -84,6 +84,17 @@
       </div>
     </div>
   </div>
+
+  @if (playing(); as quiz) {
+    <app-play-modal
+      [quizTitle]="quiz.title"
+      [onlineFriends]="onlineFriends()"
+      [friendsLoading]="friendsLoading()"
+      [busy]="matchBusy()"
+      (play)="play(quiz, $event)"
+      (closed)="playing.set(null)"
+    />
+  }
 
   @if (invitedFriend(); as friend) {
     <app-invite-to-play-dialog
