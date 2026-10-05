@@ -51,12 +51,13 @@ export const STEP_TIME_PER_QUESTION: Record<Audience, number> = {
   ADULTS: 20,
 };
 
+/** Paid on the first clear of a step; power-ups now come out of the chest. */
 export const STEP_REWARDS: Record<number, StepReward> = {
-  1: { coins: 20, boost: 'HINT' },
-  2: { coins: 25, boost: null },
-  3: { coins: 30, boost: 'FIFTY_FIFTY' },
-  4: { coins: 35, boost: 'EXTRA_TIME' },
-  5: { coins: 60, boost: 'STREAK_FREEZE' },
+  1: { coins: 20, chest: 'WOODEN' },
+  2: { coins: 25, chest: 'SILVER' },
+  3: { coins: 30, chest: 'WOODEN' },
+  4: { coins: 35, chest: 'SILVER' },
+  5: { coins: 60, chest: 'GOLDEN' },
 };
 
 export const NOT_YOUR_PATH_MESSAGE = 'This learning path belongs to someone else.';

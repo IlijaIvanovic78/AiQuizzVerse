@@ -9,6 +9,7 @@ import {
   QuizTheme,
 } from '@prisma/client';
 import { Namespace, Socket } from 'socket.io';
+import { ChestView } from '../chests/chests.types';
 import { PathResult } from '../learning-paths/learning-paths.types';
 import { MatchOutcome } from '../progression/progression.types';
 import { PublicUser } from '../users/users.types';
@@ -20,7 +21,8 @@ import { UseBoostDto } from './dto/use-boost.dto';
 
 export type MatchBoostType = Exclude<BoostType, 'STREAK_FREEZE'>;
 
-export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE';
+/** SHIELD is the one defensive move: it protects the player who raises it. */
+export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE' | 'FOG' | 'QUAKE' | 'MIRROR' | 'SHIELD';
 
 /**
  * Stored in MatchPlayer.answers; optionIndex is in the stored order, not the shuffled one.
@@ -114,6 +116,8 @@ export interface MatchResult {
   path: PathResult | null;
   leveledUp: boolean;
   coinCapReached: boolean;
+  /** The chests this match earned for the player who gets the result. */
+  chestsEarned: ChestView[];
 }
 
 export interface StartingPayload {
@@ -176,15 +180,26 @@ export interface OptionsPayload {
   options: string[];
 }
 
-export interface SabotagedPayload {
+/** A sabotage that hit a shield; the attacker still spent the charge. */
+export interface SabotageBlockedPayload {
   matchId: string;
   index: number;
   type: SabotageType;
   fromUserId: string;
   targetUserId: string;
-  /** How long the effect lasts; 0 for SCRAMBLE, which lasts until the question ends. */
-  durationMs: number;
   fromCharges: number;
+}
+
+export interface SabotagedPayload extends SabotageBlockedPayload {
+  /** How long the effect lasts; 0 for SCRAMBLE and SHIELD, which last until the question ends. */
+  durationMs: number;
+}
+
+export interface SecondChancePayload {
+  matchId: string;
+  index: number;
+  /** The wrong option the player picked first, in the order that player sees. */
+  wrongOption: number;
 }
 
 /** A scored round in the stored option order, so every player can get it in their own order. */
@@ -239,6 +254,8 @@ export interface GameServerToClientEvents {
   'match:locked-out': (payload: LockedOutPayload) => void;
   'match:options': (payload: OptionsPayload) => void;
   'match:sabotaged': (payload: SabotagedPayload) => void;
+  'match:sabotage-blocked': (payload: SabotageBlockedPayload) => void;
+  'match:second-chance': (payload: SecondChancePayload) => void;
   'match:finished': (payload: MatchResult) => void;
   'match:player-left': (payload: PlayerEventPayload) => void;
   'match:error': (payload: MatchErrorPayload) => void;

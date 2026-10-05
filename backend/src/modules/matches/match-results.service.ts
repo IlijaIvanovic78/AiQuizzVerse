@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { MatchMode, Prisma, Question } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ChestsService } from '../chests/chests.service';
 import { LearningPathsService } from '../learning-paths/learning-paths.service';
 import { PathResult, StepReward } from '../learning-paths/learning-paths.types';
 import { accuracyPercent, starsForAccuracy } from '../progression/progression.rules';
@@ -45,6 +46,7 @@ export class MatchResultsService {
     private readonly progression: ProgressionService,
     private readonly review: ReviewService,
     private readonly learningPaths: LearningPathsService,
+    private readonly chests: ChestsService,
   ) {}
 
   // Saves the match once and returns the result for every rewarded player
@@ -93,6 +95,7 @@ export class MatchResultsService {
       if (reward) {
         rewardedUserIds.push(player.userId);
         await this.updateMistakesNotebook(tx, summary, player);
+        await this.grantChests(tx, summary, player, reward);
       }
     }
     return { rewardedUserIds, path: await this.recordPathStep(tx, summary) };
@@ -124,6 +127,28 @@ export class MatchResultsService {
   ): Promise<void> {
     const answers = toReviewAnswers(summary.match.mode, player.answers, summary.questions);
     await this.review.recordAnswers(player.userId, answers, tx);
+  }
+
+  private grantChests(
+    tx: Prisma.TransactionClient,
+    summary: MatchSummary,
+    player: PlayerSummary,
+    reward: PlayerReward,
+  ): Promise<void> {
+    const { match } = summary;
+    return this.chests.grantForMatch(
+      player.userId,
+      {
+        matchId: match.id,
+        mode: match.mode,
+        finished: summary.status === 'FINISHED',
+        accuracy: accuracyPercent(player.correctCount, summary.questions.length),
+        isWinner: player.isWinner,
+        levelsGained: reward.levelsGained,
+        newStreak: reward.newStreak,
+      },
+      tx,
+    );
   }
 
   private async savePlayer(
@@ -160,17 +185,16 @@ export class MatchResultsService {
       return null;
     }
 
-    const path = await this.learningPaths.recordStepResult(
-      host.userId,
-      step,
-      host.correctCount,
-      summary.questions.length,
-      tx,
-    );
+    const run = {
+      matchId: summary.match.id,
+      correct: host.correctCount,
+      total: summary.questions.length,
+    };
+    const path = await this.learningPaths.recordStepResult(host.userId, step, run, tx);
     if (path.reward) {
       await tx.match.update({
         where: { id: summary.match.id },
-        data: { stepReward: { coins: path.reward.coins, boost: path.reward.boost } },
+        data: { stepReward: { coins: path.reward.coins, chest: path.reward.chest } },
       });
     }
     return path;

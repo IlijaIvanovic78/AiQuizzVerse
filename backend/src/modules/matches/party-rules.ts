@@ -1,15 +1,16 @@
 import { MatchMode } from '@prisma/client';
 import { PARTY_MAX_CHARGES, PARTY_START_CHARGES, PARTY_WRONG_PENALTY } from './matches.constants';
+import { SabotageType } from './matches.types';
 
 export interface SabotageAttempt {
   mode: MatchMode;
+  type: SabotageType;
   questionOpen: boolean;
   fromUserId: string;
-  targetUserId: string;
   charges: number;
   alreadySabotaged: boolean;
-  /** Null when the target does not play in this match. */
-  target: { connected: boolean; canAnswer: boolean } | null;
+  /** Null when the target does not play in this match. A SHIELD targets its own player. */
+  target: { userId: string; connected: boolean; canAnswer: boolean } | null;
 }
 
 export function startingCharges(mode: MatchMode): number {
@@ -25,7 +26,7 @@ export function scoreAfterWrongAnswer(score: number): number {
   return Math.max(0, score - PARTY_WRONG_PENALTY);
 }
 
-/** Why a sabotage is not allowed right now, or null when it is. */
+/** Why a sabotage (or a shield) is not allowed right now, or null when it is. */
 export function sabotageError(attempt: SabotageAttempt): string | null {
   if (attempt.mode !== 'PARTY') {
     return 'Sabotage is only for party matches.';
@@ -39,14 +40,22 @@ export function sabotageError(attempt: SabotageAttempt): string | null {
   if (attempt.charges < 1) {
     return 'No sabotage charges left. Win a round to get one!';
   }
-  if (attempt.targetUserId === attempt.fromUserId) {
-    return 'Pick another player, not yourself.';
-  }
-  if (!attempt.target) {
+  return attempt.type === 'SHIELD' ? shieldError(attempt) : targetError(attempt);
+}
+
+function shieldError(attempt: SabotageAttempt): string | null {
+  return attempt.target?.canAnswer ? null : 'A shield only helps before you answer.';
+}
+
+function targetError({ target, fromUserId }: SabotageAttempt): string | null {
+  if (!target) {
     return 'That player is not in this match.';
   }
-  if (!attempt.target.connected) {
+  if (target.userId === fromUserId) {
+    return 'Pick another player, not yourself.';
+  }
+  if (!target.connected) {
     return 'That player is not here right now.';
   }
-  return attempt.target.canAnswer ? null : 'That player has already answered.';
+  return target.canAnswer ? null : 'That player has already answered.';
 }

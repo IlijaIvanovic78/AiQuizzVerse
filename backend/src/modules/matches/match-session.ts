@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
-import { MatchMode, Question } from '@prisma/client';
+import { Question } from '@prisma/client';
 import {
   BehaviorSubject,
   distinct,
@@ -25,7 +25,6 @@ import {
   COUNTDOWN_SECONDS,
   EXTRA_TIME_MS,
   FIFTY_FIFTY_REMOVED_OPTIONS,
-  FREE_HINTS_PER_MATCH,
   FREEZE_DURATION_MS,
   matchRoom,
   MIN_PARTY_PLAYERS,
@@ -44,9 +43,9 @@ import {
   LivePlayerStats,
   MatchBoostType,
   MatchSummary,
-  PlayerAnswerRecord,
   PlayedRound,
   QuestionPayload,
+  SabotageBlockedPayload,
   SabotageType,
   ScoredAnswer,
   SessionMatch,
@@ -65,9 +64,9 @@ import {
   SabotageAttempt,
   sabotageError,
   scoreAfterWrongAnswer,
-  startingCharges,
 } from './party-rules';
-import { answerPoints, findWinnerIds } from './scoring';
+import { answerPoints, findWinnerIds, secondTryPoints } from './scoring';
+import { newPlayer, resetRoundState, SessionPlayer } from './session-player';
 
 export interface MatchSessionDeps {
   server: GameServer;
@@ -88,20 +87,6 @@ interface PlayerAnswer {
 interface NextPress {
   userId: string;
   questionIndex: number;
-}
-
-interface SessionPlayer {
-  userId: string;
-  connected: boolean;
-  score: number;
-  correctCount: number;
-  answers: PlayerAnswerRecord[];
-  freeHintsLeft: number;
-  boostsThisRound: Set<MatchBoostType>;
-  returnTimer: Subscription | null;
-  charges: number;
-  sabotagedThisRound: boolean;
-  frozenUntil: number;
 }
 
 interface MatchEnding {
@@ -176,7 +161,12 @@ export class MatchSession {
     if (this.isFrozen(userId)) {
       throw new WsException('You are frozen!');
     }
-    this.answers$.next({ userId, questionIndex, optionIndex, remainingMs: this.remainingMs() });
+    const answer = { userId, questionIndex, optionIndex, remainingMs: this.remainingMs() };
+    if (this.secondChanceCovers(answer)) {
+      this.offerSecondTry(userId, optionIndex);
+      return;
+    }
+    this.answers$.next(answer);
   }
 
   pressNext(userId: string, questionIndex: number): void {
@@ -201,29 +191,28 @@ export class MatchSession {
       matchId: this.match.id,
       type,
       remaining,
-      ...this.applyBoost(userId, type),
+      ...this.applyBoost(player, type),
     });
   }
 
-  sabotage(userId: string, targetUserId: string, type: SabotageType): void {
+  /** A shield takes no target: it always protects the player who raises it. */
+  sabotage(userId: string, type: SabotageType, targetUserId?: string): void {
     const player = this.requirePlayer(userId);
-    const error = sabotageError(this.sabotageAttempt(player, targetUserId));
-    if (error) {
-      throw new WsException(error);
+    const target = type === 'SHIELD' ? player : this.findPlayer(targetUserId);
+    const error = sabotageError(this.sabotageAttempt(player, type, target));
+    if (error !== null || !target) {
+      throw new WsException(error ?? NOT_IN_MATCH_MESSAGE);
     }
-    const target = this.requirePlayer(targetUserId);
 
     player.charges -= 1;
     player.sabotagedThisRound = true;
-    this.emitToRoom('match:sabotaged', {
-      matchId: this.match.id,
-      index: this.index,
-      type,
-      fromUserId: userId,
-      targetUserId,
-      durationMs: SABOTAGE_DURATION_MS[type],
-      fromCharges: player.charges,
-    });
+    const sabotage = this.sabotagePayload(player, target, type);
+    if (target.shielded) {
+      target.shielded = false;
+      this.emitToRoom('match:sabotage-blocked', sabotage);
+      return;
+    }
+    this.emitToRoom('match:sabotaged', { ...sabotage, durationMs: SABOTAGE_DURATION_MS[type] });
     this.applySabotage(target, type);
   }
 
@@ -376,10 +365,7 @@ export class MatchSession {
     const question = this.questions[index];
     const storedIndex = this.storedOption(answer);
     const correct = storedIndex === question.correctIndex;
-    const lockedOut = this.match.mode === 'PARTY' && storedIndex !== null && !correct;
-    const points = lockedOut
-      ? scoreAfterWrongAnswer(player.score) - player.score
-      : answerPoints(correct, answer?.remainingMs ?? 0, this.timeLimitMs());
+    const points = this.pointsFor(player, answer, correct);
 
     player.answers.push({ questionId: question.id, optionIndex: storedIndex, correct, points });
     player.score += points;
@@ -389,6 +375,22 @@ export class MatchSession {
     }
     const { userId, score, charges } = player;
     return { userId, storedIndex, correct, points, score, charges };
+  }
+
+  /** A wrong party answer costs points; an answer after a second chance has no speed bonus. */
+  private pointsFor(
+    player: SessionPlayer,
+    answer: PlayerAnswer | undefined,
+    correct: boolean,
+  ): number {
+    const answered = answer !== undefined && answer.optionIndex !== null;
+    if (this.match.mode === 'PARTY' && answered && !correct) {
+      return scoreAfterWrongAnswer(player.score) - player.score;
+    }
+    if (player.secondChance === 'spent') {
+      return secondTryPoints(correct);
+    }
+    return answerPoints(correct, answer?.remainingMs ?? 0, this.timeLimitMs());
   }
 
   /** Sent per player, because after a SCRAMBLE players see the options in different orders. */
@@ -459,15 +461,19 @@ export class MatchSession {
     return type === 'HINT' ? owned + player.freeHintsLeft : owned;
   }
 
-  private applyBoost(userId: string, type: MatchBoostType): BoostEffect {
+  private applyBoost(player: SessionPlayer, type: MatchBoostType): BoostEffect {
     const question = this.questions[this.index];
     if (type === 'HINT') {
       return { hint: question.hint };
     }
     if (type === 'FIFTY_FIFTY') {
-      const order = this.optionOrderFor(userId, this.index);
+      const order = this.optionOrderFor(player.userId, this.index);
       const correct = question.correctIndex;
       return { eliminatedOptions: pickWrongOptions(order, correct, FIFTY_FIFTY_REMOVED_OPTIONS) };
+    }
+    if (type === 'SECOND_CHANCE') {
+      player.secondChance = 'armed';
+      return {};
     }
     return { remainingMs: this.extendDeadline() };
   }
@@ -479,28 +485,72 @@ export class MatchSession {
     return remainingMs;
   }
 
-  private sabotageAttempt(player: SessionPlayer, targetUserId: string): SabotageAttempt {
-    const target = this.players.get(targetUserId);
+  /** With a second chance armed, a wrong answer to the open question does not count yet. */
+  private secondChanceCovers(answer: PlayerAnswer): boolean {
+    return (
+      this.requirePlayer(answer.userId).secondChance === 'armed' &&
+      answer.questionIndex === this.index &&
+      this.canAnswer(answer.userId) &&
+      !this.isCorrect(answer)
+    );
+  }
+
+  private offerSecondTry(userId: string, wrongOption: number): void {
+    this.requirePlayer(userId).secondChance = 'spent';
+    this.emitToUser(userId, 'match:second-chance', {
+      matchId: this.match.id,
+      index: this.index,
+      wrongOption,
+    });
+  }
+
+  private sabotageAttempt(
+    player: SessionPlayer,
+    type: SabotageType,
+    target: SessionPlayer | undefined,
+  ): SabotageAttempt {
     return {
       mode: this.match.mode,
+      type,
       questionOpen: this.phase === 'question',
       fromUserId: player.userId,
-      targetUserId,
       charges: player.charges,
       alreadySabotaged: player.sabotagedThisRound,
       target: target
-        ? { connected: target.connected, canAnswer: this.canAnswer(targetUserId) }
+        ? {
+            userId: target.userId,
+            connected: target.connected,
+            canAnswer: this.canAnswer(target.userId),
+          }
         : null,
     };
   }
 
-  /** INK only needs the match:sabotaged event: the clients draw it. */
+  private sabotagePayload(
+    from: SessionPlayer,
+    target: SessionPlayer,
+    type: SabotageType,
+  ): SabotageBlockedPayload {
+    return {
+      matchId: this.match.id,
+      index: this.index,
+      type,
+      fromUserId: from.userId,
+      targetUserId: target.userId,
+      fromCharges: from.charges,
+    };
+  }
+
+  /** INK, FOG, QUAKE and MIRROR only need the match:sabotaged event: the clients draw them. */
   private applySabotage(target: SessionPlayer, type: SabotageType): void {
     if (type === 'FREEZE') {
       target.frozenUntil = Date.now() + FREEZE_DURATION_MS;
     }
     if (type === 'SCRAMBLE') {
       this.scrambleOptions(target);
+    }
+    if (type === 'SHIELD') {
+      target.shielded = true;
     }
   }
 
@@ -614,6 +664,9 @@ export class MatchSession {
   private announceResult({ userId, result, coins }: FinishedPlayer): void {
     this.emitToUser(userId, 'match:finished', result);
     this.deps.notifications.emitToUser(userId, 'coins:updated', { coins });
+    result.chestsEarned.forEach((chest) => {
+      this.deps.notifications.emitToUser(userId, 'chest:earned', { chest });
+    });
   }
 
   private sendCurrentState(userId: string): void {
@@ -682,6 +735,10 @@ export class MatchSession {
     return player;
   }
 
+  private findPlayer(userId: string | undefined): SessionPlayer | undefined {
+    return userId === undefined ? undefined : this.players.get(userId);
+  }
+
   private after(ms: number, action: () => void): Subscription {
     return timer(ms).pipe(takeUntil(this.destroy$)).subscribe(action);
   }
@@ -708,27 +765,4 @@ export class MatchSession {
   ): void {
     this.deps.server.to(userRoom(userId)).emit(event, ...payload);
   }
-}
-
-function newPlayer(userId: string, mode: MatchMode): SessionPlayer {
-  return {
-    userId,
-    connected: true,
-    score: 0,
-    correctCount: 0,
-    answers: [],
-    freeHintsLeft: FREE_HINTS_PER_MATCH,
-    boostsThisRound: new Set(),
-    returnTimer: null,
-    charges: startingCharges(mode),
-    sabotagedThisRound: false,
-    frozenUntil: 0,
-  };
-}
-
-/** Power-ups, sabotage and freezes count per question. */
-function resetRoundState(player: SessionPlayer): void {
-  player.boostsThisRound.clear();
-  player.sabotagedThisRound = false;
-  player.frozenUntil = 0;
 }

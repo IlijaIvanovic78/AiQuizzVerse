@@ -23,7 +23,8 @@ export class ProgressionService {
   ): Promise<PlayerReward> {
     const today = utcToday();
     const reward = matchReward(input);
-    const streakBonus = input.correctCount > 0 ? await this.updateStreak(db, userId, today) : 0;
+    const newStreak = input.correctCount > 0 ? await this.updateStreak(db, userId, today) : null;
+    const streakBonus = newStreak === null ? 0 : streakBonusCoins(newStreak);
     const wantedCoins = reward.coins + streakBonus;
     const coinsEarnedToday = await this.matchCoinsEarnedSince(db, userId, today);
     const coinsEarned = capMatchCoins(wantedCoins, coinsEarnedToday);
@@ -34,26 +35,30 @@ export class ProgressionService {
       select: { xp: true },
     });
 
+    const levelsGained = levelForXp(user.xp) - levelForXp(user.xp - reward.xp);
     return {
       xpEarned: reward.xp,
       coinsEarned,
-      leveledUp: levelForXp(user.xp) > levelForXp(user.xp - reward.xp),
+      leveledUp: levelsGained > 0,
+      levelsGained,
       coinCapReached: coinsEarned < wantedCoins,
+      newStreak,
     };
   }
 
+  /** Returns the new streak, or null when the player already played today. */
   private async updateStreak(
     db: Prisma.TransactionClient,
     userId: string,
     today: Date,
-  ): Promise<number> {
+  ): Promise<number | null> {
     const user = await db.user.findUniqueOrThrow({
       where: { id: userId },
       select: { streak: true, longestStreak: true, lastPlayedOn: true },
     });
     const daysSinceLastPlay = user.lastPlayedOn ? daysBetween(user.lastPlayedOn, today) : null;
     if (daysSinceLastPlay === 0) {
-      return 0;
+      return null;
     }
 
     const usedFreeze =
@@ -63,7 +68,7 @@ export class ProgressionService {
       where: { id: userId },
       data: { streak, longestStreak: Math.max(user.longestStreak, streak), lastPlayedOn: today },
     });
-    return streakBonusCoins(streak);
+    return streak;
   }
 
   private async useStreakFreeze(db: Prisma.TransactionClient, userId: string): Promise<boolean> {

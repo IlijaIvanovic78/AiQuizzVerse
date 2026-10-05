@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PathStep, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ChestsService } from '../chests/chests.service';
 import { accuracyPercent, starsForAccuracy } from '../progression/progression.rules';
 import {
   PATH_DETAIL_INCLUDE,
@@ -16,12 +17,16 @@ import {
   PathResult,
   PathSummary,
   StepReward,
+  StepRun,
   StepWithOwner,
 } from './learning-paths.types';
 
 @Injectable()
 export class LearningPathsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly chests: ChestsService,
+  ) {}
 
   async findAll(userId: string): Promise<PathSummary[]> {
     const paths = await this.prisma.learningPath.findMany({
@@ -77,18 +82,19 @@ export class LearningPathsService {
   async recordStepResult(
     userId: string,
     step: PathStep,
-    correct: number,
-    total: number,
+    run: StepRun,
     db: Prisma.TransactionClient = this.prisma,
   ): Promise<PathResult> {
-    const accuracy = accuracyPercent(correct, total);
+    const accuracy = accuracyPercent(run.correct, run.total);
     const stars = starsForAccuracy(accuracy);
     await this.keepBestResult(db, step.id, stars, accuracy);
     let firstClear = false;
     if (stars > 0) {
       firstClear = await this.markCleared(db, step.id);
     }
-    const reward = firstClear ? await this.grantStepReward(db, userId, step.position) : null;
+    const reward = firstClear
+      ? await this.grantStepReward(db, userId, step.position, run.matchId)
+      : null;
 
     const saved = await db.pathStep.findUniqueOrThrow({ where: { id: step.id } });
     return this.describeStepResult(saved, stars, reward, db);
@@ -164,18 +170,15 @@ export class LearningPathsService {
     db: Prisma.TransactionClient,
     userId: string,
     position: number,
+    matchId: string,
   ): Promise<StepReward> {
     const reward = STEP_REWARDS[position];
     await db.user.update({
       where: { id: userId },
       data: { coins: { increment: reward.coins } },
     });
-    if (reward.boost) {
-      await db.userBoost.upsert({
-        where: { userId_type: { userId, type: reward.boost } },
-        create: { userId, type: reward.boost, quantity: 1 },
-        update: { quantity: { increment: 1 } },
-      });
+    if (reward.chest) {
+      await this.chests.grant(userId, { type: reward.chest, source: 'PATH_STEP', matchId }, db);
     }
     return reward;
   }

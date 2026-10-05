@@ -152,7 +152,7 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   @SubscribeMessage('match:sabotage')
   sabotage(@ConnectedSocket() socket: GameSocket, @MessageBody() dto: SabotageDto): void {
     const { userId } = socket.data;
-    this.sessionFor(dto.matchId, userId).sabotage(userId, dto.targetUserId, dto.type);
+    this.sessionFor(dto.matchId, userId).sabotage(userId, dto.type, dto.targetUserId);
   }
 
   private async startMatch(match: MatchWithPlayers): Promise<void> {

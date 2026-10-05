@@ -3,9 +3,12 @@ import { MatchSession, MatchSessionDeps } from './match-session';
 import {
   COUNTDOWN_SECONDS,
   EXTRA_TIME_MS,
+  FOG_DURATION_MS,
   FREEZE_DURATION_MS,
   INK_DURATION_MS,
+  MIRROR_DURATION_MS,
   MS_PER_SECOND,
+  QUAKE_DURATION_MS,
   RETURN_GRACE_MS,
   REVEAL_MAX_MS,
 } from './matches.constants';
@@ -19,7 +22,9 @@ import {
   PlayerEventPayload,
   QuestionPayload,
   RoundResultPayload,
+  SabotageBlockedPayload,
   SabotagedPayload,
+  SecondChancePayload,
   WaitingNextPayload,
 } from './matches.types';
 
@@ -388,6 +393,74 @@ describe('power-ups', () => {
   });
 });
 
+describe('second chance', () => {
+  it('lets the player try again after a wrong answer and pays half points', async () => {
+    const { session, payloads, received, correctOption, wrongOption, startFirstRound } = setUp(
+      'SOLO',
+      ['ana'],
+    );
+    startFirstRound();
+
+    await session.useBoost('ana', 'SECOND_CHANCE');
+    expect(payloads<BoostUsedPayload>('match:boost-used')[0]).toMatchObject({
+      type: 'SECOND_CHANCE',
+      remaining: 1,
+    });
+    session.submitAnswer('ana', 0, wrongOption());
+    expect(received<SecondChancePayload>('ana', 'match:second-chance')).toEqual([
+      { matchId: 'match-1', index: 0, wrongOption: wrongOption() },
+    ]);
+    expect(payloads('match:round-result')).toHaveLength(0);
+
+    session.submitAnswer('ana', 0, correctOption());
+    const [result] = payloads<RoundResultPayload>('match:round-result');
+    expect(result.players[0]).toMatchObject({ correct: true, points: 50 });
+  });
+
+  it('gives a normal wrong result when the second try is wrong too', async () => {
+    const { session, payloads, received, wrongOption, startFirstRound } = setUp('SOLO', ['ana']);
+    startFirstRound();
+
+    await session.useBoost('ana', 'SECOND_CHANCE');
+    session.submitAnswer('ana', 0, wrongOption());
+    session.submitAnswer('ana', 0, wrongOption());
+    expect(received('ana', 'match:second-chance')).toHaveLength(1);
+    const [result] = payloads<RoundResultPayload>('match:round-result');
+    expect(result.players[0]).toMatchObject({ correct: false, points: 0 });
+  });
+
+  it('is not needed when the first answer is right, which keeps the speed bonus', async () => {
+    const { session, payloads, received, correctOption, startFirstRound } = setUp('SOLO', ['ana']);
+    startFirstRound();
+
+    await session.useBoost('ana', 'SECOND_CHANCE');
+    session.submitAnswer('ana', 0, correctOption());
+    expect(received('ana', 'match:second-chance')).toHaveLength(0);
+    expect(payloads<RoundResultPayload>('match:round-result')[0].players[0].points).toBe(150);
+  });
+
+  it('lasts one question and keeps a team round open for the second try', async () => {
+    const { session, payloads, correctOption, wrongOption, startFirstRound } = setUp('TEAM', [
+      'ana',
+      'marko',
+    ]);
+    startFirstRound();
+
+    await session.useBoost('ana', 'SECOND_CHANCE');
+    session.submitAnswer('marko', 0, correctOption());
+    session.submitAnswer('ana', 0, wrongOption());
+    expect(payloads('match:round-result')).toHaveLength(0);
+    session.submitAnswer('ana', 0, wrongOption());
+    session.pressNext('ana', 0);
+    session.pressNext('marko', 0);
+
+    session.submitAnswer('ana', 1, wrongOption());
+    session.submitAnswer('marko', 1, wrongOption());
+    const [, secondRound] = payloads<RoundResultPayload>('match:round-result');
+    expect(secondRound.players.find((player) => player.userId === 'ana')?.correct).toBe(false);
+  });
+});
+
 describe('a party round', () => {
   it('is won by the first correct answer and closes at once', () => {
     const { session, received, correctOption, wrongOption, startFirstRound } = setUp(
@@ -492,7 +565,7 @@ describe('party sabotage', () => {
     const { session, payloads, correctOption, startFirstRound } = setUp('PARTY', PARTY);
     startFirstRound();
 
-    session.sabotage('ana', 'marko', 'FREEZE');
+    session.sabotage('ana', 'FREEZE', 'marko');
     expect(payloads<SabotagedPayload>('match:sabotaged')[0]).toMatchObject({
       type: 'FREEZE',
       fromUserId: 'ana',
@@ -510,7 +583,7 @@ describe('party sabotage', () => {
   it('ends a freeze when the next question starts', () => {
     const { session, received, correctOption, startFirstRound } = setUp('PARTY', PARTY);
     startFirstRound();
-    session.sabotage('ana', 'marko', 'FREEZE');
+    session.sabotage('ana', 'FREEZE', 'marko');
     session.submitAnswer('iva', 0, correctOption());
     PARTY.forEach((userId) => session.pressNext(userId, 0));
 
@@ -523,11 +596,93 @@ describe('party sabotage', () => {
     const { session, payloads, startFirstRound } = setUp('PARTY', PARTY);
     startFirstRound();
 
-    session.sabotage('iva', 'ana', 'INK');
+    session.sabotage('iva', 'INK', 'ana');
     expect(payloads<SabotagedPayload>('match:sabotaged')[0]).toMatchObject({
       type: 'INK',
       durationMs: INK_DURATION_MS,
     });
+  });
+
+  it('blurs, shakes or mirrors the target screen for a few seconds', () => {
+    const { session, payloads, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+
+    session.sabotage('ana', 'FOG', 'marko');
+    session.sabotage('marko', 'QUAKE', 'iva');
+    session.sabotage('iva', 'MIRROR', 'ana');
+    expect(
+      payloads<SabotagedPayload>('match:sabotaged').map(({ type, durationMs }) => ({
+        type,
+        durationMs,
+      })),
+    ).toEqual([
+      { type: 'FOG', durationMs: FOG_DURATION_MS },
+      { type: 'QUAKE', durationMs: QUAKE_DURATION_MS },
+      { type: 'MIRROR', durationMs: MIRROR_DURATION_MS },
+    ]);
+
+    session.submitAnswer('marko', 0, correctOption());
+    expect(payloads<RoundResultPayload>('match:round-result')[0].winnerUserId).toBe('marko');
+  });
+
+  it('raises a shield on yourself without a target and shows it to the room', () => {
+    const { session, payloads, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+
+    session.sabotage('ana', 'SHIELD');
+    expect(payloads<SabotagedPayload>('match:sabotaged')[0]).toEqual({
+      matchId: 'match-1',
+      index: 0,
+      type: 'SHIELD',
+      fromUserId: 'ana',
+      targetUserId: 'ana',
+      durationMs: 0,
+      fromCharges: 0,
+    });
+    expect(() => session.sabotage('ana', 'INK', 'marko')).toThrow('One sabotage per question');
+  });
+
+  it('blocks the next sabotage with a shield, and the attacker still spends the charge', () => {
+    const { session, payloads, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    session.sabotage('ana', 'SHIELD');
+
+    session.sabotage('marko', 'FREEZE', 'ana');
+    expect(payloads<SabotageBlockedPayload>('match:sabotage-blocked')).toEqual([
+      {
+        matchId: 'match-1',
+        index: 0,
+        type: 'FREEZE',
+        fromUserId: 'marko',
+        targetUserId: 'ana',
+        fromCharges: 0,
+      },
+    ]);
+    expect(payloads('match:sabotaged')).toHaveLength(1);
+
+    session.sabotage('iva', 'FREEZE', 'ana');
+    expect(payloads('match:sabotaged')).toHaveLength(2);
+    expect(() => session.submitAnswer('ana', 0, correctOption())).toThrow('You are frozen!');
+  });
+
+  it('allows a shield only before you answer', () => {
+    const { session, wrongOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+
+    session.submitAnswer('ana', 0, wrongOption());
+    expect(() => session.sabotage('ana', 'SHIELD')).toThrow('before you answer');
+  });
+
+  it('drops the shield when the next question starts', () => {
+    const { session, payloads, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    session.sabotage('ana', 'SHIELD');
+    session.submitAnswer('iva', 0, correctOption());
+    PARTY.forEach((userId) => session.pressNext(userId, 0));
+
+    session.sabotage('iva', 'INK', 'ana');
+    expect(payloads('match:sabotage-blocked')).toHaveLength(0);
+    expect(payloads<SabotagedPayload>('match:sabotaged').at(-1)?.type).toBe('INK');
   });
 
   it('scrambles only the target options, and scores them in the new order', () => {
@@ -535,7 +690,7 @@ describe('party sabotage', () => {
     startFirstRound();
     const sharedCorrect = correctOption();
 
-    session.sabotage('ana', 'marko', 'SCRAMBLE');
+    session.sabotage('ana', 'SCRAMBLE', 'marko');
     expect(received('ana', 'match:options')).toHaveLength(0);
     const [scrambled] = received<OptionsPayload>('marko', 'match:options');
     const markoCorrect = scrambled.options.indexOf(CORRECT_OPTION);
@@ -556,13 +711,13 @@ describe('party sabotage', () => {
     const { session, correctOption, startFirstRound } = setUp('PARTY', PARTY);
     startFirstRound();
 
-    session.sabotage('ana', 'marko', 'INK');
-    expect(() => session.sabotage('ana', 'iva', 'INK')).toThrow('One sabotage per question');
+    session.sabotage('ana', 'INK', 'marko');
+    expect(() => session.sabotage('ana', 'INK', 'iva')).toThrow('One sabotage per question');
 
     session.submitAnswer('iva', 0, correctOption());
     PARTY.forEach((userId) => session.pressNext(userId, 0));
-    expect(() => session.sabotage('ana', 'marko', 'INK')).toThrow('No sabotage charges');
-    expect(() => session.sabotage('iva', 'iva', 'INK')).toThrow('not yourself');
+    expect(() => session.sabotage('ana', 'INK', 'marko')).toThrow('No sabotage charges');
+    expect(() => session.sabotage('iva', 'INK', 'iva')).toThrow('not yourself');
   });
 
   it('cannot hit a player who already answered', () => {
@@ -570,7 +725,7 @@ describe('party sabotage', () => {
     startFirstRound();
 
     session.submitAnswer('marko', 0, wrongOption());
-    expect(() => session.sabotage('ana', 'marko', 'FREEZE')).toThrow('already answered');
+    expect(() => session.sabotage('ana', 'FREEZE', 'marko')).toThrow('already answered');
   });
 
   it('cannot hit a player who came back in the middle of the question', () => {
@@ -578,13 +733,13 @@ describe('party sabotage', () => {
     startFirstRound(['ana', 'marko']);
 
     session.playerReturned('iva');
-    expect(() => session.sabotage('ana', 'iva', 'FREEZE')).toThrow('already answered');
+    expect(() => session.sabotage('ana', 'FREEZE', 'iva')).toThrow('already answered');
   });
 
   it('is only for party matches', () => {
     const { session, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
     startFirstRound();
-    expect(() => session.sabotage('ana', 'marko', 'INK')).toThrow('only for party');
+    expect(() => session.sabotage('ana', 'INK', 'marko')).toThrow('only for party');
   });
 });
 

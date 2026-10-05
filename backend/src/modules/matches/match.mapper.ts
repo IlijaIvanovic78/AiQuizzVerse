@@ -1,4 +1,5 @@
 import { MatchMode, Prisma, Question } from '@prisma/client';
+import { toChestView } from '../chests/chest.mapper';
 import { PathResult } from '../learning-paths/learning-paths.types';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
 import {
@@ -45,6 +46,7 @@ export const HISTORY_INCLUDE = {
 export const MATCH_RESULT_INCLUDE = {
   quiz: { include: { questions: { orderBy: { position: 'asc' } }, pathStep: true } },
   players: PLAYERS_WITH_USERS,
+  chests: { orderBy: { earnedAt: 'asc' } },
 } satisfies Prisma.MatchInclude;
 
 export const SESSION_SETUP_INCLUDE = {
@@ -125,6 +127,7 @@ export function toMatchResult(
     path,
     leveledUp: viewer.leveledUp,
     coinCapReached: viewer.coinCapReached,
+    chestsEarned: match.chests.filter((chest) => chest.userId === viewer.userId).map(toChestView),
   };
 }
 

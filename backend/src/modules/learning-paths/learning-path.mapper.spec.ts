@@ -74,8 +74,8 @@ describe('toPathDetail', () => {
 
     const [first, last] = toPathDetail(path).steps;
 
-    expect(first.reward).toEqual({ coins: 20, boost: 'HINT' });
-    expect(last.reward).toEqual({ coins: 60, boost: 'STREAK_FREEZE' });
+    expect(first.reward).toEqual({ coins: 20, chest: 'WOODEN' });
+    expect(last.reward).toEqual({ coins: 60, chest: 'GOLDEN' });
     expect(first.questionCount).toBe(5);
   });
 

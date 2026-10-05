@@ -1,10 +1,17 @@
-import { Audience, BoostType, Difficulty, PathStep, QuizLanguage } from '@prisma/client';
+import { Audience, ChestType, Difficulty, PathStep, QuizLanguage } from '@prisma/client';
 
 export type PathSource = 'TOPIC' | 'DOCUMENT';
 
 export interface StepReward {
   coins: number;
-  boost: BoostType | null;
+  chest: ChestType | null;
+}
+
+/** One finished run of a step quiz. */
+export interface StepRun {
+  matchId: string;
+  correct: number;
+  total: number;
 }
 
 export interface PathResult {

@@ -26,7 +26,10 @@ export interface PlayerReward {
   xpEarned: number;
   coinsEarned: number;
   leveledUp: boolean;
+  levelsGained: number;
   coinCapReached: boolean;
+  /** The streak after this match when the match moved it, otherwise null. */
+  newStreak: number | null;
 }
 
 export interface StreakState {

@@ -4,6 +4,7 @@ import {
   findWinnerIds,
   partyWinnerIds,
   playerOutcome,
+  secondTryPoints,
   teamWon,
 } from './scoring';
 
@@ -26,6 +27,16 @@ describe('answer points', () => {
 
   it('never goes below the base points for a late answer', () => {
     expect(answerPoints(true, -500, TIME_LIMIT_MS)).toBe(100);
+  });
+});
+
+describe('second try points', () => {
+  it('gives half the base points and no speed bonus for a correct second try', () => {
+    expect(secondTryPoints(true)).toBe(50);
+  });
+
+  it('gives nothing when the second try is wrong too', () => {
+    expect(secondTryPoints(false)).toBe(0);
   });
 });
 

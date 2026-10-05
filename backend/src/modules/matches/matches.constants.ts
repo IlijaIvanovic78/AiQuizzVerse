@@ -29,10 +29,17 @@ export const BASE_POINTS = 100;
 export const SPEED_BONUS_MAX = 50;
 export const TEAM_WIN_ACCURACY = 60;
 
-export const MATCH_BOOST_TYPES: MatchBoostType[] = ['HINT', 'FIFTY_FIFTY', 'EXTRA_TIME'];
+export const MATCH_BOOST_TYPES: MatchBoostType[] = [
+  'HINT',
+  'FIFTY_FIFTY',
+  'EXTRA_TIME',
+  'SECOND_CHANCE',
+];
 export const FREE_HINTS_PER_MATCH = 2;
 export const FIFTY_FIFTY_REMOVED_OPTIONS = 2;
 export const EXTRA_TIME_MS = 15_000;
+/** A correct answer on the second try earns half the base points and no speed bonus. */
+export const SECOND_CHANCE_POINTS = BASE_POINTS / 2;
 
 /** A party keeps going while this many players are connected. */
 export const MIN_PARTY_PLAYERS = 2;
@@ -40,13 +47,29 @@ export const PARTY_START_CHARGES = 1;
 export const PARTY_MAX_CHARGES = 2;
 export const PARTY_WRONG_PENALTY = 25;
 
-export const SABOTAGE_TYPES: SabotageType[] = ['INK', 'FREEZE', 'SCRAMBLE'];
+export const SABOTAGE_TYPES: SabotageType[] = [
+  'INK',
+  'FREEZE',
+  'SCRAMBLE',
+  'FOG',
+  'QUAKE',
+  'MIRROR',
+  'SHIELD',
+];
 export const INK_DURATION_MS = 4_000;
 export const FREEZE_DURATION_MS = 3_000;
+export const FOG_DURATION_MS = 4_000;
+export const QUAKE_DURATION_MS = 4_000;
+export const MIRROR_DURATION_MS = 5_000;
+/** SCRAMBLE and SHIELD last until the question ends. */
 export const SABOTAGE_DURATION_MS: Record<SabotageType, number> = {
   INK: INK_DURATION_MS,
   FREEZE: FREEZE_DURATION_MS,
   SCRAMBLE: 0,
+  FOG: FOG_DURATION_MS,
+  QUAKE: QUAKE_DURATION_MS,
+  MIRROR: MIRROR_DURATION_MS,
+  SHIELD: 0,
 };
 
 /** How long the explanation stays open when not everyone pressed Next. */

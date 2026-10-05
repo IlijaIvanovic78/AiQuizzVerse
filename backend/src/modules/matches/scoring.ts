@@ -1,7 +1,12 @@
 import { MatchMode } from '@prisma/client';
 import { accuracyPercent } from '../progression/progression.rules';
 import { MatchOutcome } from '../progression/progression.types';
-import { BASE_POINTS, SPEED_BONUS_MAX, TEAM_WIN_ACCURACY } from './matches.constants';
+import {
+  BASE_POINTS,
+  SECOND_CHANCE_POINTS,
+  SPEED_BONUS_MAX,
+  TEAM_WIN_ACCURACY,
+} from './matches.constants';
 
 export interface PlayerScore {
   userId: string;
@@ -20,6 +25,11 @@ export function answerPoints(correct: boolean, remainingMs: number, timeLimitMs:
   }
   const timeLeftShare = Math.min(1, Math.max(0, remainingMs) / timeLimitMs);
   return BASE_POINTS + Math.round(SPEED_BONUS_MAX * timeLeftShare);
+}
+
+/** The answer after a second chance: no speed bonus, because the player already had a try. */
+export function secondTryPoints(correct: boolean): number {
+  return correct ? SECOND_CHANCE_POINTS : 0;
 }
 
 /** More correct answers wins, then the higher score. A full tie is a draw with no winner. */

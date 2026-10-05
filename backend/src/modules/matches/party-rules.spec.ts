@@ -32,14 +32,15 @@ describe('a wrong party answer', () => {
 });
 
 describe('sabotage validation', () => {
+  const marko = { userId: 'marko', connected: true, canAnswer: true };
   const valid: SabotageAttempt = {
     mode: 'PARTY',
+    type: 'FOG',
     questionOpen: true,
     fromUserId: 'ana',
-    targetUserId: 'marko',
     charges: 1,
     alreadySabotaged: false,
-    target: { connected: true, canAnswer: true },
+    target: marko,
   };
 
   it('allows a sabotage on a player who is still thinking', () => {
@@ -63,16 +64,44 @@ describe('sabotage validation', () => {
   });
 
   it('cannot target yourself', () => {
-    expect(sabotageError({ ...valid, targetUserId: 'ana' })).toMatch(/not yourself/);
+    expect(sabotageError({ ...valid, target: { ...marko, userId: 'ana' } })).toMatch(
+      /not yourself/,
+    );
   });
 
   it('needs a target who plays, is here and has not answered yet', () => {
     expect(sabotageError({ ...valid, target: null })).toMatch(/not in this match/);
-    expect(sabotageError({ ...valid, target: { connected: false, canAnswer: false } })).toMatch(
-      /not here/,
-    );
-    expect(sabotageError({ ...valid, target: { connected: true, canAnswer: false } })).toMatch(
+    expect(sabotageError({ ...valid, target: { ...marko, connected: false } })).toMatch(/not here/);
+    expect(sabotageError({ ...valid, target: { ...marko, canAnswer: false } })).toMatch(
       /already answered/,
     );
+  });
+});
+
+describe('a shield', () => {
+  const ana = { userId: 'ana', connected: true, canAnswer: true };
+  const shield: SabotageAttempt = {
+    mode: 'PARTY',
+    type: 'SHIELD',
+    questionOpen: true,
+    fromUserId: 'ana',
+    charges: 1,
+    alreadySabotaged: false,
+    target: ana,
+  };
+
+  it('goes on yourself while you can still answer', () => {
+    expect(sabotageError(shield)).toBeNull();
+  });
+
+  it('is not allowed after you answered', () => {
+    expect(sabotageError({ ...shield, target: { ...ana, canAnswer: false } })).toMatch(
+      /before you answer/,
+    );
+  });
+
+  it('costs a charge and counts as the sabotage of the round', () => {
+    expect(sabotageError({ ...shield, charges: 0 })).toMatch(/No sabotage charges/);
+    expect(sabotageError({ ...shield, alreadySabotaged: true })).toMatch(/One sabotage/);
   });
 });
