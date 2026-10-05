@@ -1,0 +1,33 @@
+<div
+  class="pointer-events-none fixed inset-x-3 top-3 z-50 flex flex-col gap-2 md:bottom-6 md:left-auto md:right-6 md:top-auto md:w-96"
+  aria-live="polite"
+>
+  @for (item of items(); track item.toast.id) {
+    <div
+      class="panel pointer-events-auto flex items-center gap-3 border-l-8 py-2 pl-3 pr-2"
+      [class]="item.stripe"
+      animate.enter="toast-enter"
+      animate.leave="toast-leave"
+    >
+      <app-pixel-icon [name]="item.icon" />
+      <p class="flex-1 py-1">{{ item.toast.text }}</p>
+      @if (item.toast.actionLabel) {
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          (click)="actionClicked.emit(item.toast)"
+        >
+          {{ item.toast.actionLabel }}
+        </button>
+      }
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm px-2"
+        aria-label="Dismiss"
+        (click)="dismissed.emit(item.toast.id)"
+      >
+        <app-pixel-icon name="cross" />
+      </button>
+    </div>
+  }
+</div>
