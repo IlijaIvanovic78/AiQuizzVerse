@@ -1,0 +1,58 @@
+<section class="panel p-5" aria-labelledby="quick-actions-title">
+  <h2 id="quick-actions-title" class="sr-only">Quick actions</h2>
+  <div
+    class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[auto_auto_minmax(0,1fr)] lg:items-end"
+  >
+    <a class="btn btn-primary btn-lg" routerLink="/create">
+      <img
+        src="/assets/images/icons/axes.webp"
+        alt=""
+        width="256"
+        height="204"
+        class="h-7 w-auto"
+      />
+      Create a quiz
+    </a>
+    <a class="btn btn-secondary btn-lg" routerLink="/create" [queryParams]="newPathQuery">
+      <img
+        src="/assets/images/icons/sword.webp"
+        alt=""
+        width="256"
+        height="228"
+        class="h-7 w-auto"
+      />
+      New learning path
+    </a>
+
+    <form
+      class="sm:col-span-2 lg:col-span-1 lg:border-l-3 lg:border-night-600 lg:pl-4"
+      [formGroup]="joinForm"
+      (ngSubmit)="submitCode()"
+    >
+      <label for="home-join-code" class="field-label">Got a code from a friend?</label>
+      <div class="flex gap-2">
+        <input
+          id="home-join-code"
+          class="input font-display uppercase tracking-widest"
+          [maxlength]="codeLength"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="ABC234"
+          aria-describedby="home-join-code-error"
+          formControlName="code"
+          [attr.aria-invalid]="codeInvalid()"
+        />
+        <button type="submit" class="btn btn-success shrink-0" [disabled]="joining()">Join</button>
+      </div>
+      <div id="home-join-code-error">
+        @if (codeInvalid()) {
+          <p class="field-error">
+            <app-pixel-icon name="cross" [scale]="1" />
+            A code has {{ codeLength }} letters and numbers.
+          </p>
+        }
+      </div>
+    </form>
+  </div>
+</section>

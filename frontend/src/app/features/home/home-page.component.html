@@ -1,0 +1,99 @@
+@if (user(); as user) {
+  <div class="flex flex-col gap-5 md:gap-6">
+    @if (anySectionFailed()) {
+      <div class="form-alert flex-wrap justify-between" role="alert">
+        <span>Some parts of your camp didn't load.</span>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="loadEverything()">
+          Try again
+        </button>
+      </div>
+    }
+
+    <app-hero-banner [user]="user" />
+
+    <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12">
+      <app-continue-path-card
+        class="lg:col-span-7"
+        [path]="pathToContinue()"
+        [hasPaths]="hasPaths()"
+        [status]="pathsStatus()"
+      />
+      <app-mistakes-card
+        class="lg:col-span-5"
+        [dueToday]="dueToday()"
+        [total]="reviewTotal()"
+        [status]="reviewStatus()"
+      />
+    </div>
+
+    <app-quick-actions [joining]="matchBusy()" (join)="joinWithCode($event)" />
+
+    <div class="grid grid-cols-1 gap-5 md:gap-6 xl:grid-cols-12">
+      <section class="xl:col-span-8" aria-labelledby="home-quizzes-title">
+        <header class="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div>
+            <h2 id="home-quizzes-title" class="text-2xl">
+              {{ showsFeatured() ? 'Try a featured quiz' : 'Your quizzes' }}
+            </h2>
+            @if (showsFeatured()) {
+              <p class="text-sm text-muted">
+                You haven't made a quiz yet. Start with one of these!
+              </p>
+            }
+          </div>
+          <a class="link text-sm" routerLink="/library">Open the library</a>
+        </header>
+
+        @if (shownQuizzes().length > 0) {
+          <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            @for (quiz of shownQuizzes(); track quiz.id) {
+              <li>
+                <app-quiz-card
+                  [quiz]="quiz"
+                  [link]="showsFeatured() ? null : ['/library', quiz.id]"
+                  [busy]="matchBusy()"
+                  (play)="playSolo(quiz.id)"
+                />
+              </li>
+            }
+          </ul>
+        } @else if (quizzesStatus() === 'loading') {
+          <div class="panel p-5">
+            <app-spinner label="Opening your quiz chest..." [showLabel]="true" />
+          </div>
+        } @else {
+          <div class="panel flex flex-col items-start gap-3 p-5">
+            <p>Your quiz chest is empty. Make your first quiz in a minute!</p>
+            <a class="btn btn-primary" routerLink="/create">Create a quiz</a>
+          </div>
+        }
+      </section>
+
+      <div
+        class="grid grid-cols-1 items-start gap-5 md:grid-cols-2 md:gap-6 xl:col-span-4 xl:grid-cols-1"
+      >
+        <app-online-friends
+          [friends]="shownOnlineFriends()"
+          [onlineCount]="onlineCount()"
+          [hasFriends]="hasFriends()"
+          [status]="friendsStatus()"
+          [busy]="matchBusy()"
+          (invite)="openInvite($event)"
+        />
+        <app-weekly-top [entries]="weeklyTop()" [myUserId]="user.id" [status]="weeklyStatus()" />
+      </div>
+    </div>
+  </div>
+
+  @if (invitedFriend(); as friend) {
+    <app-invite-to-play-dialog
+      [friend]="friend"
+      [quizzes]="myQuizzes()"
+      [featured]="featuredQuizzes()"
+      [loading]="quizzesStatus() === 'loading'"
+      [busy]="matchBusy()"
+      (invite)="sendInvite(friend, $event)"
+      (closed)="closeInvite()"
+    />
+  }
+}

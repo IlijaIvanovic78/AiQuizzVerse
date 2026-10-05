@@ -1,0 +1,71 @@
+<section class="panel flex h-full flex-col gap-4 p-5" aria-labelledby="continue-path-title">
+  <div class="flex items-center gap-4">
+    <img
+      src="/assets/images/icons/sword.webp"
+      alt=""
+      width="256"
+      height="228"
+      class="h-16 w-auto shrink-0"
+    />
+    <div class="min-w-0">
+      <h2 id="continue-path-title" class="text-xl">Continue your path</h2>
+      @if (path(); as path) {
+        <p class="truncate text-2xl font-semibold text-torch-300">{{ path.topic }}</p>
+      }
+    </div>
+  </div>
+
+  @if (path(); as path) {
+    @if (path.nextStep; as next) {
+      <p class="read-text">
+        Step {{ next.position }} of {{ path.totalSteps }}:
+        <strong>{{ next.title }}</strong>
+      </p>
+    }
+    <ol class="flex flex-wrap gap-2" aria-label="Steps of this path">
+      @for (step of steps(); track step.position) {
+        <li
+          class="flex h-9 w-9 items-center justify-center rounded border-3 border-outline font-display text-xs shadow-[inset_0_-3px_0_rgba(0,0,0,0.3)]"
+          [class]="step.className"
+        >
+          <span class="sr-only">Step {{ step.position }}, {{ step.label }}</span>
+          @switch (step.state) {
+            @case ('cleared') {
+              <app-pixel-icon name="check" [scale]="1" />
+            }
+            @case ('locked') {
+              <app-pixel-icon name="lock" [scale]="1" />
+            }
+            @default {
+              <span aria-hidden="true">{{ step.position }}</span>
+            }
+          }
+        </li>
+      }
+    </ol>
+    <div class="mt-auto flex flex-wrap items-center justify-between gap-3">
+      <span class="flex items-center gap-1.5 font-semibold">
+        <app-pixel-icon name="star" />
+        {{ path.stars }} / {{ path.maxStars }} stars
+      </span>
+      <a class="btn btn-primary" [routerLink]="['/paths', path.id]">Continue</a>
+    </div>
+  } @else if (status() === 'loading') {
+    <app-spinner label="Looking for your paths..." [showLabel]="true" />
+  } @else if (status() === 'failed') {
+    <p class="text-muted">Your paths didn't load this time.</p>
+  } @else {
+    <p class="read-text">
+      @if (hasPaths()) {
+        You cleared every step of your paths. Amazing work! Ready for a new adventure?
+      } @else {
+        Turn any topic into 5 short lessons, with a quiz after each one.
+      }
+    </p>
+    <div class="mt-auto">
+      <a class="btn btn-primary" routerLink="/create" [queryParams]="newPathQuery">
+        New learning path
+      </a>
+    </div>
+  }
+</section>

@@ -1,0 +1,42 @@
+<section class="panel flex h-full flex-col gap-4 p-5" aria-labelledby="review-card-title">
+  <div class="flex items-center gap-4">
+    <img
+      src="/assets/images/icons/potion.webp"
+      alt=""
+      width="256"
+      height="148"
+      class="h-14 w-[4.75rem] shrink-0 object-cover object-left"
+    />
+    <h2 id="review-card-title" class="text-xl">Mistakes to review</h2>
+  </div>
+
+  @if (status() === 'loading') {
+    <app-spinner label="Opening your notebook..." [showLabel]="true" />
+  } @else if (status() === 'failed') {
+    <p class="text-muted">Your notebook didn't load this time.</p>
+  } @else if (dueToday() > 0) {
+    <p class="flex items-baseline gap-3">
+      <span class="font-display text-3xl text-torch-300">{{ dueToday() }}</span>
+      <span class="read-text"
+        >{{ dueToday() === 1 ? 'question is' : 'questions are' }} waiting for you today</span
+      >
+    </p>
+    <div class="mt-auto">
+      <a class="btn btn-success" routerLink="/review">Review now</a>
+    </div>
+  } @else {
+    <p class="read-text flex items-start gap-2">
+      <app-pixel-icon class="mt-1" name="check" />
+      @if (total() > 0) {
+        Nothing to review today. Your notebook has {{ total() }} more for the next days.
+      } @else {
+        No mistakes to review. Great job!
+      }
+    </p>
+    @if (total() > 0) {
+      <div class="mt-auto">
+        <a class="btn btn-secondary" routerLink="/review">Open notebook</a>
+      </div>
+    }
+  }
+</section>

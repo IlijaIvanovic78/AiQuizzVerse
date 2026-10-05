@@ -1,0 +1,57 @@
+<section class="panel overflow-hidden" aria-labelledby="home-hero-name">
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+    <app-arena-stage
+      class="border-b-3 border-outline lg:border-b-0 lg:border-r-3"
+      [heroKey]="user().avatarKey"
+      [petKey]="user().petKey"
+    >
+      <span class="coin-plate">
+        <app-coin-amount [amount]="user().coins" size="sm" />
+      </span>
+      <img
+        src="/assets/images/icons/treasure.webp"
+        alt=""
+        width="256"
+        height="150"
+        class="h-auto w-full"
+      />
+    </app-arena-stage>
+
+    <div class="flex flex-col justify-center gap-4 p-5">
+      <div>
+        <p class="text-muted">Welcome back,</p>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 id="home-hero-name" class="break-all text-3xl text-parchment-100">
+            {{ user().username }}
+          </h1>
+          <app-level-badge [level]="user().level" />
+        </div>
+        <p class="mt-1 text-sm text-muted">{{ heroName() }} of the castle arena</p>
+      </div>
+
+      <div>
+        <p class="mb-1.5 text-sm font-semibold">
+          {{ xpToGo() }} XP to level {{ user().level + 1 }}
+        </p>
+        <app-xp-bar [current]="user().xpIntoLevel" [total]="user().xpForNextLevel" />
+      </div>
+
+      <div class="hud-tile">
+        <app-pixel-icon
+          class="shrink-0"
+          name="flame"
+          [scale]="3"
+          [class.flame-out]="user().streak === 0"
+          label="Streak"
+        />
+        <div class="min-w-0">
+          <p class="font-semibold">
+            <span class="font-display text-lg">{{ user().streak }}</span>
+            {{ streakDays() }} in a row
+          </p>
+          <p class="text-sm text-muted">{{ streakTip() }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

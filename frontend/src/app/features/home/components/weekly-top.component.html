@@ -1,0 +1,37 @@
+<section class="panel p-5" aria-labelledby="weekly-top-title">
+  <header class="mb-4 flex items-center justify-between gap-3">
+    <h2 id="weekly-top-title" class="text-xl">Friends this week</h2>
+    <a class="link text-sm" routerLink="/leaderboard">Leaderboard</a>
+  </header>
+
+  @if (entries().length > 0) {
+    <ol class="flex flex-col gap-2">
+      @for (entry of entries(); track entry.user.id) {
+        <li
+          class="flex items-center gap-3 rounded border-3 px-2 py-1.5"
+          [class]="
+            entry.user.id === myUserId() ? 'border-torch-400 bg-night-700' : 'border-transparent'
+          "
+        >
+          <app-rank-badge [rank]="entry.rank" />
+          <app-user-avatar [heroKey]="entry.user.avatarKey" />
+          <span class="min-w-0 flex-1 truncate font-semibold">
+            {{ entry.user.username }}
+            @if (entry.user.id === myUserId()) {
+              <span class="text-sm text-torch-300">(you)</span>
+            }
+          </span>
+          <span class="shrink-0 text-sm font-semibold text-mana-400">
+            {{ entry.weeklyXp | number }} XP
+          </span>
+        </li>
+      }
+    </ol>
+  } @else if (status() === 'loading') {
+    <app-spinner label="Counting this week's XP..." [showLabel]="true" />
+  } @else if (status() === 'failed') {
+    <p class="text-muted">The scores didn't load this time.</p>
+  } @else {
+    <p class="text-muted">No XP yet this week. Finish a quiz and take the lead!</p>
+  }
+</section>

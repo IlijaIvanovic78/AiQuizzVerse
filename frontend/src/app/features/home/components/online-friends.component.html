@@ -1,0 +1,47 @@
+<section class="panel p-5" aria-labelledby="online-friends-title">
+  <header class="mb-4 flex items-center justify-between gap-3">
+    <h2 id="online-friends-title" class="flex items-center gap-2 text-xl">
+      Friends online
+      @if (onlineCount() > 0) {
+        <span class="badge badge-jade">{{ onlineCount() }}</span>
+      }
+    </h2>
+    <a class="link text-sm" routerLink="/friends">All friends</a>
+  </header>
+
+  @if (friends().length > 0) {
+    <ul class="flex flex-col gap-3">
+      @for (friend of friends(); track friend.friendshipId) {
+        <li class="flex items-center gap-3">
+          <app-user-avatar [heroKey]="friend.user.avatarKey" [online]="true" />
+          <div class="min-w-0 flex-1">
+            <a
+              class="block truncate font-semibold hover:text-torch-300 hover:underline"
+              [routerLink]="['/profile', friend.user.username]"
+            >
+              {{ friend.user.username }}
+            </a>
+            <app-level-badge [level]="friend.user.level" />
+          </div>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm"
+            [disabled]="busy()"
+            (click)="invite.emit(friend.user)"
+          >
+            Invite<span class="sr-only"> {{ friend.user.username }} to play</span>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else if (status() === 'loading') {
+    <app-spinner label="Looking for your friends..." [showLabel]="true" />
+  } @else if (status() === 'failed') {
+    <p class="text-muted">Your friends list didn't load this time.</p>
+  } @else if (hasFriends()) {
+    <p class="text-muted">None of your friends are online right now. Check back soon!</p>
+  } @else {
+    <p class="text-muted">Quizzes are more fun together. Add a friend and challenge them.</p>
+    <a class="btn btn-secondary btn-sm mt-3" routerLink="/friends">Find friends</a>
+  }
+</section>
