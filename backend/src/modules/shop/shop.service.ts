@@ -38,6 +38,9 @@ export class ShopService {
 
   async equipItem(userId: string, itemId: string): Promise<CurrentUser> {
     const item = await this.findItem(itemId);
+    if (item.type === 'SABOTAGE') {
+      throw new BadRequestException('Sabotages are not worn. They work in party matches.');
+    }
     const owned = await this.prisma.userItem.count({ where: { userId, itemId } });
     if (owned === 0) {
       throw new BadRequestException('Get this item in the shop first.');

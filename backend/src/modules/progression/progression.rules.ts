@@ -3,8 +3,6 @@ import { daysBetween } from '../../common/utils/dates';
 import {
   COINS_PER_CORRECT,
   DAILY_MATCH_COIN_CAP,
-  DUEL_DRAW_BONUS,
-  DUEL_WIN_BONUS,
   FINISH_BONUS,
   HARD_XP_MULTIPLIER,
   MAX_STREAK_BONUS_COINS,
@@ -127,12 +125,6 @@ function finishBonus(correctCount: number): Reward {
 }
 
 function outcomeBonus(mode: MatchMode, outcome: MatchOutcome): Reward {
-  if (mode === 'DUEL' && outcome === 'WIN') {
-    return DUEL_WIN_BONUS;
-  }
-  if (mode === 'DUEL' && outcome === 'DRAW') {
-    return DUEL_DRAW_BONUS;
-  }
   if (mode === 'TEAM' && outcome === 'WIN') {
     return TEAM_WIN_BONUS;
   }

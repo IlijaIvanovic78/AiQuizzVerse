@@ -126,7 +126,9 @@ export class MatchSession {
     private readonly match: SessionMatch,
     private readonly questions: Question[],
   ) {
-    match.playerIds.forEach((userId) => this.players.set(userId, newPlayer(userId, match.mode)));
+    match.players.forEach((player) => {
+      this.players.set(player.userId, newPlayer(player, match.mode));
+    });
     this.optionOrders = new MatchOptionOrders(questions.map((question) => question.options.length));
   }
 
@@ -244,7 +246,7 @@ export class MatchSession {
       return;
     }
     player.returnTimer = this.after(RETURN_GRACE_MS[this.match.mode], () => {
-      void this.runSafely(() => this.dropPlayer(userId));
+      void this.runSafely(() => this.afterPlayerLeft());
     });
   }
 
@@ -259,7 +261,7 @@ export class MatchSession {
     if (this.match.mode === 'PARTY') {
       this.stopWaitingFor(userId);
     }
-    await this.dropPlayer(userId);
+    await this.afterPlayerLeft();
   }
 
   stop(): void {
@@ -437,8 +439,8 @@ export class MatchSession {
   }
 
   private assertCanUseBoost(player: SessionPlayer, type: MatchBoostType): void {
-    if (this.match.mode === 'DUEL' || this.match.mode === 'PARTY') {
-      throw new WsException('Power-ups are off in duels. Fair fight!');
+    if (this.match.mode === 'PARTY') {
+      throw new WsException('Power-ups are off in party matches. Fair fight!');
     }
     if (!this.canAnswer(player.userId)) {
       throw new WsException('Power-ups work only before you answer.');
@@ -512,6 +514,7 @@ export class MatchSession {
     return {
       mode: this.match.mode,
       type,
+      owned: player.sabotages.includes(type),
       questionOpen: this.phase === 'question',
       fromUserId: player.userId,
       charges: player.charges,
@@ -585,14 +588,10 @@ export class MatchSession {
     }
   }
 
-  private async dropPlayer(userId: string): Promise<void> {
+  /** A party may go on without the player; a solo or team match cannot. */
+  private async afterPlayerLeft(): Promise<void> {
     if (this.match.mode === 'PARTY') {
       await this.endPartyIfTooSmall();
-      return;
-    }
-    if (this.match.mode === 'DUEL') {
-      const winnerIds = this.match.playerIds.filter((playerId) => playerId !== userId);
-      await this.finish({ status: 'FINISHED', winnerIds });
       return;
     }
     await this.finish(ABANDONED_END);

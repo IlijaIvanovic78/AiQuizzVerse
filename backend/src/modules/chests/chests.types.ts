@@ -1,13 +1,13 @@
 import { BoostType, ChestSource, ChestType, Item, MatchMode } from '@prisma/client';
 import { ShopItem } from '../shop/shop.types';
 
-export type SkinPool = 'BASIC' | 'CHEST_ONLY';
+export type ItemPool = 'BASIC' | 'CHEST_ONLY';
 
 /** One row of a drop table: what a chest can give and how likely it is compared to the others. */
 export type ChestDrop =
   | { kind: 'COINS'; weight: number; minCoins: number; maxCoins: number }
   | { kind: 'BOOSTS'; weight: number; boostCount: number; streakFreezes: number }
-  | { kind: 'SKIN'; weight: number; pool: SkinPool };
+  | { kind: 'ITEM'; weight: number; pool: ItemPool };
 
 export type MatchChestSource = Exclude<ChestSource, 'PATH_STEP'>;
 

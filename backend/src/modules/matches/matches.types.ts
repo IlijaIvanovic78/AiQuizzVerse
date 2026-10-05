@@ -291,12 +291,18 @@ export type GameSocket = Socket<
   GameSocketData
 >;
 
+/** Sabotage ownership is read once at the start, so the rounds can check it without waiting. */
+export interface SessionMatchPlayer {
+  userId: string;
+  sabotages: SabotageType[];
+}
+
 export interface SessionMatch {
   id: string;
   mode: MatchMode;
   hostId: string;
   quiz: { id: string; kind: QuizKind; difficulty: Difficulty; timePerQuestion: number };
-  playerIds: string[];
+  players: SessionMatchPlayer[];
 }
 
 export interface SessionSetup {

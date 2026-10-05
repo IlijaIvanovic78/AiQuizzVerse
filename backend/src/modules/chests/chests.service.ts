@@ -10,7 +10,7 @@ import {
   CHEST_NOT_FOUND_MESSAGE,
   RECENT_CHESTS_LIMIT,
 } from './chests.constants';
-import { chestOdds, chestsForMatch, rollChest, skinPools } from './chests.rules';
+import { chestOdds, chestsForMatch, itemPools, rollChest } from './chests.rules';
 import {
   ChestList,
   ChestOdds,
@@ -103,7 +103,7 @@ export class ChestsService {
       this.prisma.item.findMany({ where: { isStarter: false } }),
       this.shop.findCustomer(userId),
     ]);
-    const rolled = rollChest(type, skinPools(items), customer.ownedItemIds, Math.random);
+    const rolled = rollChest(type, itemPools(items), customer.ownedItemIds, Math.random);
     return toChestReward(rolled, customer);
   }
 

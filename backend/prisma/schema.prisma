@@ -57,7 +57,6 @@ enum FriendshipStatus {
 
 enum MatchMode {
   SOLO
-  DUEL
   TEAM
   PARTY
 }
@@ -72,6 +71,7 @@ enum MatchStatus {
 enum ItemType {
   AVATAR
   PET
+  SABOTAGE
 }
 
 enum BoostType {
@@ -312,6 +312,7 @@ model ReviewCard {
 model Item {
   id          String   @id
   name        String
+  description String   @default("")
   type        ItemType
   price       Int
   minLevel    Int      @default(1) @map("min_level")

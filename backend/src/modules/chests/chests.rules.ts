@@ -1,6 +1,6 @@
 import { BoostType, ChestType, Item } from '@prisma/client';
 import {
-  BASIC_SKIN_MAX_PRICE,
+  BASIC_ITEM_MAX_PRICE,
   CHEST_BOOSTS,
   CHEST_ONLY_DUPLICATE_COINS,
   DAILY_CHEST_MIN_ACCURACY,
@@ -8,7 +8,6 @@ import {
   MATCH_CHESTS,
   MAX_VICTORY_CHESTS_PER_DAY,
   STREAK_CHEST_EVERY_DAYS,
-  VICTORY_MODES,
 } from './chests.constants';
 import {
   BoostAmount,
@@ -17,16 +16,16 @@ import {
   ChestsEarnedToday,
   DropOdds,
   EarnedChest,
+  ItemPool,
   MatchChestFacts,
   MatchChestSource,
   RolledReward,
-  SkinPool,
 } from './chests.types';
 
 /** Returns a number from 0 (included) to 1 (excluded), like Math.random. */
 export type RandomFn = () => number;
 
-export type SkinPools = Record<SkinPool, Item[]>;
+export type ItemPools = Record<ItemPool, Item[]>;
 
 export function chestsForMatch(match: MatchChestFacts, today: ChestsEarnedToday): EarnedChest[] {
   const sources: MatchChestSource[] = [];
@@ -50,33 +49,34 @@ function earnsDailyChest(match: MatchChestFacts, today: ChestsEarnedToday): bool
   return match.finished && today.daily === 0 && match.accuracy >= DAILY_CHEST_MIN_ACCURACY;
 }
 
+/** Only a party has a single winner; a team win is shared and gives no victory chest. */
 function earnsVictoryChest(match: MatchChestFacts, today: ChestsEarnedToday): boolean {
   return (
     match.finished &&
     match.isWinner &&
-    VICTORY_MODES.includes(match.mode) &&
+    match.mode === 'PARTY' &&
     today.victories < MAX_VICTORY_CHESTS_PER_DAY
   );
 }
 
-/** Basic skins come from the cheaper end of the shop; starters are never in a chest. */
-export function skinPools(items: Item[]): SkinPools {
-  const shopSkins = items.filter((item) => !item.isStarter && !item.isChestOnly);
+/** Basic items come from the cheaper end of the shop; starters are never in a chest. */
+export function itemPools(items: Item[]): ItemPools {
+  const shopItems = items.filter((item) => !item.isStarter && !item.isChestOnly);
   return {
-    BASIC: shopSkins.filter((item) => item.price <= BASIC_SKIN_MAX_PRICE),
+    BASIC: shopItems.filter((item) => item.price <= BASIC_ITEM_MAX_PRICE),
     CHEST_ONLY: items.filter((item) => item.isChestOnly),
   };
 }
 
 export function rollChest(
   type: ChestType,
-  pools: SkinPools,
+  pools: ItemPools,
   ownedItemIds: Set<string>,
   random: RandomFn,
 ): RolledReward {
-  // A skin drop whose pool has no items is left out, so the other drops share its chance.
+  // An item drop whose pool is empty is left out, so the other drops share its chance.
   const drops = DROP_TABLES[type].filter(
-    (drop) => drop.kind !== 'SKIN' || pools[drop.pool].length > 0,
+    (drop) => drop.kind !== 'ITEM' || pools[drop.pool].length > 0,
   );
   const drop = pickDrop(drops, random);
   if (drop.kind === 'COINS') {
@@ -87,10 +87,10 @@ export function rollChest(
     const boosts = rollBoosts(drop.boostCount, drop.streakFreezes, random);
     return { kind: 'BOOSTS', coins: 0, boosts, item: null, duplicate: false };
   }
-  return skinReward(pickOne(pools[drop.pool], random), ownedItemIds);
+  return itemReward(pickOne(pools[drop.pool], random), ownedItemIds);
 }
 
-/** A skin the player already owns is turned into coins. */
+/** An item the player already owns is turned into coins. */
 function duplicateCoins(item: Item): number {
   return item.isChestOnly ? CHEST_ONLY_DUPLICATE_COINS : item.price;
 }
@@ -119,7 +119,7 @@ function dropLabel(drop: ChestDrop): string {
     const boosts = drop.boostCount === 1 ? '1 power-up' : `${drop.boostCount} power-ups`;
     return drop.streakFreezes > 0 ? `${boosts} + ${drop.streakFreezes} streak freeze` : boosts;
   }
-  return drop.pool === 'BASIC' ? 'A hero or pet from the shop' : 'A chest-only hero or pet';
+  return drop.pool === 'BASIC' ? 'Hero, pet or sabotage' : 'Chest-only hero or pet';
 }
 
 function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
@@ -158,7 +158,7 @@ function countByType(types: BoostType[]): BoostAmount[] {
   return amounts;
 }
 
-function skinReward(item: Item, ownedItemIds: Set<string>): RolledReward {
+function itemReward(item: Item, ownedItemIds: Set<string>): RolledReward {
   const duplicate = ownedItemIds.has(item.id);
   const coins = duplicate ? duplicateCoins(item) : 0;
   return { kind: 'ITEM', coins, boosts: [], item, duplicate };

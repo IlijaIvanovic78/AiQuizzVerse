@@ -4,6 +4,8 @@ import { BoostType, ItemType } from '@prisma/client';
 export type ShopItem = {
   id: string;
   name: string;
+  /** What a sabotage does; empty for heroes and pets. */
+  description: string;
   type: ItemType;
   price: number;
   minLevel: number;
@@ -11,6 +13,7 @@ export type ShopItem = {
   /** Found only in chests: listed in the shop, but never sold. */
   isChestOnly: boolean;
   owned: boolean;
+  /** Always false for sabotages: they are not worn, they are ready in every party match. */
   equipped: boolean;
 };
 

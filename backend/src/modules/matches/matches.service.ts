@@ -129,7 +129,7 @@ export class MatchesService implements OnModuleInit {
   async rematch(matchId: string, userId: string): Promise<MatchView> {
     const previous = await this.findForPlayer(matchId, userId);
     if (previous.status !== 'FINISHED' || previous.mode === 'SOLO') {
-      throw new BadRequestException('Only finished duel, team and party matches can be replayed.');
+      throw new BadRequestException('Only finished team and party matches can be replayed.');
     }
     const quiz = await this.prisma.quiz.findFirst({
       where: { id: previous.quiz.id, deletedAt: null },
@@ -190,7 +190,7 @@ export class MatchesService implements OnModuleInit {
 
   private async assertCanInvite(mode: MatchMode, userId: string, friendId: string): Promise<void> {
     if (mode === 'SOLO') {
-      throw new BadRequestException('Solo matches are just for you. Pick a duel, team or party.');
+      throw new BadRequestException('Solo matches are just for you. Pick a team or party match.');
     }
     const friendship = await this.prisma.friendship.findFirst({
       where: {
@@ -240,7 +240,7 @@ export class MatchesService implements OnModuleInit {
     if (!host || !match.inviteCode) {
       return;
     }
-    this.notifications.emitToUser(friendId, 'duel:invite', {
+    this.notifications.emitToUser(friendId, 'match:invite', {
       matchId: match.id,
       inviteCode: match.inviteCode,
       mode: match.mode,

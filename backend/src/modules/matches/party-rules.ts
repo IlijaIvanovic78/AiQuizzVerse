@@ -5,6 +5,8 @@ import { SabotageType } from './matches.types';
 export interface SabotageAttempt {
   mode: MatchMode;
   type: SabotageType;
+  /** INK is free; the others are bought in the shop or found in chests. */
+  owned: boolean;
   questionOpen: boolean;
   fromUserId: string;
   charges: number;
@@ -30,6 +32,9 @@ export function scoreAfterWrongAnswer(score: number): number {
 export function sabotageError(attempt: SabotageAttempt): string | null {
   if (attempt.mode !== 'PARTY') {
     return 'Sabotage is only for party matches.';
+  }
+  if (!attempt.owned) {
+    return "You don't own this sabotage yet. You can get it in the shop.";
   }
   if (!attempt.questionOpen) {
     return 'Sabotage works only while a question is open.';

@@ -9,10 +9,10 @@ export class CreateMatchDto {
   quizId: string;
 
   @ApiProperty({ enum: MatchMode })
-  @IsEnum(MatchMode, { message: 'Pick SOLO, DUEL, TEAM or PARTY.' })
+  @IsEnum(MatchMode, { message: 'Pick SOLO, TEAM or PARTY.' })
   mode: MatchMode;
 
-  @ApiPropertyOptional({ description: 'A friend who gets a duel:invite right away' })
+  @ApiPropertyOptional({ description: 'A friend who gets a match:invite right away' })
   @IsOptional()
   @IsUUID()
   inviteFriendId?: string;

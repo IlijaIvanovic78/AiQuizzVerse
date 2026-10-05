@@ -5,6 +5,7 @@ export function toShopItem(item: Item, customer: ShopCustomer): ShopItem {
   return {
     id: item.id,
     name: item.name,
+    description: item.description,
     type: item.type,
     price: item.price,
     minLevel: item.minLevel,

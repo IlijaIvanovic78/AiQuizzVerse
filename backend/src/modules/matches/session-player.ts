@@ -1,7 +1,12 @@
 import { MatchMode } from '@prisma/client';
 import { Subscription } from 'rxjs';
 import { FREE_HINTS_PER_MATCH } from './matches.constants';
-import { MatchBoostType, PlayerAnswerRecord } from './matches.types';
+import {
+  MatchBoostType,
+  PlayerAnswerRecord,
+  SabotageType,
+  SessionMatchPlayer,
+} from './matches.types';
 import { startingCharges } from './party-rules';
 
 /** armed: the power-up is on for this question; spent: a wrong answer used it up. */
@@ -18,13 +23,17 @@ export interface SessionPlayer {
   boostsThisRound: Set<MatchBoostType>;
   secondChance: SecondChanceState;
   returnTimer: Subscription | null;
+  sabotages: SabotageType[];
   charges: number;
   sabotagedThisRound: boolean;
   shielded: boolean;
   frozenUntil: number;
 }
 
-export function newPlayer(userId: string, mode: MatchMode): SessionPlayer {
+export function newPlayer(
+  { userId, sabotages }: SessionMatchPlayer,
+  mode: MatchMode,
+): SessionPlayer {
   return {
     userId,
     connected: true,
@@ -35,6 +44,7 @@ export function newPlayer(userId: string, mode: MatchMode): SessionPlayer {
     boostsThisRound: new Set(),
     secondChance: 'unused',
     returnTimer: null,
+    sabotages,
     charges: startingCharges(mode),
     sabotagedThisRound: false,
     shielded: false,

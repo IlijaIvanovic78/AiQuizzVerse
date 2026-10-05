@@ -1,6 +1,7 @@
 import { Prisma, User } from '@prisma/client';
 import { utcToday } from '../../common/utils/dates';
 import { displayedStreak, levelForXp, levelProgress } from '../progression/progression.rules';
+import { ownedSabotages } from '../shop/sabotage-items';
 import { CurrentUser, PublicUser } from './users.types';
 
 export const PUBLIC_USER_SELECT = {
@@ -23,6 +24,11 @@ interface WithStreakFreezes {
   boosts: { quantity: number }[];
 }
 
+/** Loaded with SABOTAGE_ITEMS_SELECT. */
+interface WithSabotageItems {
+  items: { itemId: string }[];
+}
+
 type StreakRow = Pick<User, 'streak' | 'lastPlayedOn'> & WithStreakFreezes;
 
 export function toPublicUser(user: PublicUserRow): PublicUser {
@@ -35,7 +41,7 @@ export function toPublicUser(user: PublicUserRow): PublicUser {
   };
 }
 
-export function toCurrentUser(user: User & WithStreakFreezes): CurrentUser {
+export function toCurrentUser(user: User & WithStreakFreezes & WithSabotageItems): CurrentUser {
   const { xpIntoLevel, xpForNextLevel } = levelProgress(user.xp);
   return {
     ...toPublicUser(user),
@@ -48,6 +54,7 @@ export function toCurrentUser(user: User & WithStreakFreezes): CurrentUser {
     twoFaEnabled: user.twoFaEnabled,
     xpIntoLevel,
     xpForNextLevel,
+    sabotages: ownedSabotages(user.items),
   };
 }
 

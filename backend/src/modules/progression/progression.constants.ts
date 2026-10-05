@@ -8,12 +8,9 @@ export const HARD_XP_MULTIPLIER = 1.5;
 
 export const NO_REWARD: Reward = { xp: 0, coins: 0 };
 export const FINISH_BONUS: Reward = { xp: 10, coins: 5 };
-export const DUEL_WIN_BONUS: Reward = { xp: 30, coins: 15 };
-export const DUEL_DRAW_BONUS: Reward = { xp: 10, coins: 5 };
 export const TEAM_WIN_BONUS: Reward = { xp: 20, coins: 10 };
-/** A party pays its winner and its draws the same bonus as a duel. */
-export const PARTY_WIN_BONUS: Reward = DUEL_WIN_BONUS;
-export const PARTY_DRAW_BONUS: Reward = DUEL_DRAW_BONUS;
+export const PARTY_WIN_BONUS: Reward = { xp: 30, coins: 15 };
+export const PARTY_DRAW_BONUS: Reward = { xp: 10, coins: 5 };
 
 export const STREAK_BONUS_COINS_PER_DAY = 5;
 export const MAX_STREAK_BONUS_COINS = 30;

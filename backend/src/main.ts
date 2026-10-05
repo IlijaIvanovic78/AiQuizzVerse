@@ -35,7 +35,7 @@ async function bootstrap(): Promise<void> {
 function setUpSwagger(app: INestApplication): void {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('AI QuizVerse API')
-    .setDescription('Study game: AI quizzes, learning paths, mistakes review, duels and a shop')
+    .setDescription('Study game: AI quizzes, learning paths, mistakes review, parties and a shop')
     .setVersion('2.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'refresh-token')

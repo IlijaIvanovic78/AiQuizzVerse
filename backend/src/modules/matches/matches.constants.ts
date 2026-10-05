@@ -6,7 +6,6 @@ export const HISTORY_LIMIT = 20;
 
 export const MAX_PLAYERS_BY_MODE: Record<MatchMode, number> = {
   SOLO: 1,
-  DUEL: 2,
   TEAM: 2,
   PARTY: 4,
 };
@@ -14,7 +13,6 @@ export const MAX_PLAYERS_BY_MODE: Record<MatchMode, number> = {
 /** Connected players the host needs before the match can start. */
 export const MIN_PLAYERS_TO_START: Record<MatchMode, number> = {
   SOLO: 1,
-  DUEL: 2,
   TEAM: 2,
   PARTY: 2,
 };
@@ -56,6 +54,8 @@ export const SABOTAGE_TYPES: SabotageType[] = [
   'MIRROR',
   'SHIELD',
 ];
+/** Everyone can use these without buying them in the shop. */
+export const FREE_SABOTAGES: SabotageType[] = ['INK'];
 export const INK_DURATION_MS = 4_000;
 export const FREEZE_DURATION_MS = 3_000;
 export const FOG_DURATION_MS = 4_000;
@@ -75,7 +75,6 @@ export const SABOTAGE_DURATION_MS: Record<SabotageType, number> = {
 /** How long the explanation stays open when not everyone pressed Next. */
 export const REVEAL_MAX_MS: Record<MatchMode, number> = {
   SOLO: 60_000,
-  DUEL: 15_000,
   TEAM: 15_000,
   PARTY: 15_000,
 };
@@ -84,7 +83,6 @@ export const REVEAL_MAX_MS: Record<MatchMode, number> = {
 // A party goes on without them and only ends once fewer than two players are left that long.
 export const RETURN_GRACE_MS: Record<MatchMode, number> = {
   SOLO: 60_000,
-  DUEL: 30_000,
   TEAM: 30_000,
   PARTY: 30_000,
 };

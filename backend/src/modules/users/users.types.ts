@@ -1,3 +1,5 @@
+import { SabotageType } from '../matches/matches.types';
+
 export interface PublicUser {
   id: string;
   username: string;
@@ -16,6 +18,8 @@ export interface CurrentUser extends PublicUser {
   twoFaEnabled: boolean;
   xpIntoLevel: number;
   xpForNextLevel: number;
+  /** INK plus every sabotage the user owns, for the party sabotage bar. */
+  sabotages: SabotageType[];
 }
 
 export interface NewUser {

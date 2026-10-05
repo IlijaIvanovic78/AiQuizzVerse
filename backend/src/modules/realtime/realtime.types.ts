@@ -12,7 +12,7 @@ export interface QuizProgress {
   total: number;
 }
 
-export interface DuelInvite {
+export interface MatchInvite {
   matchId: string;
   inviteCode: string;
   mode: MatchMode;
@@ -27,7 +27,7 @@ export interface ServerToClientEvents {
   'friend:accepted': (payload: Friend) => void;
   'friend:request-removed': (payload: { requestId: string }) => void;
   'friend:removed': (payload: { friendshipId: string }) => void;
-  'duel:invite': (payload: DuelInvite) => void;
+  'match:invite': (payload: MatchInvite) => void;
   'quiz:progress': (payload: QuizProgress) => void;
   'coins:updated': (payload: { coins: number }) => void;
   'chest:earned': (payload: { chest: ChestView }) => void;

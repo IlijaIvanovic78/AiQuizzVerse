@@ -6,11 +6,12 @@ import { addUtcDays, startOfUtcDay, utcToday } from '../src/common/utils/dates';
 import { BCRYPT_ROUNDS } from '../src/modules/auth/auth.constants';
 import { EarnedChest } from '../src/modules/chests/chests.types';
 import { MS_PER_SECOND } from '../src/modules/matches/matches.constants';
-import { PlayerAnswerRecord } from '../src/modules/matches/matches.types';
+import { PlayerAnswerRecord, SabotageType } from '../src/modules/matches/matches.types';
 import { answerPoints, findWinnerIds, playerOutcome } from '../src/modules/matches/scoring';
 import { matchReward } from '../src/modules/progression/progression.rules';
 import { toQuizCopy } from '../src/modules/quizzes/quiz.mapper';
 import { STARTER_QUIZ_IDS } from '../src/modules/quizzes/quizzes.constants';
+import { sabotageItemId } from '../src/modules/shop/sabotage-items';
 import { STARTER_BOOSTS } from '../src/modules/users/users.constants';
 import { DEMO_MATCHES, DemoPlayer, SeedMatch, SeedRun } from './seed-data/demo-history';
 import { DEMO_QUIZZES, SeedQuiz } from './seed-data/demo-quizzes';
@@ -25,6 +26,8 @@ interface DemoUser {
   xp: number;
   boosts: { type: BoostType; quantity: number }[];
   chests: EarnedChest[];
+  /** Bought sabotages; INK is free for everyone. */
+  sabotages: SabotageType[];
 }
 
 interface ScoredRun {
@@ -63,6 +66,7 @@ const DEMO_HERO: DemoUser = {
     { type: 'SILVER', source: 'LEVEL_UP' },
     { type: 'GOLDEN', source: 'STREAK' },
   ],
+  sabotages: ['FREEZE', 'FOG', 'SHIELD'],
 };
 
 const DEMO_FRIEND: DemoUser = {
@@ -74,6 +78,7 @@ const DEMO_FRIEND: DemoUser = {
   xp: 600,
   boosts: STARTER_BOOSTS,
   chests: [{ type: 'WOODEN', source: 'DAILY_MATCH' }],
+  sabotages: ['SCRAMBLE'],
 };
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -89,14 +94,15 @@ async function seedItems(): Promise<void> {
 }
 
 async function seedUser(user: DemoUser, passwordHash: string): Promise<string> {
-  const { boosts, chests, ...profile } = user;
+  const { boosts, chests, sabotages, ...profile } = user;
   const { id: userId } = await prisma.user.upsert({
     where: { email: user.email },
     update: {},
     create: { ...profile, passwordHash },
   });
 
-  for (const itemId of [user.avatarKey, user.petKey]) {
+  const ownedItemIds = [user.avatarKey, user.petKey, ...sabotages.map(sabotageItemId)];
+  for (const itemId of ownedItemIds) {
     await prisma.userItem.upsert({
       where: { userId_itemId: { userId, itemId } },
       update: {},

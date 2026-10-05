@@ -34,3 +34,6 @@ export const BOOST_CATALOG: BoostCatalogEntry[] = [
 ];
 
 export const NOT_ENOUGH_COINS_MESSAGE = 'Not enough coins. Play quizzes to earn more coins.';
+
+/** Sabotage items are named after their sabotage: FOG is sold as `sabotage-fog`. */
+export const SABOTAGE_ITEM_PREFIX = 'sabotage-';

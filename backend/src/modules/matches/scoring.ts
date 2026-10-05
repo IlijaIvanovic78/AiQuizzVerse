@@ -32,17 +32,6 @@ export function secondTryPoints(correct: boolean): number {
   return correct ? SECOND_CHANCE_POINTS : 0;
 }
 
-/** More correct answers wins, then the higher score. A full tie is a draw with no winner. */
-export function duelWinnerIds([first, second]: PlayerScore[]): string[] {
-  if (first.correctCount !== second.correctCount) {
-    return [first.correctCount > second.correctCount ? first.userId : second.userId];
-  }
-  if (first.score !== second.score) {
-    return [first.score > second.score ? first.userId : second.userId];
-  }
-  return [];
-}
-
 export function teamWon(players: PlayerScore[], questionCount: number): boolean {
   const teamCorrect = players.reduce((sum, player) => sum + player.correctCount, 0);
   return accuracyPercent(teamCorrect, players.length * questionCount) >= TEAM_WIN_ACCURACY;
@@ -60,9 +49,6 @@ export function findWinnerIds(
   players: PlayerScore[],
   questionCount: number,
 ): string[] {
-  if (mode === 'DUEL') {
-    return duelWinnerIds(players);
-  }
   if (mode === 'PARTY') {
     return partyWinnerIds(players);
   }
@@ -72,25 +58,23 @@ export function findWinnerIds(
   return [];
 }
 
+/** Solo play and a team that missed the goal are simply DONE; only a party has losers. */
 export function playerOutcome(
   mode: MatchMode,
   player: OutcomePlayer,
   players: OutcomePlayer[],
 ): MatchOutcome {
-  if (mode === 'SOLO') {
-    return 'DONE';
-  }
   if (player.isWinner) {
     return 'WIN';
   }
-  return isDraw(mode, player, players) ? 'DRAW' : 'LOSS';
+  if (mode !== 'PARTY') {
+    return 'DONE';
+  }
+  return isPartyDraw(player, players) ? 'DRAW' : 'LOSS';
 }
 
-/** Duels and parties without a winner are a draw for the players who share the top score. */
-function isDraw(mode: MatchMode, player: OutcomePlayer, players: OutcomePlayer[]): boolean {
-  if (mode !== 'DUEL' && mode !== 'PARTY') {
-    return false;
-  }
+/** A party without a winner is a draw for the players who share the top score. */
+function isPartyDraw(player: OutcomePlayer, players: OutcomePlayer[]): boolean {
   const someoneWon = players.some((candidate) => candidate.isWinner);
   return !someoneWon && player.score === highestScore(players);
 }

@@ -1,6 +1,5 @@
 import {
   answerPoints,
-  duelWinnerIds,
   findWinnerIds,
   partyWinnerIds,
   playerOutcome,
@@ -37,32 +36,6 @@ describe('second try points', () => {
 
   it('gives nothing when the second try is wrong too', () => {
     expect(secondTryPoints(false)).toBe(0);
-  });
-});
-
-describe('duel winner', () => {
-  it('picks the player with more correct answers even with a lower score', () => {
-    const winners = duelWinnerIds([
-      { userId: 'ana', correctCount: 4, score: 400 },
-      { userId: 'marko', correctCount: 3, score: 450 },
-    ]);
-    expect(winners).toEqual(['ana']);
-  });
-
-  it('uses the score when both answered the same number correctly', () => {
-    const winners = duelWinnerIds([
-      { userId: 'ana', correctCount: 3, score: 380 },
-      { userId: 'marko', correctCount: 3, score: 410 },
-    ]);
-    expect(winners).toEqual(['marko']);
-  });
-
-  it('is a draw when correct answers and score are equal', () => {
-    const winners = duelWinnerIds([
-      { userId: 'ana', correctCount: 3, score: 400 },
-      { userId: 'marko', correctCount: 3, score: 400 },
-    ]);
-    expect(winners).toEqual([]);
   });
 });
 
@@ -120,11 +93,11 @@ describe('player outcome', () => {
     expect(playerOutcome('SOLO', loser, [loser])).toBe('DONE');
   });
 
-  it('tells a duel win, loss and draw apart', () => {
+  it('tells a win, loss and draw apart in a party of two', () => {
     const drawn = { score: 200, isWinner: false };
-    expect(playerOutcome('DUEL', winner, [winner, loser])).toBe('WIN');
-    expect(playerOutcome('DUEL', loser, [winner, loser])).toBe('LOSS');
-    expect(playerOutcome('DUEL', drawn, [drawn, drawn])).toBe('DRAW');
+    expect(playerOutcome('PARTY', winner, [winner, loser])).toBe('WIN');
+    expect(playerOutcome('PARTY', loser, [winner, loser])).toBe('LOSS');
+    expect(playerOutcome('PARTY', drawn, [drawn, drawn])).toBe('DRAW');
   });
 
   it('is a draw in a party only for the players who share the top score', () => {
@@ -135,9 +108,9 @@ describe('player outcome', () => {
     expect(playerOutcome('PARTY', winner, [winner, loser, loser])).toBe('WIN');
   });
 
-  it('has no draw for teams', () => {
+  it('is a WIN for a team that reached the goal and DONE for one that did not', () => {
     const teammate = { score: 100, isWinner: false };
     expect(playerOutcome('TEAM', winner, [winner, winner])).toBe('WIN');
-    expect(playerOutcome('TEAM', teammate, [teammate, teammate])).toBe('LOSS');
+    expect(playerOutcome('TEAM', teammate, [teammate, teammate])).toBe('DONE');
   });
 });

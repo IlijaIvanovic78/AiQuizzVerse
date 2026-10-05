@@ -11,6 +11,7 @@ import {
   QUAKE_DURATION_MS,
   RETURN_GRACE_MS,
   REVEAL_MAX_MS,
+  SABOTAGE_TYPES,
 } from './matches.constants';
 import {
   BoostUsedPayload,
@@ -24,6 +25,7 @@ import {
   RoundResultPayload,
   SabotageBlockedPayload,
   SabotagedPayload,
+  SabotageType,
   SecondChancePayload,
   WaitingNextPayload,
 } from './matches.types';
@@ -55,7 +57,13 @@ function makeQuestion(position: number): Question {
   };
 }
 
-function setUp(mode: MatchMode, playerIds: string[], questionCount = 2) {
+/** Every player owns the sabotages given, all of them unless a test says otherwise. */
+function setUp(
+  mode: MatchMode,
+  playerIds: string[],
+  questionCount = 2,
+  sabotages: SabotageType[] = SABOTAGE_TYPES,
+) {
   const sent: SentEvent[] = [];
   const server = {
     to: (room: string) => ({
@@ -91,7 +99,7 @@ function setUp(mode: MatchMode, playerIds: string[], questionCount = 2) {
         difficulty: 'EASY',
         timePerQuestion: TIME_PER_QUESTION,
       },
-      playerIds,
+      players: playerIds.map((userId) => ({ userId, sabotages })),
     },
     questions,
   );
@@ -151,7 +159,7 @@ describe('a round', () => {
   });
 
   it('ignores a second answer from the same player', () => {
-    const { session, payloads, correctOption, wrongOption, startFirstRound } = setUp('DUEL', [
+    const { session, payloads, correctOption, wrongOption, startFirstRound } = setUp('TEAM', [
       'ana',
       'marko',
     ]);
@@ -168,7 +176,7 @@ describe('a round', () => {
   });
 
   it('ends early when everyone has answered', () => {
-    const { session, received, correctOption, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+    const { session, received, correctOption, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
 
     session.submitAnswer('ana', 0, correctOption());
@@ -216,8 +224,8 @@ describe('a round', () => {
     expect(savedSummary().players[0].answers[0]).toMatchObject({ optionIndex: 1, correct: true });
   });
 
-  it('does not wait for a duel player who left in the middle of the question', () => {
-    const { session, payloads, correctOption, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+  it('does not wait for a team player who left in the middle of the question', () => {
+    const { session, payloads, correctOption, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
 
     session.playerDisconnected('marko');
@@ -229,8 +237,8 @@ describe('a round', () => {
     ]);
   });
 
-  it('tells a duel player who comes back in the middle of the question that it is done', () => {
-    const { session, received, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+  it('tells a team player who comes back in the middle of the question that it is done', () => {
+    const { session, received, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
 
     session.playerDisconnected('marko');
@@ -244,7 +252,7 @@ describe('a round', () => {
 
 describe('the reveal', () => {
   it('waits until every player pressed Next', () => {
-    const { session, payloads, correctOption, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+    const { session, payloads, correctOption, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
     session.submitAnswer('ana', 0, correctOption());
     session.submitAnswer('marko', 0, correctOption());
@@ -268,8 +276,8 @@ describe('the reveal', () => {
 });
 
 describe('the end of a match', () => {
-  function playOneQuestionDuel(anaOption: 'correct' | 'wrong', markoOption: 'correct' | 'wrong') {
-    const setup = setUp('DUEL', ['ana', 'marko'], 1);
+  function playOneQuestionTeam(anaOption: 'correct' | 'wrong', markoOption: 'correct' | 'wrong') {
+    const setup = setUp('TEAM', ['ana', 'marko'], 1);
     const option = (choice: 'correct' | 'wrong') =>
       choice === 'correct' ? setup.correctOption() : setup.wrongOption();
     setup.startFirstRound();
@@ -280,27 +288,27 @@ describe('the end of a match', () => {
     return setup;
   }
 
-  it('makes the player with more correct answers the duel winner', () => {
-    const { savedSummary } = playOneQuestionDuel('correct', 'wrong');
+  it('makes both team players winners when the team reaches 60%', () => {
+    const { savedSummary } = playOneQuestionTeam('correct', 'correct');
     expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.map((player) => player.isWinner)).toEqual([true, false]);
+    expect(savedSummary().players.map((player) => player.isWinner)).toEqual([true, true]);
   });
 
-  it('is a draw when both duel players did equally well', () => {
-    const { savedSummary } = playOneQuestionDuel('correct', 'correct');
+  it('has no winners when the team stays below 60%', () => {
+    const { savedSummary } = playOneQuestionTeam('correct', 'wrong');
     expect(savedSummary().players.every((player) => !player.isWinner)).toBe(true);
   });
 
-  it('lets the remaining duel player win when the opponent does not come back', () => {
-    const { session, payloads, savedSummary, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+  it('abandons a team match when the partner does not come back', () => {
+    const { session, payloads, savedSummary, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
 
     session.playerDisconnected('marko');
     expect(payloads<PlayerEventPayload>('match:player-left')[0].userId).toBe('marko');
 
-    jest.advanceTimersByTime(RETURN_GRACE_MS.DUEL);
-    expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.find((player) => player.isWinner)?.userId).toBe('ana');
+    jest.advanceTimersByTime(RETURN_GRACE_MS.TEAM);
+    expect(savedSummary().status).toBe('ABANDONED');
+    expect(savedSummary().players.map((player) => player.rewarded)).toEqual([true, false]);
   });
 
   it('keeps a solo round open while the player only refreshes the page', () => {
@@ -329,14 +337,12 @@ describe('the end of a match', () => {
 });
 
 describe('power-ups', () => {
-  it('are off in duels and parties', async () => {
-    const duel = setUp('DUEL', ['ana', 'marko']);
-    duel.startFirstRound();
-    await expect(duel.session.useBoost('ana', 'HINT')).rejects.toThrow('Power-ups are off');
-
-    const party = setUp('PARTY', PARTY);
-    party.startFirstRound();
-    await expect(party.session.useBoost('ana', 'HINT')).rejects.toThrow('Power-ups are off');
+  it('are off in party matches', async () => {
+    const { session, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    await expect(session.useBoost('ana', 'HINT')).rejects.toThrow(
+      'Power-ups are off in party matches',
+    );
   });
 
   it('use the free hints before the owned ones', async () => {
@@ -737,9 +743,21 @@ describe('party sabotage', () => {
   });
 
   it('is only for party matches', () => {
-    const { session, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+    const { session, startFirstRound } = setUp('TEAM', ['ana', 'marko']);
     startFirstRound();
     expect(() => session.sabotage('ana', 'INK', 'marko')).toThrow('only for party');
+  });
+
+  it('needs a sabotage from the shop, and a refused one does not spend the charge', () => {
+    const { session, payloads, startFirstRound } = setUp('PARTY', PARTY, 2, ['INK']);
+    startFirstRound();
+
+    expect(() => session.sabotage('ana', 'FOG', 'marko')).toThrow("You don't own this sabotage");
+    expect(() => session.sabotage('ana', 'SHIELD')).toThrow('You can get it in the shop');
+    session.sabotage('ana', 'INK', 'marko');
+    expect(payloads<SabotagedPayload>('match:sabotaged')).toMatchObject([
+      { type: 'INK', fromUserId: 'ana', fromCharges: 0 },
+    ]);
   });
 });
 

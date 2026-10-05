@@ -35,7 +35,7 @@ export const DEMO_MATCHES: SeedMatch[] = [
     runs: [{ player: 'hero', correct: [true, true, true, false, true, true], timeLeft: 0.4 }],
   },
   {
-    mode: 'DUEL',
+    mode: 'PARTY',
     quizId: 'seed-quiz-animals',
     daysAgo: 3,
     minutesEarlier: 30,
@@ -69,7 +69,7 @@ export const DEMO_MATCHES: SeedMatch[] = [
     runs: [{ player: 'hero', correct: ALL_RIGHT, timeLeft: 0.7 }],
   },
   {
-    mode: 'DUEL',
+    mode: 'PARTY',
     quizId: 'seed-quiz-solar-system',
     daysAgo: 1,
     minutesEarlier: 0,
@@ -79,7 +79,7 @@ export const DEMO_MATCHES: SeedMatch[] = [
     ],
   },
   {
-    mode: 'DUEL',
+    mode: 'PARTY',
     quizId: 'seed-quiz-animals',
     daysAgo: 0,
     minutesEarlier: 30,

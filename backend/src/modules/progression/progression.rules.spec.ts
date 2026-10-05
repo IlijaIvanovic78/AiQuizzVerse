@@ -158,15 +158,7 @@ describe('match rewards', () => {
     });
   });
 
-  it('adds the duel winner and draw bonuses', () => {
-    const duel: MatchRewardInput = { ...solo, mode: 'DUEL', correctCount: 1 };
-
-    expect(matchReward({ ...duel, outcome: 'WIN' })).toEqual({ xp: 50, coins: 22 });
-    expect(matchReward({ ...duel, outcome: 'DRAW' })).toEqual({ xp: 30, coins: 12 });
-    expect(matchReward({ ...duel, outcome: 'LOSS' })).toEqual({ xp: 20, coins: 7 });
-  });
-
-  it('pays a party winner and a party draw like a duel', () => {
+  it('adds the party winner and draw bonuses', () => {
     const party: MatchRewardInput = { ...solo, mode: 'PARTY', correctCount: 1 };
 
     expect(matchReward({ ...party, outcome: 'WIN' })).toEqual({ xp: 50, coins: 22 });

@@ -9,7 +9,7 @@ import {
 describe('sabotage charges', () => {
   it('start at one in a party and at zero everywhere else', () => {
     expect(startingCharges('PARTY')).toBe(1);
-    expect(startingCharges('DUEL')).toBe(0);
+    expect(startingCharges('TEAM')).toBe(0);
     expect(startingCharges('SOLO')).toBe(0);
   });
 
@@ -36,6 +36,7 @@ describe('sabotage validation', () => {
   const valid: SabotageAttempt = {
     mode: 'PARTY',
     type: 'FOG',
+    owned: true,
     questionOpen: true,
     fromUserId: 'ana',
     charges: 1,
@@ -48,7 +49,11 @@ describe('sabotage validation', () => {
   });
 
   it('works only in party matches', () => {
-    expect(sabotageError({ ...valid, mode: 'DUEL' })).toMatch(/only for party/);
+    expect(sabotageError({ ...valid, mode: 'TEAM' })).toMatch(/only for party/);
+  });
+
+  it('needs to be bought in the shop first, even with charges to spare', () => {
+    expect(sabotageError({ ...valid, owned: false, charges: 2 })).toMatch(/get it in the shop/);
   });
 
   it('works only while a question is open', () => {
@@ -83,6 +88,7 @@ describe('a shield', () => {
   const shield: SabotageAttempt = {
     mode: 'PARTY',
     type: 'SHIELD',
+    owned: true,
     questionOpen: true,
     fromUserId: 'ana',
     charges: 1,

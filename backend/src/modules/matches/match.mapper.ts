@@ -1,6 +1,7 @@
 import { MatchMode, Prisma, Question } from '@prisma/client';
 import { toChestView } from '../chests/chest.mapper';
 import { PathResult } from '../learning-paths/learning-paths.types';
+import { ownedSabotages, SABOTAGE_ITEMS_SELECT } from '../shop/sabotage-items';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
 import {
   LivePlayerStats,
@@ -51,7 +52,10 @@ export const MATCH_RESULT_INCLUDE = {
 
 export const SESSION_SETUP_INCLUDE = {
   quiz: { include: { questions: { orderBy: { position: 'asc' } } } },
-  players: { orderBy: { joinedAt: 'asc' }, select: { userId: true } },
+  players: {
+    orderBy: { joinedAt: 'asc' },
+    select: { userId: true, user: { select: { items: SABOTAGE_ITEMS_SELECT } } },
+  },
 } satisfies Prisma.MatchInclude;
 
 export type MatchWithPlayers = Prisma.MatchGetPayload<{ include: typeof MATCH_VIEW_INCLUDE }>;
@@ -170,7 +174,10 @@ export function toSessionSetup(match: SessionSetupRow): SessionSetup {
         difficulty: match.quiz.difficulty,
         timePerQuestion: match.quiz.timePerQuestion,
       },
-      playerIds: match.players.map((player) => player.userId),
+      players: match.players.map((player) => ({
+        userId: player.userId,
+        sabotages: ownedSabotages(player.user.items),
+      })),
     },
     questions: match.quiz.questions,
   };
@@ -191,7 +198,7 @@ function toMatchPlayerView(
   };
 }
 
-/** The best-scoring other player: the duel opponent, the team partner or the party rival. */
+/** The best-scoring other player: the team partner or the best party rival. */
 function bestOtherPlayer(players: PlayerWithUser[], userId: string): PlayerWithUser | undefined {
   return byScore(players.filter((player) => player.userId !== userId))[0];
 }
