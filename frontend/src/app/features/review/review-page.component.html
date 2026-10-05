@@ -1,0 +1,95 @@
+<app-page-header
+  title="Mistakes notebook"
+  subtitle="Every question you miss lands here, so you can learn it for good."
+/>
+
+@if (!loaded() && error()) {
+  <app-empty-state
+    role="alert"
+    title="We couldn't open your notebook"
+    [text]="error() ?? ''"
+    image="potion"
+  >
+    <button type="button" class="btn btn-secondary" (click)="load()">Try again</button>
+  </app-empty-state>
+} @else if (!loaded()) {
+  <div class="panel flex justify-center p-10">
+    <app-spinner label="Opening your notebook..." [showLabel]="true" />
+  </div>
+} @else if (total() === 0) {
+  <app-empty-state
+    title="No mistakes to review. Great job!"
+    text="When you miss a question in a quiz, it shows up here so you can practice it later."
+    image="treasure"
+  >
+    <a routerLink="/library" class="btn btn-primary">Play a quiz</a>
+    <a routerLink="/home" class="btn btn-secondary">Back home</a>
+  </app-empty-state>
+} @else {
+  <section
+    class="panel mb-6 flex flex-col gap-5 p-5 md:flex-row md:items-center"
+    aria-labelledby="due-title"
+  >
+    @if (user(); as user) {
+      <div class="hidden h-24 w-24 shrink-0 items-end justify-center overflow-hidden sm:flex">
+        <app-hero-sprite [heroKey]="user.avatarKey" [scale]="3" [decorative]="true" />
+      </div>
+    }
+    <div class="flex-1">
+      <h2 id="due-title" class="text-muted">Due today</h2>
+      <p class="font-display text-4xl text-torch-300">{{ dueToday() }}</p>
+      <p class="mt-1">
+        {{ total() }} {{ total() === 1 ? 'question' : 'questions' }} in your notebook
+      </p>
+    </div>
+    <div class="flex flex-col gap-2 md:w-72">
+      <button
+        type="button"
+        class="btn btn-primary btn-lg"
+        [disabled]="dueToday() === 0 || starting()"
+        (click)="practice()"
+      >
+        @if (starting()) {
+          <app-spinner label="Getting ready" />
+          Getting ready...
+        } @else {
+          Practice now
+        }
+      </button>
+      @if (dueToday() === 0 && nextDueOn(); as nextDueOn) {
+        <p class="text-sm text-muted">
+          Nothing is due today. Come back {{ nextDueOn | relativeTime: 'day' }}!
+        </p>
+      } @else {
+        <p class="text-sm text-muted">
+          Up to {{ practiceSize }} questions, {{ practiceSeconds }} seconds each.
+        </p>
+      }
+    </div>
+  </section>
+
+  <section class="panel mb-6 p-4" aria-labelledby="how-title">
+    <h2 id="how-title" class="mb-3 font-semibold">How the notebook works</h2>
+    <ol class="flex flex-wrap items-center gap-2">
+      <li class="badge badge-ruby">Missed</li>
+      @for (days of intervals; track days) {
+        <li class="h-[3px] w-4 bg-fog-400" aria-hidden="true"></li>
+        <li class="badge">Again in {{ days }} {{ days === 1 ? 'day' : 'days' }}</li>
+      }
+      <li class="h-[3px] w-4 bg-fog-400" aria-hidden="true"></li>
+      <li class="badge badge-jade">Mastered!</li>
+    </ol>
+    <p class="mt-3 text-sm text-muted">
+      Get a question right on its review day and it moves on. Miss it again and it starts over.
+    </p>
+  </section>
+
+  <h2 class="mb-3 text-2xl">Your cards</h2>
+  <ul class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    @for (card of cards(); track card.id) {
+      <li>
+        <app-review-card [card]="card" />
+      </li>
+    }
+  </ul>
+}

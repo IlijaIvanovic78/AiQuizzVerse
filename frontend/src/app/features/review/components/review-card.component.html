@@ -1,0 +1,33 @@
+<article class="panel-parchment flex h-full flex-col gap-3 p-4">
+  <header class="flex flex-wrap items-center justify-between gap-2">
+    @if (due()) {
+      <span class="badge badge-torch">Due today</span>
+    } @else {
+      <span class="badge badge-fog">Next review {{ card().dueOn | relativeTime: 'day' }}</span>
+    }
+    <span class="truncate text-sm text-muted">From: {{ card().quizTitle }}</span>
+  </header>
+
+  <p class="font-read text-xl font-bold leading-snug">{{ card().questionText }}</p>
+
+  <p class="read-text flex items-start gap-2">
+    <app-pixel-icon name="check" class="mt-1" />
+    <span>
+      Answer:
+      <strong>{{ card().correctAnswer }}</strong>
+    </span>
+  </p>
+
+  <footer
+    class="mt-auto flex flex-wrap items-center justify-between gap-2 border-t-2 border-dashed border-ink/30 pt-3 text-sm"
+  >
+    <span class="flex items-center gap-1.5">
+      <app-pixel-icon name="cross" [scale]="1" />
+      Missed {{ card().timesWrong }} {{ card().timesWrong === 1 ? 'time' : 'times' }}
+    </span>
+    <span class="flex items-center gap-2">
+      <span class="text-muted">Mastery</span>
+      <app-star-rating [stars]="card().correctStreak" [max]="reviewsToMaster" [scale]="1" />
+    </span>
+  </footer>
+</article>
