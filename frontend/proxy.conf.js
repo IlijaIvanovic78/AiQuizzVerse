@@ -5,6 +5,7 @@ module.exports = {
     target,
     secure: false,
     changeOrigin: true,
+    xfwd: true,
     pathRewrite: { '^/api': '' },
   },
   '/socket.io': {
