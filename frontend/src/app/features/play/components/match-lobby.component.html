@@ -1,0 +1,123 @@
+<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <section class="panel p-4 md:p-5" aria-labelledby="invite-code-title">
+    <h2 id="invite-code-title" class="text-xl">Invite code</h2>
+    <p class="text-muted">Your friend opens "Join a game" and types this code.</p>
+    <p class="my-4 flex justify-center gap-1.5 sm:gap-2">
+      <span class="sr-only">Invite code {{ spokenCode() }}</span>
+      @for (letter of letters(); track $index) {
+        <span
+          class="grid h-12 w-10 place-items-center rounded border-3 border-outline bg-parchment-100 font-display text-lg text-ink shadow-[inset_0_-4px_0_rgba(59,42,26,0.22)] sm:h-14 sm:w-12 sm:text-xl"
+          aria-hidden="true"
+        >
+          {{ letter }}
+        </span>
+      }
+    </p>
+    <div class="flex flex-wrap gap-2">
+      <button
+        type="button"
+        class="btn btn-primary flex-1 whitespace-nowrap px-3"
+        (click)="copyCode.emit()"
+      >
+        Copy code
+      </button>
+      <button
+        type="button"
+        class="btn btn-secondary flex-1 whitespace-nowrap px-3"
+        (click)="copyLink.emit()"
+      >
+        Copy link
+      </button>
+      @if (canShare()) {
+        <button type="button" class="btn btn-secondary flex-1 px-3" (click)="share.emit()">
+          Share
+        </button>
+      }
+    </div>
+    <p class="mt-3 break-all text-sm text-muted">{{ shareUrl() }}</p>
+  </section>
+
+  <section class="panel flex flex-col gap-4 p-4 md:p-5" aria-live="polite">
+    <div>
+      <h2 class="text-xl">{{ status().title }}</h2>
+      <p class="text-muted">{{ status().text }}</p>
+    </div>
+
+    <div>
+      <h3 class="mb-2 font-semibold">Players {{ match().players.length }}/{{ playersNeeded }}</h3>
+      @for (player of match().players; track player.user.id) {
+        <div
+          class="mb-2 flex items-center gap-2 rounded border-2 border-outline bg-night-700 py-1 pl-1 pr-3"
+        >
+          <span class="flex h-11 w-11 shrink-0 items-end justify-center overflow-hidden">
+            <app-hero-sprite [heroKey]="player.user.avatarKey" [scale]="2" [decorative]="true" />
+          </span>
+          <span class="min-w-0 flex-1 truncate font-semibold">
+            {{ player.user.id === meId() ? 'You' : player.user.username }}
+          </span>
+          @if (player.user.id === match().hostId) {
+            <span class="badge badge-torch">Host</span>
+          }
+          @if (player.user.id !== meId()) {
+            @if (player.isConnected) {
+              <span class="badge badge-jade">Here</span>
+            } @else {
+              <span class="badge badge-fog">Not here yet</span>
+            }
+          }
+          <app-level-badge class="hidden sm:inline-flex" [level]="player.user.level" />
+        </div>
+      }
+    </div>
+
+    @if (isHost()) {
+      <button
+        type="button"
+        class="btn btn-success btn-lg"
+        [disabled]="!ready()"
+        (click)="start.emit()"
+      >
+        {{ startLabel() }}
+      </button>
+
+      @if (match().players.length < playersNeeded) {
+        <div>
+          <h3 class="mb-2 font-semibold">Friends online</h3>
+          @for (friend of friends(); track friend.friendshipId) {
+            <div
+              class="mb-2 flex items-center gap-2 rounded border-2 border-outline bg-night-700 py-1 pl-1 pr-2"
+            >
+              <span class="flex h-11 w-11 shrink-0 items-end justify-center overflow-hidden">
+                <app-hero-sprite
+                  [heroKey]="friend.user.avatarKey"
+                  [scale]="2"
+                  [decorative]="true"
+                />
+              </span>
+              <span class="min-w-0 flex-1 truncate font-semibold">{{ friend.user.username }}</span>
+              <app-level-badge class="hidden sm:inline-flex" [level]="friend.user.level" />
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                [disabled]="invitedIds().includes(friend.user.id)"
+                (click)="invite.emit(friend.user.id)"
+              >
+                {{ invitedIds().includes(friend.user.id) ? 'Invited' : 'Invite' }}
+              </button>
+            </div>
+          } @empty {
+            <p class="text-muted">
+              No friends are online right now. Send them the code instead, or
+              <a routerLink="/friends" class="link">find new friends</a>.
+            </p>
+          }
+        </div>
+      }
+    } @else {
+      <p class="flex items-center gap-3">
+        <app-spinner />
+        Waiting for the host to start...
+      </p>
+    }
+  </section>
+</div>

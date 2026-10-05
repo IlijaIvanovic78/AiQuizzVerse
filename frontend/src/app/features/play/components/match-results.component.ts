@@ -1,0 +1,131 @@
+import { ChangeDetectionStrategy, Component, Signal, computed, input, output } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { switchMap } from 'rxjs';
+import { MatchResult, MatchResultPlayer } from '../../../core/models/match.model';
+import { BOOST_LABELS } from '../../../shared/components/boost-icon.component';
+import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
+import { StarRatingComponent } from '../../../shared/components/star-rating.component';
+import { StatTileComponent } from '../../../shared/components/stat-tile.component';
+import { TreasureChestComponent } from '../../../shared/components/treasure-chest.component';
+import { starsForAccuracy } from '../../../shared/stars';
+import { ArenaFighter } from '../arena-fighter';
+import { countUp } from '../count-up';
+import {
+  accuracyPercent,
+  correctAnswers,
+  findPlayer,
+  missedQuestions,
+  resultHeadline,
+} from '../match-result';
+import { LEVEL_UP_SOUND_DELAY_MS } from '../play.constants';
+import { BattleArenaComponent } from './battle-arena.component';
+import { MistakeListComponent } from './mistake-list.component';
+
+const HEADLINE_COLORS = {
+  victory: 'text-torch-300',
+  almost: 'text-mana-400',
+  draw: 'text-parchment-100',
+};
+
+@Component({
+  selector: 'app-match-results',
+  imports: [
+    RouterLink,
+    BattleArenaComponent,
+    MistakeListComponent,
+    PixelIconComponent,
+    StarRatingComponent,
+    StatTileComponent,
+    TreasureChestComponent,
+  ],
+  templateUrl: './match-results.component.html',
+  host: { class: 'block' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class MatchResultsComponent {
+  readonly result = input.required<MatchResult>();
+  readonly meId = input.required<string>();
+  readonly level = input(1);
+  readonly busy = input(false);
+  readonly rivalLeft = input(false);
+  readonly playAgain = output<void>();
+  readonly practice = output<string[]>();
+  readonly rematch = output<void>();
+
+  protected readonly me = computed(() => findPlayer(this.result(), this.meId()));
+  protected readonly others = computed(() =>
+    this.result().players.filter((player) => player.user.id !== this.meId()),
+  );
+  protected readonly headline = computed(() => resultHeadline(this.result(), this.meId()));
+  protected readonly headlineColor = computed(() => HEADLINE_COLORS[this.headline().tone]);
+  protected readonly accuracy = computed(() =>
+    accuracyPercent(this.me()?.correctCount ?? 0, this.result().questionCount),
+  );
+  protected readonly stars = computed(() => starsForAccuracy(this.accuracy()));
+  protected readonly missed = computed(() => missedQuestions(this.result()));
+  protected readonly teamCorrect = computed(() => correctAnswers(this.result()));
+  protected readonly nextStep = computed(() => {
+    const path = this.result().path;
+    return path?.cleared && path.nextStepId ? path : null;
+  });
+  protected readonly stepReward = computed(() => {
+    const reward = this.result().path?.reward;
+    if (!reward) {
+      return null;
+    }
+    const boost = reward.boost ? ` and a power-up: ${BOOST_LABELS[reward.boost]}` : '';
+    return `+${reward.coins} coins${boost}`;
+  });
+
+  protected readonly leftFighters = computed(() => {
+    const team = this.result().mode === 'TEAM' ? this.others() : [];
+    return [this.me(), ...team]
+      .filter((player) => player !== null)
+      .map((player) => this.toFighter(player));
+  });
+  protected readonly rival = computed(() => {
+    const rival = this.others().at(0);
+    return this.result().mode === 'DUEL' && rival ? this.toFighter(rival) : null;
+  });
+  // Coins fly into the chest once when the player earned some treasure.
+  protected readonly strikeKey = computed(() => (this.teamCorrect() > 0 ? 1 : 0));
+
+  protected readonly shownScore = this.countTo(() => this.me()?.score ?? 0);
+  protected readonly shownAccuracy = this.countTo(() => this.accuracy());
+  protected readonly shownXp = this.countTo(() => this.me()?.xpEarned ?? 0);
+  protected readonly shownCoins = this.countTo(() => this.me()?.coinsEarned ?? 0);
+  protected readonly levelUpDelayMs = LEVEL_UP_SOUND_DELAY_MS;
+
+  protected practiceMistakes(): void {
+    this.practice.emit(this.missed().map((question) => question.questionId));
+  }
+
+  private toFighter(player: MatchResultPlayer): ArenaFighter {
+    return {
+      id: player.user.id,
+      name: player.user.username,
+      heroKey: player.user.avatarKey,
+      petKey: player.user.petKey,
+      isMe: player.user.id === this.meId(),
+      score: player.score,
+      action: this.celebrates(player) ? 'attack' : 'idle',
+      points: null,
+      answered: false,
+      away: false,
+    };
+  }
+
+  private celebrates(player: MatchResultPlayer): boolean {
+    if (this.result().mode === 'SOLO') {
+      return this.headline().tone === 'victory';
+    }
+    return player.isWinner;
+  }
+
+  private countTo(target: () => number): Signal<number> {
+    return toSignal(toObservable(computed(target)).pipe(switchMap(countUp)), {
+      initialValue: 0,
+    });
+  }
+}

@@ -1,0 +1,46 @@
+<div class="panel px-3 py-2">
+  <ul class="flex items-start gap-2">
+    @for (fighter of fighters(); track fighter.id) {
+      @if (mode() === 'DUEL' && !$first) {
+        <li class="self-center font-display text-sm text-ruby-400" aria-hidden="true">VS</li>
+      }
+      <li
+        class="flex min-w-0 flex-1 flex-col gap-0.5"
+        [class.items-end]="mode() === 'DUEL' && !$first"
+      >
+        <span class="max-w-full truncate font-semibold" [class.text-torch-300]="fighter.isMe">
+          {{ fighter.isMe ? 'You' : fighter.name }}
+        </span>
+        <!-- The badge sits next to the points, so a long name still fits on a phone. -->
+        <span
+          class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted"
+          [class.justify-end]="mode() === 'DUEL' && !$first"
+        >
+          <span
+            ><span class="font-display text-gold">{{ fighter.score }}</span> pts</span
+          >
+          @if (fighter.away) {
+            <span class="badge badge-fog">Left</span>
+          } @else if (showAnswered() && fighter.answered) {
+            <span class="badge badge-jade">
+              <app-pixel-icon name="check" [scale]="1" />
+              Answered
+            </span>
+          }
+        </span>
+      </li>
+    }
+  </ul>
+  @if (mode() === 'DUEL') {
+    <div
+      class="mt-2 flex h-3 overflow-hidden rounded border-2 border-outline bg-ruby-400"
+      role="img"
+      [attr.aria-label]="'You have ' + myShare() + '% of the points'"
+    >
+      <div
+        class="h-full bg-mana-400 transition-[width] duration-500 ease-out"
+        [style.width.%]="myShare()"
+      ></div>
+    </div>
+  }
+</div>

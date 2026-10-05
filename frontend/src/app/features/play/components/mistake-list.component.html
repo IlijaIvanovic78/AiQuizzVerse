@@ -1,0 +1,41 @@
+<section aria-labelledby="mistakes-title">
+  <h2 id="mistakes-title" class="mb-3 text-2xl">Review your mistakes</h2>
+
+  @if (questions().length === 0) {
+    <p class="panel flex items-center gap-3 p-4">
+      <app-pixel-icon name="trophy" [scale]="2" />
+      Perfect run! You did not miss a single question.
+    </p>
+  } @else {
+    <ol class="flex flex-col gap-3">
+      @for (question of shownRows(); track question.questionId) {
+        <li class="panel-parchment animate-banner-in p-4">
+          <p class="font-read text-xl font-bold leading-snug">{{ question.text }}</p>
+          <p class="read-text mt-2 flex items-start gap-2">
+            <app-pixel-icon name="cross" class="mt-1" />
+            <span>
+              Your answer:
+              @if (question.myAnswer === null) {
+                <strong>no answer</strong>
+              } @else {
+                <strong>{{ question.options[question.myAnswer] }}</strong>
+              }
+            </span>
+          </p>
+          <p class="read-text mt-1 flex items-start gap-2">
+            <app-pixel-icon name="check" class="mt-1" />
+            <span>
+              Right answer: <strong>{{ question.options[question.correctIndex] }}</strong>
+            </span>
+          </p>
+          <p class="read-text mt-2 border-t-2 border-dashed border-ink/30 pt-2">
+            {{ question.explanation }}
+          </p>
+        </li>
+      }
+    </ol>
+    <p class="mt-3 text-muted">
+      These questions are now in your Mistakes notebook, and they come back for review tomorrow.
+    </p>
+  }
+</section>

@@ -1,0 +1,28 @@
+<header class="mb-3 flex items-start gap-3 md:mb-4">
+  <div class="min-w-0 flex-1">
+    <p class="flex flex-wrap items-center gap-2 text-sm text-muted">
+      <span class="badge badge-torch">{{ modeLabel() }}</span>
+      @if (theme(); as theme) {
+        <app-theme-badge [theme]="theme" />
+      }
+      @if (progressLabel()) {
+        <span class="hidden font-semibold text-parchment-100 sm:inline">{{ progressLabel() }}</span>
+      }
+    </p>
+    <h1 class="mt-1 truncate text-xl text-parchment-100 md:text-3xl">{{ title() }}</h1>
+  </div>
+  <div class="flex shrink-0 items-center gap-2">
+    <button
+      type="button"
+      class="btn btn-ghost btn-sm hidden sm:inline-flex"
+      (click)="toggleSound.emit()"
+    >
+      Sound {{ muted() ? 'off' : 'on' }}
+    </button>
+    @if (quitLabel(); as quitLabel) {
+      <button type="button" class="btn btn-danger btn-sm" (click)="quit.emit()">
+        {{ quitLabel }}
+      </button>
+    }
+  </div>
+</header>

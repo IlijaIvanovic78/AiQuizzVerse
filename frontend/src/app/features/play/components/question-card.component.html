@@ -1,0 +1,22 @@
+<article class="panel-parchment p-3 sm:p-4 md:p-5" aria-labelledby="question-text">
+  <header class="mb-2 flex items-center justify-between gap-3">
+    <span class="text-sm font-semibold text-muted">Question {{ number() }} of {{ total() }}</span>
+    @if (canReadAloud()) {
+      <button type="button" class="btn btn-secondary btn-sm" (click)="readAloud.emit()">
+        {{ speaking() ? 'Stop reading' : 'Read aloud' }}
+      </button>
+    }
+  </header>
+  <h2 id="question-text" class="font-read text-[1.3rem] font-bold leading-snug md:text-2xl">
+    {{ text() }}
+  </h2>
+  @if (hint(); as hint) {
+    <p
+      class="read-text mt-3 flex items-start gap-2 rounded border-2 border-dashed border-ink/40 bg-parchment-200 px-3 py-2"
+      animate.enter="fade-enter"
+    >
+      <app-pixel-icon name="bolt" class="mt-1" />
+      <span><strong>Hint:</strong> {{ hint }}</span>
+    </p>
+  }
+</article>

@@ -3,6 +3,7 @@ import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
 import { heroGuard } from './core/auth/hero.guard';
 import { noHeroGuard } from './core/auth/no-hero.guard';
+import { leaveMatchGuard } from './features/play/leave-match.guard';
 
 export const routes: Routes = [
   {
@@ -61,6 +62,7 @@ export const routes: Routes = [
       {
         path: 'play/:matchId',
         title: 'Play',
+        canDeactivate: [leaveMatchGuard],
         loadComponent: () =>
           import('./features/play/match-page.component').then((m) => m.MatchPageComponent),
       },

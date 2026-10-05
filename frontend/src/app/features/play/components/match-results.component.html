@@ -1,0 +1,157 @@
+<div class="mx-auto flex max-w-3xl flex-col gap-4">
+  <section aria-labelledby="result-title">
+    <app-battle-arena
+      [banner]="true"
+      [leftFighters]="leftFighters()"
+      [rightFighter]="rival()"
+      [showChest]="result().mode !== 'DUEL'"
+      [strikeKey]="strikeKey()"
+    />
+    <div class="panel -mt-[3px] flex flex-col items-center gap-2 px-4 pb-5 pt-4 text-center">
+      <p class="text-sm font-semibold text-muted">{{ result().quizTitle }}</p>
+      <h1
+        id="result-title"
+        class="animate-banner-in text-3xl md:text-4xl"
+        [class]="headlineColor()"
+      >
+        {{ headline().title }}
+      </h1>
+      <p class="text-lg">{{ headline().subtitle }}</p>
+      @if (result().mode === 'SOLO') {
+        <app-star-rating [stars]="stars()" [scale]="3" [animated]="true" />
+      }
+      @if (rivalLeft()) {
+        <p class="text-muted">Your rival left the match, so the win is yours.</p>
+      }
+    </div>
+  </section>
+
+  @if (result().leveledUp) {
+    <section
+      class="panel-parchment animate-banner-in flex items-center gap-4 p-4"
+      [style.animation-delay.ms]="levelUpDelayMs"
+    >
+      <app-pixel-icon name="trophy" [scale]="3" />
+      <div>
+        <h2 class="text-2xl">Level up!</h2>
+        <p>You reached level {{ level() }}. New heroes may be waiting in the shop.</p>
+      </div>
+    </section>
+  }
+
+  @if (result().kind === 'PATH_STEP' && stepReward(); as reward) {
+    <section class="panel-parchment flex items-center gap-4 p-4">
+      <img
+        src="/assets/images/icons/treasure.webp"
+        alt=""
+        width="256"
+        height="150"
+        class="h-12 w-auto"
+      />
+      <div>
+        <h2 class="text-xl">Step reward</h2>
+        <p>{{ reward }}</p>
+      </div>
+    </section>
+  }
+
+  @if (result().mode !== 'DUEL') {
+    <app-treasure-chest
+      [correct]="teamCorrect()"
+      [total]="result().players.length * result().questionCount"
+      [label]="result().mode === 'TEAM' ? 'Team chest' : 'Treasure chest'"
+    />
+  }
+
+  <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+    <app-stat-tile label="Score" [value]="shownScore()" icon="trophy" />
+    <app-stat-tile label="Accuracy" [value]="shownAccuracy() + '%'" icon="star" />
+    <app-stat-tile label="XP earned" [value]="'+' + shownXp()" icon="bolt" />
+    <app-stat-tile label="Coins earned" [value]="'+' + shownCoins()" icon="coin" />
+  </div>
+
+  @if (result().coinCapReached) {
+    <p class="panel flex items-center gap-3 p-3">
+      <app-pixel-icon name="coin" [scale]="2" />
+      Your coin bag is full for today. XP still counts!
+    </p>
+  }
+
+  @if (result().mode !== 'SOLO') {
+    <section class="panel p-4" aria-labelledby="players-title">
+      <h2 id="players-title" class="mb-3 text-xl">
+        {{ result().mode === 'DUEL' ? 'Duel scores' : 'Team scores' }}
+      </h2>
+      <ul class="flex flex-col gap-2">
+        @for (player of result().players; track player.user.id) {
+          <li
+            class="flex items-center gap-3 rounded border-2 border-outline bg-night-700 px-3 py-2"
+          >
+            @if (player.isWinner) {
+              <app-pixel-icon name="trophy" label="Winner" />
+            }
+            <span class="min-w-0 flex-1 truncate font-semibold">
+              {{ player.user.id === meId() ? 'You' : player.user.username }}
+            </span>
+            <span class="text-sm text-muted">
+              {{ player.correctCount }}/{{ result().questionCount }}
+              <span class="hidden sm:inline">right</span>
+            </span>
+            <span class="font-display text-sm text-gold">{{ player.score }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
+  <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+    @if (nextStep(); as path) {
+      <a
+        class="btn btn-primary btn-lg"
+        [routerLink]="['/paths', path.pathId]"
+        [queryParams]="{ step: path.nextStepId }"
+      >
+        Next step
+      </a>
+    }
+    @if (result().mode === 'SOLO') {
+      <button
+        type="button"
+        class="btn btn-lg"
+        [class.btn-primary]="!nextStep()"
+        [class.btn-secondary]="nextStep()"
+        [disabled]="busy()"
+        (click)="playAgain.emit()"
+      >
+        {{ result().kind === 'PATH_STEP' ? 'Retry' : 'Play again' }}
+      </button>
+    } @else {
+      <button
+        type="button"
+        class="btn btn-primary btn-lg"
+        [disabled]="busy()"
+        (click)="rematch.emit()"
+      >
+        Rematch
+      </button>
+    }
+    @if (missed().length > 0) {
+      <button
+        type="button"
+        class="btn btn-secondary btn-lg"
+        [disabled]="busy()"
+        (click)="practiceMistakes()"
+      >
+        Practice these mistakes
+      </button>
+    }
+    @if (result().path; as path) {
+      @if (!nextStep()) {
+        <a class="btn btn-secondary btn-lg" [routerLink]="['/paths', path.pathId]">Back to path</a>
+      }
+    }
+    <a class="btn btn-ghost btn-lg" routerLink="/home">Home</a>
+  </div>
+
+  <app-mistake-list [questions]="missed()" />
+</div>

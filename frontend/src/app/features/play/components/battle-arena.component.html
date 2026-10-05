@@ -1,0 +1,114 @@
+<div class="arena-window">
+  <div
+    class="arena-scene"
+    role="img"
+    [attr.aria-label]="description()"
+    [style.--pixel.px]="heroScale()"
+  >
+    <picture>
+      <source media="(min-width: 768px)" srcset="/assets/images/arena.webp" />
+      <img
+        src="/assets/images/arena-small.webp"
+        alt=""
+        width="768"
+        height="512"
+        class="arena-backdrop"
+      />
+    </picture>
+
+    <div class="arena-spot arena-spot-left">
+      @for (fighter of leftFighters(); track fighter.id) {
+        <!-- Two team heroes fill the platform, so the pet comes along only for a single hero. -->
+        @if ($count === 1 && fighter.petKey) {
+          <app-pet-sprite
+            class="arena-pet"
+            [petKey]="fighter.petKey"
+            [scale]="petScale()"
+            [decorative]="true"
+          />
+        }
+        <app-arena-fighter class="arena-fighter" [fighter]="fighter" [scale]="heroScale()" />
+      }
+      @if (emptySide() === 'left') {
+        <div class="arena-empty" aria-hidden="true">
+          <span class="animate-blink font-display text-lg">?</span>
+        </div>
+      }
+    </div>
+
+    <div class="arena-spot arena-spot-right">
+      @if (rightFighter(); as rival) {
+        <app-arena-fighter
+          class="arena-fighter"
+          [fighter]="rival"
+          [scale]="heroScale()"
+          [flip]="true"
+        />
+        @if (rival.petKey) {
+          <app-pet-sprite
+            class="arena-pet"
+            [petKey]="rival.petKey"
+            [scale]="petScale()"
+            [flip]="true"
+            [decorative]="true"
+          />
+        }
+      } @else if (emptySide() === 'right') {
+        <div class="arena-empty" aria-hidden="true">
+          <span class="animate-blink font-display text-lg">?</span>
+        </div>
+      } @else if (showChest()) {
+        @for (strike of strikes(); track strike) {
+          <div class="arena-chest">
+            <img
+              src="/assets/images/icons/chest.webp"
+              alt=""
+              width="256"
+              height="128"
+              class="arena-chest-image"
+              [class.animate-chest-bounce]="strike > 0"
+              [style.animation-delay.ms]="coinsLandMs"
+            />
+            @if (strike > 0) {
+              <div class="arena-burst" aria-hidden="true">
+                @for (coin of burstCoins; track $index) {
+                  <img
+                    src="/assets/images/icons/coin.png"
+                    alt=""
+                    width="16"
+                    height="16"
+                    class="arena-burst-coin pixelated animate-coin-burst"
+                    [style.--burst-x]="coin.x"
+                    [style.--burst-y]="coin.y"
+                    [style.animation-delay.ms]="coin.delayMs"
+                  />
+                }
+              </div>
+            }
+          </div>
+        }
+      }
+    </div>
+
+    @if (showChest() && strikeKey() > 0) {
+      @for (strike of strikes(); track strike) {
+        <div class="coin-trail" aria-hidden="true">
+          @for (delay of flyingCoinDelays; track $index) {
+            <img
+              src="/assets/images/icons/coin.png"
+              alt=""
+              width="16"
+              height="16"
+              class="flying-coin pixelated"
+              [style.animation-delay.ms]="delay"
+            />
+          }
+        </div>
+      }
+    }
+  </div>
+
+  <div class="arena-overlay">
+    <ng-content />
+  </div>
+</div>

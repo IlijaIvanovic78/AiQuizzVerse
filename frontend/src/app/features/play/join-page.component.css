@@ -1,0 +1,47 @@
+/* A slice of the arena: the player's hero on the left platform, a mystery friend on the right. */
+.join-stage {
+  position: relative;
+  height: 9rem;
+  border-bottom: 3px solid var(--outline);
+  background: var(--night-900) url('/assets/images/arena-small.webp') center 78% / cover;
+}
+
+.join-spot {
+  position: absolute;
+  bottom: 22%;
+  display: flex;
+  align-items: flex-end;
+  transform: translateX(-50%);
+}
+
+.join-spot-left {
+  left: 22%;
+}
+
+.join-spot-right {
+  left: 78%;
+}
+
+.join-spot-left app-pet-sprite + app-hero-sprite {
+  margin-left: -1.75rem;
+}
+
+.join-mystery {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3.5rem;
+  margin-bottom: 0.25rem;
+  border: 3px dashed var(--fog-300);
+  border-radius: 4px;
+  background-color: rgba(18, 13, 31, 0.6);
+  color: var(--fog-200);
+}
+
+.join-code-input {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.4rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+  text-transform: uppercase;
+}

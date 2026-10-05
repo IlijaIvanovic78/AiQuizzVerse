@@ -1,0 +1,173 @@
+:host {
+  display: block;
+}
+
+/*
+ * The scene is the whole 3:2 arena picture; the window shows the band around the two
+ * platforms. Heroes are placed in scene percentages, so they stay on the platforms at every size.
+ */
+.arena-window {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 5 / 2;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background-color: var(--night-950);
+}
+
+.arena-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.35),
+    inset 0 3px 0 rgba(255, 255, 255, 0.07);
+}
+
+.arena-scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  container-type: inline-size;
+  transform: translateY(-27%);
+}
+
+@media (min-width: 768px) {
+  .arena-window {
+    aspect-ratio: 3 / 1;
+  }
+
+  .arena-scene {
+    transform: translateY(-28%);
+  }
+}
+
+@media (min-width: 1024px) {
+  :host(:not(.arena-banner)) .arena-window {
+    aspect-ratio: 3 / 2;
+  }
+
+  :host(:not(.arena-banner)) .arena-scene {
+    transform: none;
+  }
+}
+
+.arena-backdrop {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arena-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.arena-spot {
+  position: absolute;
+  bottom: 34.5%;
+  display: flex;
+  align-items: flex-end;
+  transform: translateX(-50%);
+}
+
+.arena-spot-left {
+  left: 19%;
+}
+
+.arena-spot-right {
+  left: 81.5%;
+}
+
+/* Sprite frames have empty space around the character, so neighbours overlap a little. */
+.arena-pet + .arena-fighter,
+.arena-fighter + .arena-pet {
+  margin-left: calc(var(--pixel) * -14);
+}
+
+.arena-fighter + .arena-fighter {
+  margin-left: calc(var(--pixel) * -14);
+}
+
+.arena-fighter + .arena-empty {
+  margin-left: calc(var(--pixel) * -7);
+}
+
+.arena-empty {
+  display: grid;
+  place-items: center;
+  width: calc(var(--pixel) * 16);
+  height: calc(var(--pixel) * 18);
+  border: 3px dashed var(--fog-300);
+  border-radius: 4px;
+  background-color: rgba(18, 13, 31, 0.55);
+  color: var(--fog-200);
+}
+
+.arena-chest {
+  position: relative;
+  width: 19cqw;
+}
+
+.arena-chest-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.arena-burst {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+}
+
+.arena-burst-coin {
+  position: absolute;
+  width: calc(var(--pixel) * 5);
+  max-width: none;
+  height: auto;
+  margin: calc(var(--pixel) * -2.5);
+  animation-fill-mode: both;
+}
+
+/* Coins leave the heroes, arc over the arena and drop into the chest. */
+.coin-trail {
+  position: absolute;
+  top: 56%;
+  left: 22%;
+}
+
+.flying-coin {
+  position: absolute;
+  width: calc(var(--pixel) * 5);
+  max-width: none;
+  height: auto;
+  animation: coin-travel 620ms ease-in both;
+}
+
+@keyframes coin-travel {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(30cqw, -14cqw) scale(1.1);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(59cqw, 2cqw) scale(0.7);
+    opacity: 0;
+  }
+}

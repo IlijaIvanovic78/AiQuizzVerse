@@ -1,0 +1,38 @@
+<ol
+  class="grid gap-3"
+  [class]="shortOptions() ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-1'"
+  aria-label="Answers"
+>
+  @for (answer of answers(); track $index) {
+    <li>
+      <button
+        type="button"
+        class="answer"
+        [class]="'answer-' + answer.state"
+        [class.animate-shake]="answer.state === 'wrong'"
+        [disabled]="answer.disabled"
+        [attr.aria-keyshortcuts]="answer.key"
+        (click)="picked.emit($index)"
+      >
+        <span class="answer-key" aria-hidden="true">{{ answer.key }}</span>
+        <span class="sr-only">Answer {{ answer.key }}:</span>
+        <span class="flex min-w-0 flex-1 flex-col items-start gap-1">
+          <span class="answer-text">{{ answer.text }}</span>
+          @if (answer.note || answer.pickedBy.length > 0) {
+            <span class="flex flex-wrap gap-1">
+              @if (answer.note; as note) {
+                <span class="answer-note">
+                  <app-pixel-icon [name]="note.icon" [scale]="1" />
+                  {{ note.text }}
+                </span>
+              }
+              @for (name of answer.pickedBy; track name) {
+                <span class="answer-note answer-note-other">{{ name }}</span>
+              }
+            </span>
+          }
+        </span>
+      </button>
+    </li>
+  }
+</ol>

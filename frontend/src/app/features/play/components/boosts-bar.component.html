@@ -1,0 +1,40 @@
+<div class="panel px-3 pb-3 pt-2">
+  <div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 text-sm">
+    <h3 class="font-semibold text-muted">Power-ups</h3>
+    @if (freeHintsLeft() > 0) {
+      <p class="text-muted">
+        {{ freeHintsLeft() }} free {{ freeHintsLeft() === 1 ? 'hint' : 'hints' }}
+      </p>
+    }
+  </div>
+  <!-- Each power-up is an inventory slot with its count in the corner. -->
+  <ul class="grid grid-cols-3 gap-2">
+    @for (boost of boosts(); track boost.type) {
+      <li>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm relative w-full flex-col gap-0.5 px-1 py-1.5"
+          [disabled]="boost.disabled"
+          [title]="boost.description"
+          (click)="used.emit(boost.type)"
+        >
+          <app-boost-icon [type]="boost.type" size="sm" />
+          <span class="whitespace-nowrap">{{ boost.label }}</span>
+          <span
+            class="badge absolute -right-2 -top-2"
+            [class.badge-torch]="boost.count > 0"
+            aria-hidden="true"
+          >
+            {{ boost.count }}
+          </span>
+          <span class="sr-only">
+            , {{ boost.count }} left. {{ boost.description }}.
+            @if (boost.usedNow) {
+              Used on this question.
+            }
+          </span>
+        </button>
+      </li>
+    }
+  </ul>
+</div>

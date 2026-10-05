@@ -1,0 +1,66 @@
+<div class="mx-auto flex max-w-lg flex-col gap-4">
+  <section class="panel overflow-hidden" aria-labelledby="join-title">
+    <div class="join-stage" aria-hidden="true">
+      @if (user(); as user) {
+        <div class="join-spot join-spot-left">
+          @if (user.petKey) {
+            <app-pet-sprite [petKey]="user.petKey" [scale]="2" [decorative]="true" />
+          }
+          <app-hero-sprite [heroKey]="user.avatarKey" [scale]="3" [decorative]="true" />
+        </div>
+      }
+      <div class="join-spot join-spot-right">
+        <span class="join-mystery font-display">?</span>
+      </div>
+    </div>
+
+    <form class="flex flex-col gap-4 p-5" [formGroup]="form" (ngSubmit)="join()">
+      <div>
+        <h1 id="join-title" class="text-3xl">Join a game</h1>
+        <p class="mt-1 text-muted">
+          Type the code your friend sees in their match lobby. It has {{ codeLength }} letters and
+          numbers.
+        </p>
+      </div>
+
+      <div>
+        <label for="invite-code" class="field-label">Invite code</label>
+        <input
+          id="invite-code"
+          class="input join-code-input"
+          formControlName="code"
+          [maxlength]="codeLength"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          placeholder="ABC234"
+          aria-describedby="invite-code-error"
+          [attr.aria-invalid]="showCodeError()"
+          (input)="normalizeCode()"
+        />
+        <div id="invite-code-error" aria-live="polite">
+          @if (showCodeError()) {
+            <p class="field-error">
+              <app-pixel-icon name="cross" [scale]="1" />
+              The code has {{ codeLength }} letters and numbers, like ABC234.
+            </p>
+          }
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg" [disabled]="busy()">
+        @if (busy()) {
+          <app-spinner label="Joining" />
+          Joining...
+        } @else {
+          Join the match
+        }
+      </button>
+    </form>
+  </section>
+
+  <p class="panel flex items-center gap-3 p-4 text-muted">
+    <app-pixel-icon name="bolt" />
+    Want to play with a friend? Start a duel or team match from any quiz, then share your code.
+  </p>
+</div>
