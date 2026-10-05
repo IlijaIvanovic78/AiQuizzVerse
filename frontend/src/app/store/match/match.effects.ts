@@ -239,6 +239,20 @@ export class MatchEffects {
     { dispatch: false },
   );
 
+  readonly raiseShield$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(MatchActions.raiseShield),
+        withLatestFrom(this.store.select(matchFeature.selectMatchId)),
+        tap(([, matchId]) => {
+          if (matchId) {
+            this.matchSocket.raiseShield(matchId);
+          }
+        }),
+      ),
+    { dispatch: false },
+  );
+
   readonly inviteFriend$ = createEffect(() =>
     this.actions$.pipe(
       ofType(MatchActions.inviteFriend),
@@ -352,7 +366,17 @@ export class MatchEffects {
       forMatch(matchId),
       map((sabotage) => MatchSocketActions.playerSabotaged({ sabotage, landedAt: Date.now() })),
     );
-    return merge(boostUsed$, lockedOut$, options$, sabotaged$);
+    const sabotageBlocked$ = socket.sabotageBlocked$.pipe(
+      forMatch(matchId),
+      map((block) => MatchSocketActions.sabotageBlocked({ block, landedAt: Date.now() })),
+    );
+    const secondChance$ = socket.secondChance$.pipe(
+      forMatch(matchId),
+      map(({ index, wrongOption }) =>
+        MatchSocketActions.secondChanceOffered({ index, wrongOption }),
+      ),
+    );
+    return merge(boostUsed$, secondChance$, lockedOut$, options$, sabotaged$, sabotageBlocked$);
   }
 
   private failed(error: unknown): Action {

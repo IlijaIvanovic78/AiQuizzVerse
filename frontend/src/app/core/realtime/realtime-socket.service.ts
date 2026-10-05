@@ -4,6 +4,7 @@ import { TokenRefreshService } from '../auth/token-refresh.service';
 import { TokenStorageService } from '../auth/token-storage.service';
 import { Friend, FriendRequest } from '../models/friend.model';
 import {
+  ChestEarnedEvent,
   CoinsUpdatedEvent,
   DuelInvite,
   FriendRemovedEvent,
@@ -31,6 +32,7 @@ export class RealtimeSocketService {
   readonly duelInvite$ = fromEvent<DuelInvite>(this.socket, 'duel:invite');
   readonly quizProgress$ = fromEvent<QuizProgress>(this.socket, 'quiz:progress');
   readonly coinsUpdated$ = fromEvent<CoinsUpdatedEvent>(this.socket, 'coins:updated');
+  readonly chestEarned$ = fromEvent<ChestEarnedEvent>(this.socket, 'chest:earned');
 
   connect(): void {
     this.socket.connect();

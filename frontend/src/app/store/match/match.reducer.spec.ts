@@ -2,6 +2,7 @@ import { MatchResult, MatchView } from '../../core/models/match.model';
 import {
   MatchQuestionEvent,
   RoundResultEvent,
+  SabotageBlockedEvent,
   SabotagedEvent,
 } from '../../core/models/realtime-events.model';
 import { PublicUser } from '../../core/models/user.model';
@@ -56,6 +57,7 @@ const soloResult: MatchResult = {
   path: null,
   leveledUp: false,
   coinCapReached: false,
+  chestsEarned: [],
 };
 
 function questionOpen(): MatchState {
@@ -114,6 +116,7 @@ describe('match reducer', () => {
         boosts: [
           { type: 'HINT', name: 'Hint', description: '', price: 10, owned: 3 },
           { type: 'FIFTY_FIFTY', name: '50/50', description: '', price: 15, owned: 1 },
+          { type: 'SECOND_CHANCE', name: 'Second chance', description: '', price: 20, owned: 2 },
         ],
       }),
     );
@@ -122,6 +125,7 @@ describe('match reducer', () => {
       HINT: 3 + FREE_HINTS_PER_MATCH,
       FIFTY_FIFTY: 1,
       EXTRA_TIME: 0,
+      SECOND_CHANCE: 2,
     });
   });
 
@@ -138,6 +142,48 @@ describe('match reducer', () => {
     expect(state.boostUses.HINT).toBe(4);
     expect(state.hint).toBe('It is a gas giant.');
     expect(state.boostsUsedThisRound).toEqual(['HINT']);
+  });
+
+  it('opens the answers again without the wrong pick when a second chance catches it', () => {
+    const answered = reducer(questionOpen(), MatchActions.answer({ optionIndex: 2 }));
+
+    const state = reducer(
+      answered,
+      MatchSocketActions.secondChanceOffered({ index: 0, wrongOption: 2 }),
+    );
+
+    expect(state.myAnswer).toBeNull();
+    expect(state.secondChanceOption).toBe(2);
+    expect(state.phase).toBe('question');
+  });
+
+  it('ignores a second chance for a question that is already over', () => {
+    const answered = reducer(questionOpen(), MatchActions.answer({ optionIndex: 2 }));
+
+    const state = reducer(
+      answered,
+      MatchSocketActions.secondChanceOffered({ index: 3, wrongOption: 2 }),
+    );
+
+    expect(state.myAnswer).toBe(2);
+    expect(state.secondChanceOption).toBeNull();
+  });
+
+  it('forgets the second chance when the next question opens', () => {
+    const offered = reducer(
+      questionOpen(),
+      MatchSocketActions.secondChanceOffered({ index: 0, wrongOption: 2 }),
+    );
+
+    const state = reducer(
+      offered,
+      MatchSocketActions.questionReceived({
+        question: { ...firstQuestion, index: 1 },
+        deadlineAt: DEADLINE_AT,
+      }),
+    );
+
+    expect(state.secondChanceOption).toBeNull();
   });
 
   it('keeps the error that stopped the match from loading as the interrupted reason', () => {
@@ -210,6 +256,31 @@ describe('match reducer in a party', () => {
     };
   }
 
+  function block(changes: Partial<SabotageBlockedEvent>): SabotageBlockedEvent {
+    return {
+      matchId: MATCH_ID,
+      index: 0,
+      type: 'FREEZE',
+      fromUserId: 'fox',
+      targetUserId: 'hero',
+      fromCharges: 0,
+      ...changes,
+    };
+  }
+
+  function shielded(userId: string): MatchState {
+    const shield = sabotage({
+      type: 'SHIELD',
+      fromUserId: userId,
+      targetUserId: userId,
+      durationMs: 0,
+    });
+    return reducer(
+      partyQuestionOpen(),
+      MatchSocketActions.playerSabotaged({ sabotage: shield, landedAt: LANDED_AT }),
+    );
+  }
+
   function partyRound(changes: Partial<RoundResultEvent>): RoundResultEvent {
     return {
       matchId: MATCH_ID,
@@ -271,6 +342,47 @@ describe('match reducer in a party', () => {
 
     expect(state.sabotages).toEqual([]);
     expect(state.charges['fox']).toBe(1);
+  });
+
+  it('puts a raised shield on the player who raised it', () => {
+    const state = shielded('hero');
+
+    expect(state.shieldedUserIds).toEqual(['hero']);
+    expect(state.charges['hero']).toBe(0);
+  });
+
+  it('breaks the shield on a blocked sabotage, and the attacker still pays the charge', () => {
+    const state = reducer(
+      shielded('hero'),
+      MatchSocketActions.sabotageBlocked({ block: block({}), landedAt: LANDED_AT + 500 }),
+    );
+
+    expect(state.shieldedUserIds).toEqual([]);
+    expect(state.blocks).toEqual([{ ...block({}), landedAt: LANDED_AT + 500 }]);
+    expect(state.charges['fox']).toBe(0);
+  });
+
+  it('ignores a block of a question that is already over, but keeps the charges', () => {
+    const state = reducer(
+      shielded('hero'),
+      MatchSocketActions.sabotageBlocked({
+        block: block({ index: 4, fromCharges: 1 }),
+        landedAt: LANDED_AT,
+      }),
+    );
+
+    expect(state.shieldedUserIds).toEqual(['hero']);
+    expect(state.blocks).toEqual([]);
+    expect(state.charges['fox']).toBe(1);
+  });
+
+  it('drops the shields when the round ends', () => {
+    const state = reducer(
+      shielded('hero'),
+      MatchSocketActions.roundFinished({ round: partyRound({}) }),
+    );
+
+    expect(state.shieldedUserIds).toEqual([]);
   });
 
   it('shows my options in the scrambled order and keeps my pick', () => {

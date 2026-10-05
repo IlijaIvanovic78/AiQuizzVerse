@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { fromEvent } from 'rxjs';
 import { TokenRefreshService } from '../auth/token-refresh.service';
 import { TokenStorageService } from '../auth/token-storage.service';
-import { MatchResult, MatchView, SabotageType } from '../models/match.model';
+import { AttackType, MatchResult, MatchView } from '../models/match.model';
 import {
   BoostUsedEvent,
   LockedOutEvent,
@@ -14,7 +14,9 @@ import {
   PlayerAnsweredEvent,
   PlayerLeftEvent,
   RoundResultEvent,
+  SabotageBlockedEvent,
   SabotagedEvent,
+  SecondChanceEvent,
   WaitingNextEvent,
 } from '../models/realtime-events.model';
 import { MatchBoostType } from '../models/shop.model';
@@ -41,6 +43,11 @@ export class MatchSocketService {
   readonly lockedOut$ = fromEvent<LockedOutEvent>(this.socket, 'match:locked-out');
   readonly options$ = fromEvent<MatchOptionsEvent>(this.socket, 'match:options');
   readonly sabotaged$ = fromEvent<SabotagedEvent>(this.socket, 'match:sabotaged');
+  readonly sabotageBlocked$ = fromEvent<SabotageBlockedEvent>(
+    this.socket,
+    'match:sabotage-blocked',
+  );
+  readonly secondChance$ = fromEvent<SecondChanceEvent>(this.socket, 'match:second-chance');
   readonly finished$ = fromEvent<MatchResult>(this.socket, 'match:finished');
   readonly playerLeft$ = fromEvent<PlayerLeftEvent>(this.socket, 'match:player-left');
   readonly error$ = fromEvent<MatchErrorEvent>(this.socket, 'match:error');
@@ -91,8 +98,13 @@ export class MatchSocketService {
     this.socket.emit('match:boost', { matchId, type });
   }
 
-  sabotage(matchId: string, targetUserId: string, type: SabotageType): void {
+  sabotage(matchId: string, targetUserId: string, type: AttackType): void {
     this.socket.emit('match:sabotage', { matchId, targetUserId, type });
+  }
+
+  // A shield has no target: the server puts it on the player who raises it.
+  raiseShield(matchId: string): void {
+    this.socket.emit('match:sabotage', { matchId, type: 'SHIELD' });
   }
 
   private joinCurrentMatch(): void {

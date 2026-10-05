@@ -11,7 +11,15 @@ export type PixelIconName =
   | 'bolt'
   | 'check'
   | 'cross'
-  | 'trophy';
+  | 'trophy'
+  | 'fog'
+  | 'quake'
+  | 'mirror'
+  | 'shield-bubble'
+  | 'second-chance'
+  | 'chest-wooden'
+  | 'chest-silver'
+  | 'chest-golden';
 
 const ICON_SIZE = 16;
 

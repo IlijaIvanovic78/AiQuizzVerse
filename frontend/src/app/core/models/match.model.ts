@@ -1,3 +1,4 @@
+import { ChestView } from './chest.model';
 import { PathResult } from './path.model';
 import { QuizKind, QuizLanguage, QuizTheme } from './quiz.model';
 import { PublicUser } from './user.model';
@@ -8,7 +9,10 @@ export type MatchStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED' | 'ABANDONED';
 
 export type MatchOutcome = 'WIN' | 'LOSS' | 'DRAW' | 'DONE';
 
-export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE';
+export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE' | 'FOG' | 'QUAKE' | 'MIRROR' | 'SHIELD';
+
+// SHIELD is the one defensive move: it has no target and protects the player who raises it.
+export type AttackType = Exclude<SabotageType, 'SHIELD'>;
 
 export interface MatchQuizInfo {
   id: string;
@@ -70,6 +74,8 @@ export interface MatchResult {
   path: PathResult | null;
   leveledUp: boolean;
   coinCapReached: boolean;
+  // The chests this match earned for the player who reads the result.
+  chestsEarned: ChestView[];
 }
 
 export interface MatchHistoryEntry {

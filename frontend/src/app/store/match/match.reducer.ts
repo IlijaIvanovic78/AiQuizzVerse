@@ -4,6 +4,7 @@ import {
   BoostUsedEvent,
   MatchQuestionEvent,
   RoundResultEvent,
+  SabotageBlockedEvent,
   SabotagedEvent,
 } from '../../core/models/realtime-events.model';
 import { BoostOffer, MatchBoostType } from '../../core/models/shop.model';
@@ -24,6 +25,11 @@ export type MatchPhase =
 
 // A party sabotage of the open question. landedAt is on this device's clock, like deadlineAt.
 export interface SabotageHit extends SabotagedEvent {
+  landedAt: number;
+}
+
+// A sabotage that bounced off a shield during the open question.
+export interface SabotageBlock extends SabotageBlockedEvent {
   landedAt: number;
 }
 
@@ -49,6 +55,10 @@ export interface MatchState {
   lockedOutUserIds: string[];
   charges: Record<string, number>;
   sabotages: SabotageHit[];
+  shieldedUserIds: string[];
+  blocks: SabotageBlock[];
+  // My first, wrong pick when a second chance gave me another try.
+  secondChanceOption: number | null;
   result: MatchResult | null;
   busy: boolean;
   error: string | null;
@@ -76,9 +86,23 @@ export const initialMatchState: MatchState = {
   lockedOutUserIds: [],
   charges: {},
   sabotages: [],
+  shieldedUserIds: [],
+  blocks: [],
+  secondChanceOption: null,
   result: null,
   busy: false,
   error: null,
+};
+
+// Sabotages, shields and a second chance last only until the question ends.
+const noQuestionEffects: Pick<
+  MatchState,
+  'sabotages' | 'shieldedUserIds' | 'blocks' | 'secondChanceOption'
+> = {
+  sabotages: [],
+  shieldedUserIds: [],
+  blocks: [],
+  secondChanceOption: null,
 };
 
 export const matchFeature = createFeature({
@@ -150,6 +174,12 @@ export const matchFeature = createFeature({
     ),
     on(MatchSocketActions.playerSabotaged, (state, { sabotage, landedAt }) =>
       withSabotage(state, sabotage, landedAt),
+    ),
+    on(MatchSocketActions.sabotageBlocked, (state, { block, landedAt }) =>
+      withBlockedSabotage(state, block, landedAt),
+    ),
+    on(MatchSocketActions.secondChanceOffered, (state, { index, wrongOption }) =>
+      withSecondChance(state, index, wrongOption),
     ),
     on(
       ShopActions.boostsLoaded,
@@ -244,7 +274,7 @@ function withNewQuestion(
     eliminatedOptions: [],
     hint: null,
     lockedOutUserIds: [],
-    sabotages: [],
+    ...noQuestionEffects,
   };
 }
 
@@ -270,7 +300,7 @@ function withRoundResult(state: MatchState, round: RoundResultEvent): MatchState
     charges,
     teamCorrect: round.teamCorrect,
     deadlineAt: null,
-    sabotages: [],
+    ...noQuestionEffects,
   };
 }
 
@@ -291,7 +321,42 @@ function withSabotage(state: MatchState, sabotage: SabotagedEvent, landedAt: num
   if (!isOpenQuestion(state, sabotage.index)) {
     return { ...state, charges };
   }
-  return { ...state, charges, sabotages: [...state.sabotages, { ...sabotage, landedAt }] };
+  const shieldedUserIds =
+    sabotage.type === 'SHIELD'
+      ? addOnce(state.shieldedUserIds, sabotage.targetUserId)
+      : state.shieldedUserIds;
+  return {
+    ...state,
+    charges,
+    sabotages: [...state.sabotages, { ...sabotage, landedAt }],
+    shieldedUserIds,
+  };
+}
+
+// A shield stops one sabotage and breaks. The attacker paid the charge all the same.
+function withBlockedSabotage(
+  state: MatchState,
+  block: SabotageBlockedEvent,
+  landedAt: number,
+): MatchState {
+  const charges = { ...state.charges, [block.fromUserId]: block.fromCharges };
+  if (!isOpenQuestion(state, block.index)) {
+    return { ...state, charges };
+  }
+  return {
+    ...state,
+    charges,
+    blocks: [...state.blocks, { ...block, landedAt }],
+    shieldedUserIds: state.shieldedUserIds.filter((userId) => userId !== block.targetUserId),
+  };
+}
+
+// The wrong pick did not count, so the answers open again without it.
+function withSecondChance(state: MatchState, index: number, wrongOption: number): MatchState {
+  if (!isOpenQuestion(state, index)) {
+    return state;
+  }
+  return { ...state, myAnswer: null, secondChanceOption: wrongOption };
 }
 
 function withBoost(
@@ -321,6 +386,7 @@ function usesFromOwned(
     HINT: ownedCount(offers, 'HINT') + freeHintsLeft,
     FIFTY_FIFTY: ownedCount(offers, 'FIFTY_FIFTY'),
     EXTRA_TIME: ownedCount(offers, 'EXTRA_TIME'),
+    SECOND_CHANCE: ownedCount(offers, 'SECOND_CHANCE'),
   };
 }
 

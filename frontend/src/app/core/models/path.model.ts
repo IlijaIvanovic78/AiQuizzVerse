@@ -1,11 +1,11 @@
+import { ChestType } from './chest.model';
 import { Audience, Difficulty, QuizLanguage } from './quiz.model';
-import { BoostType } from './shop.model';
 
 export type PathSource = 'TOPIC' | 'DOCUMENT';
 
 export interface StepReward {
   coins: number;
-  boost: BoostType | null;
+  chest: ChestType | null;
 }
 
 export interface NextPathStep {

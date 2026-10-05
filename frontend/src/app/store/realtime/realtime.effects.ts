@@ -3,7 +3,9 @@ import { createEffect } from '@ngrx/effects';
 import { map, merge, tap } from 'rxjs';
 import { ToastService } from '../../core/notifications/toast.service';
 import { RealtimeSocketService } from '../../core/realtime/realtime-socket.service';
+import { CHEST_NAMES } from '../../shared/chests';
 import { AuthActions } from '../auth/auth.actions';
+import { ChestsActions } from '../chests/chests.actions';
 import { FriendsActions } from '../friends/friends.actions';
 import { MatchActions } from '../match/match.actions';
 import { QuizzesActions } from '../quizzes/quizzes.actions';
@@ -41,6 +43,9 @@ export class RealtimeEffects {
     const quizProgress$ = this.socket.quizProgress$.pipe(
       map((progress) => QuizzesActions.progressReceived({ progress })),
     );
+    const chestEarned$ = this.socket.chestEarned$.pipe(
+      map(({ chest }) => ChestsActions.earned({ chest })),
+    );
 
     return merge(
       friendRequest$,
@@ -52,6 +57,7 @@ export class RealtimeEffects {
       duelInvite$,
       coinsUpdated$,
       quizProgress$,
+      chestEarned$,
     );
   });
 
@@ -70,6 +76,19 @@ export class RealtimeEffects {
       );
       return merge(requestToast$, acceptedToast$);
     },
+    { dispatch: false },
+  );
+
+  readonly chestToast$ = createEffect(
+    () =>
+      this.socket.chestEarned$.pipe(
+        tap(({ chest }) =>
+          this.toast.success(`You earned a ${CHEST_NAMES[chest.type].toLowerCase()}!`, {
+            label: 'Open',
+            action: ChestsActions.visitTreasureRoom(),
+          }),
+        ),
+      ),
     { dispatch: false },
   );
 }

@@ -1,5 +1,6 @@
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { CurrentUser } from '../../core/models/user.model';
+import { ChestsActions } from '../chests/chests.actions';
 import { PaymentsActions } from '../shop/payments.actions';
 import { ShopActions } from '../shop/shop.actions';
 import { AuthActions } from './auth.actions';
@@ -80,6 +81,7 @@ export const authFeature = createFeature({
       ShopActions.itemBought,
       ShopActions.boostBought,
       PaymentsActions.purchaseConfirmed,
+      ChestsActions.opened,
       (state, { coins }): AuthState => withCoins(state, coins),
     ),
   ),

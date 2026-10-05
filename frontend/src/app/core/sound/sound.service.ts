@@ -1,5 +1,6 @@
 import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import {
+  CHEST_NOTES,
   COIN_NOTES,
   CORRECT_NOTES,
   LEVEL_UP_NOTES,
@@ -49,6 +50,10 @@ export class SoundService {
 
   playLevelUp(): void {
     this.playNotes(LEVEL_UP_NOTES, 'triangle');
+  }
+
+  playChestOpen(): void {
+    this.playNotes(CHEST_NOTES, 'square');
   }
 
   private playNotes(notes: number[], wave: OscillatorType): void {

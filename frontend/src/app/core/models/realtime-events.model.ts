@@ -1,4 +1,5 @@
-import { MatchMode, SabotageType } from './match.model';
+import { ChestView } from './chest.model';
+import { AttackType, MatchMode, SabotageType } from './match.model';
 import { MatchBoostType } from './shop.model';
 import { PublicUser } from './user.model';
 
@@ -32,6 +33,10 @@ export interface DuelInvite {
 
 export interface CoinsUpdatedEvent {
   coins: number;
+}
+
+export interface ChestEarnedEvent {
+  chest: ChestView;
 }
 
 export interface MatchStartingEvent {
@@ -94,15 +99,30 @@ export interface MatchOptionsEvent {
   options: string[];
 }
 
-export interface SabotagedEvent {
+// A sabotage that hit a shield. The attacker still spent the charge, and the shield is gone.
+// Nobody can raise a shield at someone else, so what was blocked is always an attack.
+export interface SabotageBlockedEvent {
   matchId: string;
   index: number;
-  type: SabotageType;
+  type: AttackType;
   fromUserId: string;
   targetUserId: string;
-  // 0 for a scramble, which lasts until the question ends.
-  durationMs: number;
   fromCharges: number;
+}
+
+// A shield targets the player who raised it.
+export interface SabotagedEvent extends Omit<SabotageBlockedEvent, 'type'> {
+  type: SabotageType;
+  // 0 for a scramble and a shield, which last until the question ends.
+  durationMs: number;
+}
+
+// Sent only to the player whose second chance caught a wrong answer.
+export interface SecondChanceEvent {
+  matchId: string;
+  index: number;
+  // In the order this player sees the options.
+  wrongOption: number;
 }
 
 export interface WaitingNextEvent {

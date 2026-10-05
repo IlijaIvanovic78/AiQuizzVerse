@@ -13,6 +13,7 @@ export const BOOST_LABELS: Record<BoostType, string> = {
   HINT: 'Hint',
   FIFTY_FIFTY: '50/50',
   EXTRA_TIME: 'Extra time',
+  SECOND_CHANCE: 'Second chance',
   STREAK_FREEZE: 'Streak freeze',
 };
 
@@ -20,6 +21,7 @@ const BOOST_IMAGES: Record<BoostType, BoostImage> = {
   HINT: { src: itemIconUrl('potion'), pixelated: false },
   FIFTY_FIFTY: { src: itemIconUrl('axes'), pixelated: false },
   EXTRA_TIME: { src: `${ICONS_URL}bolt.png`, pixelated: true },
+  SECOND_CHANCE: { src: `${ICONS_URL}second-chance.png`, pixelated: true },
   STREAK_FREEZE: { src: itemIconUrl('shield'), pixelated: false },
 };
 

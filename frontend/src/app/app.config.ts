@@ -16,6 +16,8 @@ import { AuthBootstrapService } from './core/auth/auth-bootstrap.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authFeature } from './store/auth/auth.reducer';
+import { ChestsEffects } from './store/chests/chests.effects';
+import { chestsFeature } from './store/chests/chests.reducer';
 import { duelInviteFeature } from './store/duel-invite/duel-invite.reducer';
 import { FriendsEffects } from './store/friends/friends.effects';
 import { friendsFeature } from './store/friends/friends.reducer';
@@ -53,6 +55,7 @@ export const appConfig: ApplicationConfig = {
     provideState(friendsFeature),
     provideState(leaderboardFeature),
     provideState(matchHistoryFeature),
+    provideState(chestsFeature),
     provideEffects([
       AuthEffects,
       QuizzesEffects,
@@ -64,6 +67,7 @@ export const appConfig: ApplicationConfig = {
       FriendsEffects,
       LeaderboardEffects,
       MatchHistoryEffects,
+      ChestsEffects,
       RealtimeEffects,
     ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),

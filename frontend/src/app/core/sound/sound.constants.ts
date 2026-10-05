@@ -10,4 +10,5 @@ export const CORRECT_NOTES = [660, 880];
 export const WRONG_NOTES = [220, 165];
 export const COIN_NOTES = [988, 1319];
 export const LEVEL_UP_NOTES = [523, 659, 784, 1047];
+export const CHEST_NOTES = [784, 988, 1175, 1568, 1976];
 export const TICK_FREQUENCY = 1200;

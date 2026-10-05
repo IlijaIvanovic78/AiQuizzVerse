@@ -17,8 +17,9 @@ interface ShopState extends EntityState<ShopItem> {
   error: string | null;
 }
 
+// Chest-only items have no price, so they go after everything the shop sells.
 const shopItemsAdapter = createEntityAdapter<ShopItem>({
-  sortComparer: (a, b) => a.price - b.price,
+  sortComparer: (a, b) => Number(a.isChestOnly) - Number(b.isChestOnly) || a.price - b.price,
 });
 const { selectAll } = shopItemsAdapter.getSelectors();
 
