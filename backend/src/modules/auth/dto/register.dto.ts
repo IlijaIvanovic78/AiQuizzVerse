@@ -1,22 +1,35 @@
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform, TransformFnParams } from 'class-transformer';
+import { IsEmail, IsString, Length, Matches, MaxLength } from 'class-validator';
+import {
+  EMAIL_MAX_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  USERNAME_PATTERN,
+} from '../auth.constants';
+
+function toNormalizedEmail({ value }: TransformFnParams): unknown {
+  return typeof value === 'string' ? value.trim().toLowerCase() : value;
+}
 
 export class RegisterDto {
-  @ApiProperty({ example: 'player@quizverse.com', description: 'User email address' })
-  @IsEmail({}, { message: 'Invalid email address' })
+  @ApiProperty({ example: 'hero@example.com' })
+  @Transform(toNormalizedEmail)
+  @IsEmail({}, { message: 'Please enter a valid email address.' })
+  @MaxLength(EMAIL_MAX_LENGTH)
   email: string;
 
-  @ApiProperty({ example: 'QuizMaster42', description: 'Unique username (3-20 chars)', minLength: 3, maxLength: 20 })
+  @ApiProperty({ example: 'pixel_hero', description: '3-20 letters, numbers or underscores' })
   @IsString()
-  @MinLength(3, { message: 'Username must be at least 3 characters long' })
-  @MaxLength(20, { message: 'Username must not exceed 20 characters' })
-  @Matches(/^[a-zA-Z0-9_-]+$/, {
-    message: 'Username can only contain letters, numbers, underscores and hyphens',
+  @Matches(USERNAME_PATTERN, {
+    message: 'Your nickname needs 3-20 letters, numbers or underscores.',
   })
   username: string;
 
-  @ApiProperty({ example: 'StrongP@ss1', description: 'Password (min 6 chars)', minLength: 6 })
+  @ApiProperty({ example: 'secret123', minLength: PASSWORD_MIN_LENGTH })
   @IsString()
-  @MinLength(6, { message: 'Password must be at least 6 characters long' })
+  @Length(PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH, {
+    message: `Your password needs ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters.`,
+  })
   password: string;
 }

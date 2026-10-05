@@ -1,162 +1,112 @@
 import {
-  Controller,
-  Post,
-  Get,
   Body,
-  UseGuards,
-  Param,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { AuthService, AuthResponse } from './auth.service';
-import { RegisterDto, LoginDto, TwoFactorDto, Login2FADto } from './dto';
-import { JwtAuthGuard } from '../../shared/guards/jwt-auth.guard';
-import { JwtRefreshAuthGuard } from './guards/jwt-refresh.guard';
-import { CurrentUser } from '../../shared/decorators/current-user.decorator';
-import type { RequestUser } from '../../shared/decorators/current-user.decorator';
+import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
 import { UsersService } from '../users/users.service';
+import { CurrentUser } from '../users/users.types';
+import { AuthService } from './auth.service';
+import { AuthResponse, LoginResult, TwoFactorSetup } from './auth.types';
+import { CurrentUserId } from './decorators/current-user.decorator';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { TwoFactorCodeDto } from './dto/two-factor-code.dto';
+import { TwoFactorLoginDto } from './dto/two-factor-login.dto';
+import { UsernameQueryDto } from './dto/username-query.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { TwoFactorService } from './two-factor.service';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
+    private readonly auth: AuthService,
+    private readonly twoFactor: TwoFactorService,
+    private readonly users: UsersService,
   ) {}
 
-  // ==================== REGISTER ====================
   @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Register new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
-  @ApiResponse({ status: 409, description: 'Email or username already taken' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  register(@Body() dto: RegisterDto): Promise<AuthResponse> {
+    return this.auth.register(dto);
   }
 
-  // ==================== LOGIN ====================
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Returns JWT tokens or 2FA required flag' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponse | { is2FARequired: true; userId: string }> {
-    return this.authService.login(loginDto);
+  @UseGuards(LocalAuthGuard)
+  @ApiBody({ type: LoginDto })
+  login(@CurrentUserId() userId: string): Promise<LoginResult> {
+    return this.auth.login(userId);
   }
 
-  // ==================== LOGIN WITH 2FA ====================
   @Post('login/2fa')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Complete login with 2FA code' })
-  @ApiResponse({ status: 200, description: 'Returns JWT tokens after 2FA verification' })
-  @ApiResponse({ status: 401, description: 'Invalid 2FA code' })
-  async login2FA(@Body() login2FADto: Login2FADto): Promise<AuthResponse> {
-    return this.authService.login2FA(login2FADto.userId, login2FADto.token);
+  loginWithTwoFactor(@Body() dto: TwoFactorLoginDto): Promise<AuthResponse> {
+    return this.auth.loginWithTwoFactor(dto.twoFactorToken, dto.code);
   }
 
-  // ==================== REFRESH TOKENS ====================
   @Post('refresh')
-  @UseGuards(JwtRefreshAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtRefreshGuard)
   @ApiBearerAuth('refresh-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @ApiResponse({ status: 200, description: 'Returns new JWT tokens' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refreshTokens(@CurrentUser() user: RequestUser): Promise<AuthResponse> {
-    return this.authService.refreshTokens(user.userId, user.refreshToken!);
+  refresh(@CurrentUserId() userId: string): Promise<AuthResponse> {
+    return this.auth.refresh(userId);
   }
 
-  // ==================== LOGOUT ====================
   @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
+  logout(@CurrentUserId() userId: string): Promise<void> {
+    return this.auth.logout(userId);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  me(@CurrentUserId() userId: string): Promise<CurrentUser> {
+    return this.users.findCurrentUser(userId);
+  }
+
+  @Get('username-available')
+  async usernameAvailable(@Query() query: UsernameQueryDto): Promise<{ available: boolean }> {
+    return { available: await this.auth.isUsernameAvailable(query.username) };
+  }
+
+  @Post('2fa/setup')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Logout — invalidates refresh token' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@CurrentUser('userId') userId: string) {
-    return this.authService.logout(userId);
-  }
-
-  // ==================== GET PROFILE ====================
-  @Get('profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Get current user profile' })
-  @ApiResponse({ status: 200, description: 'Returns user profile without sensitive data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@CurrentUser('userId') userId: string) {
-    const user = await this.usersService.findOne(userId);
-
-    if (!user) {
-      return null;
-    }
-
-    // Don't return sensitive fields
-    const { passwordHash, refreshToken, twoFaSecret, ...safeUser } = user;
-
-    return safeUser;
+  setupTwoFactor(@CurrentUserId() userId: string): Promise<TwoFactorSetup> {
+    return this.twoFactor.setup(userId);
   }
 
-  // ==================== ENABLE 2FA ====================
   @Post('2fa/enable')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Generate QR code for 2FA setup' })
-  @ApiResponse({ status: 200, description: 'Returns secret and QR code data URL' })
-  async enable2FA(@CurrentUser('userId') userId: string) {
-    return this.authService.enable2FA(userId);
+  enableTwoFactor(
+    @CurrentUserId() userId: string,
+    @Body() dto: TwoFactorCodeDto,
+  ): Promise<CurrentUser> {
+    return this.twoFactor.enable(userId, dto.code);
   }
 
-  // ==================== VERIFY 2FA ====================
-  @Post('2fa/verify')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth('access-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Verify 2FA code and enable 2FA' })
-  @ApiResponse({ status: 200, description: '2FA enabled successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid 2FA code' })
-  async verify2FA(
-    @CurrentUser('userId') userId: string,
-    @Body() twoFactorDto: TwoFactorDto,
-  ) {
-    return this.authService.verify2FA(userId, twoFactorDto.token);
-  }
-
-  // ==================== DISABLE 2FA ====================
   @Post('2fa/disable')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Disable 2FA on account' })
-  @ApiResponse({ status: 200, description: '2FA disabled successfully' })
-  @ApiResponse({ status: 400, description: '2FA is not enabled' })
-  async disable2FA(@CurrentUser('userId') userId: string) {
-    return this.authService.disable2FA(userId);
-  }
-
-  // ==================== CHECK USERNAME AVAILABILITY ====================
-  @Get('check-username/:username')
-  @ApiOperation({ summary: 'Check if username is available' })
-  @ApiResponse({ status: 200, description: 'Returns { available: boolean }' })
-  async checkUsername(@Param('username') username: string) {
-    const user = await this.usersService.findByUsername(username);
-
-    return {
-      available: !user,
-    };
-  }
-
-  // ==================== CHECK EMAIL AVAILABILITY ====================
-  @Get('check-email/:email')
-  @ApiOperation({ summary: 'Check if email is available' })
-  @ApiResponse({ status: 200, description: 'Returns { available: boolean }' })
-  async checkEmail(@Param('email') email: string) {
-    const user = await this.usersService.findByEmail(email);
-
-    return {
-      available: !user,
-    };
+  disableTwoFactor(
+    @CurrentUserId() userId: string,
+    @Body() dto: TwoFactorCodeDto,
+  ): Promise<CurrentUser> {
+    return this.twoFactor.disable(userId, dto.code);
   }
 }

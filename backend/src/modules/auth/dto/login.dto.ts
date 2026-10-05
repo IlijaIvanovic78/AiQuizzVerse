@@ -1,13 +1,10 @@
-import { IsEmail, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
+/** Documents the login body; LocalStrategy reads and checks these fields itself. */
 export class LoginDto {
-  @ApiProperty({ example: 'player@quizverse.com', description: 'User email address' })
-  @IsEmail({}, { message: 'Invalid email address' })
+  @ApiProperty({ example: 'demo@quizverse.dev' })
   email: string;
 
-  @ApiProperty({ example: 'StrongP@ss1', description: 'User password' })
-  @IsString()
-  @MinLength(1, { message: 'Password is required' })
+  @ApiProperty({ example: 'demo1234' })
   password: string;
 }

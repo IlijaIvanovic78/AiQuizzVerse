@@ -1,43 +1,31 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
-
-export interface JwtRefreshPayload {
-  sub: string;
-  email: string;
-  iat?: number;
-  exp?: number;
-}
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { SESSION_EXPIRED_MESSAGE } from '../auth.constants';
+import { AuthService } from '../auth.service';
+import { AuthUser, TokenPayload } from '../auth.types';
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
-  constructor() {
+  constructor(
+    config: ConfigService,
+    private readonly auth: AuthService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: process.env.JWT_REFRESH_SECRET!,
+      secretOrKey: config.getOrThrow<string>('JWT_REFRESH_SECRET'),
       passReqToCallback: true,
-    } as any);
+    });
   }
 
-  async validate(req: Request, payload: JwtRefreshPayload) {
-    if (!payload.sub || !payload.email) {
-      throw new UnauthorizedException('Invalid refresh token payload');
+  async validate(request: Request, payload: TokenPayload): Promise<AuthUser> {
+    const refreshToken = ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+    if (payload.type !== 'refresh' || !refreshToken) {
+      throw new UnauthorizedException(SESSION_EXPIRED_MESSAGE);
     }
-
-    // Extract refresh token from Authorization header
-    const authHeader = req.headers.authorization;
-    const refreshToken = authHeader?.replace('Bearer ', '').trim();
-
-    if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
-    }
-
-    return {
-      userId: payload.sub,
-      email: payload.email,
-      refreshToken,
-    };
+    await this.auth.assertRefreshTokenIsCurrent(payload.sub, refreshToken);
+    return { userId: payload.sub };
   }
 }
