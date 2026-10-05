@@ -1,0 +1,52 @@
+<ul class="flex flex-col gap-3">
+  @for (friend of friends(); track friend.friendshipId) {
+    <li
+      class="panel flex flex-wrap items-center gap-x-4 gap-y-3 p-3 sm:p-4"
+      animate.enter="fade-enter"
+    >
+      <app-user-avatar [heroKey]="friend.user.avatarKey" size="md" [online]="friend.isOnline" />
+
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <a
+            class="truncate text-lg font-semibold hover:text-torch-300 hover:underline"
+            [routerLink]="['/profile', friend.user.username]"
+          >
+            {{ friend.user.username }}
+          </a>
+          <app-level-badge [level]="friend.user.level" />
+        </div>
+        <p class="text-sm">
+          @if (friend.isOnline) {
+            <span class="font-semibold text-jade-400">Online now</span>
+          } @else {
+            <span class="text-muted">Offline</span>
+          }
+          <span class="text-muted"> · friends since {{ friend.since | date: 'MMM y' }}</span>
+        </p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        @if (friend.isOnline) {
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="inviteBusy()"
+            (click)="invite.emit(friend.user)"
+          >
+            <app-pixel-icon name="bolt" [scale]="1" />
+            Invite<span class="sr-only"> {{ friend.user.username }} to play</span>
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm"
+          [disabled]="busy()"
+          (click)="remove.emit(friend)"
+        >
+          Remove<span class="sr-only"> {{ friend.user.username }}</span>
+        </button>
+      </div>
+    </li>
+  }
+</ul>

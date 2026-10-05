@@ -1,0 +1,52 @@
+<section class="panel p-5" aria-labelledby="friend-search-title">
+  <h2 id="friend-search-title" class="text-xl">Find a friend</h2>
+  <label for="friend-search-input" class="field-label mt-3">Their nickname</label>
+  <input
+    id="friend-search-input"
+    type="search"
+    class="input"
+    placeholder="For example: brave_owl"
+    autocomplete="off"
+    spellcheck="false"
+    aria-describedby="friend-search-status"
+    [value]="query()"
+    (input)="typed($event)"
+  />
+
+  <div id="friend-search-status" class="mt-4" aria-live="polite">
+    @if (tooShort()) {
+      <p class="field-hint mt-0">Type at least {{ minLength }} letters of a nickname.</p>
+    } @else if (results().length > 0) {
+      <ul class="flex flex-col gap-3" [attr.aria-busy]="searching()">
+        @for (result of results(); track result.user.id) {
+          <li class="flex flex-wrap items-center gap-3">
+            <app-user-avatar [heroKey]="result.user.avatarKey" />
+            <div class="min-w-0 flex-1">
+              <a
+                class="block truncate font-semibold hover:text-torch-300 hover:underline"
+                [routerLink]="['/profile', result.user.username]"
+              >
+                {{ result.user.username }}
+              </a>
+              <app-level-badge [level]="result.user.level" />
+            </div>
+            <app-relation-actions
+              [relation]="result.relation"
+              [username]="result.user.username"
+              [busy]="busy()"
+              (add)="add.emit(result.user.id)"
+              (accept)="acceptResult(result)"
+              (cancel)="cancelResult(result)"
+            />
+          </li>
+        }
+      </ul>
+    } @else if (searching()) {
+      <app-spinner label="Searching the kingdom..." [showLabel]="true" />
+    } @else {
+      <p class="text-muted">
+        No hero called "{{ query().trim() }}" yet. Check the spelling with your friend.
+      </p>
+    }
+  </div>
+</section>

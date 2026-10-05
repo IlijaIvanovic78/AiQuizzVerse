@@ -1,0 +1,87 @@
+<app-page-header
+  title="Friends"
+  subtitle="Add friends, answer requests and challenge them to a duel."
+/>
+
+<div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12">
+  <div class="flex flex-col gap-5 md:gap-6 lg:order-2 lg:col-span-5">
+    <app-friend-search
+      [query]="query()"
+      [results]="searchResults()"
+      [searching]="searching()"
+      [busy]="busy()"
+      (queryChange)="search($event)"
+      (add)="sendRequest($event)"
+      (accept)="acceptRequest($event)"
+      (cancel)="removeRequest($event)"
+    />
+    <app-friend-requests
+      [incoming]="incoming()"
+      [outgoing]="outgoing()"
+      [busy]="busy()"
+      (accept)="acceptRequest($event)"
+      (remove)="removeRequest($event)"
+    />
+  </div>
+
+  <section class="lg:order-1 lg:col-span-7" aria-labelledby="friend-list-title">
+    <h2 id="friend-list-title" class="mb-3 flex items-center gap-2 text-2xl">
+      Your friends
+      @if (friends().length > 0) {
+        <span class="badge">{{ friends().length }}</span>
+      }
+    </h2>
+
+    @if (friends().length > 0) {
+      <app-friend-list
+        [friends]="friends()"
+        [busy]="busy()"
+        [inviteBusy]="matchBusy()"
+        (invite)="openInvite($event)"
+        (remove)="askToRemove($event)"
+      />
+    } @else if (loaded()) {
+      <app-empty-state
+        title="No friends yet"
+        text="Ask your friend for their nickname and search for it. When they accept, you can duel or team up."
+        image="shield"
+      />
+    } @else if (error()) {
+      <app-empty-state
+        role="alert"
+        title="Your friends didn't load"
+        text="Check your connection and try again."
+        image="potion"
+      >
+        <button type="button" class="btn btn-secondary" (click)="loadFriends()">Try again</button>
+      </app-empty-state>
+    } @else {
+      <div class="panel p-5">
+        <app-spinner label="Gathering your friends..." [showLabel]="true" />
+      </div>
+    }
+  </section>
+</div>
+
+@if (friendToRemove(); as friend) {
+  <app-confirm-dialog
+    title="Remove friend?"
+    [message]="removeMessage()"
+    confirmLabel="Remove"
+    cancelLabel="Keep friend"
+    (confirmed)="confirmRemove(friend)"
+    (closed)="friendToRemove.set(null)"
+  />
+}
+
+@if (invitedFriend(); as friend) {
+  <app-invite-to-play-dialog
+    [friend]="friend"
+    [quizzes]="myQuizzes()"
+    [featured]="featuredQuizzes()"
+    [loading]="!quizzesLoaded()"
+    [busy]="matchBusy()"
+    (invite)="sendInvite(friend, $event)"
+    (closed)="invitedFriend.set(null)"
+  />
+}
