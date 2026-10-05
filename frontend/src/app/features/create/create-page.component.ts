@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
@@ -12,34 +11,24 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormControl } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { readErrorMessage } from '../../core/api/api-error';
-import { DocumentsApiService } from '../../core/api/documents-api.service';
 import { Audience, Difficulty, QuizLanguage, QuizTheme } from '../../core/models/quiz.model';
-import { ChoiceCardComponent } from '../../shared/components/choice-card.component';
-import { NumberStepperComponent } from '../../shared/components/number-stepper.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
 import { touchedAndInvalid } from '../../shared/forms/form-signals';
 import {
-  MAX_QUESTIONS,
-  MAX_TIME_PER_QUESTION,
   MIN_QUESTIONS,
-  MIN_TIME_PER_QUESTION,
   QUIZ_TITLE_MAX_LENGTH,
   QUIZ_TITLE_MIN_LENGTH,
   QuestionForm,
-  TIME_STEP_SECONDS,
   TOPIC_MAX_LENGTH,
   TOPIC_MIN_LENGTH,
   createQuestionForm,
   textLength,
   toQuestionInput,
 } from '../../shared/forms/quiz-form';
-import { LanguageLabelPipe } from '../../shared/pipes/language-label.pipe';
-import { ThemeLabelPipe } from '../../shared/pipes/theme-label.pipe';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { MatchActions } from '../../store/match/match.actions';
 import { matchFeature } from '../../store/match/match.reducer';
@@ -47,75 +36,54 @@ import { PathsActions } from '../../store/paths/paths.actions';
 import { pathsFeature } from '../../store/paths/paths.reducer';
 import { QuizzesActions } from '../../store/quizzes/quizzes.actions';
 import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
-import { AudiencePickerComponent } from './components/audience-picker.component';
 import { CreationDoneComponent } from './components/creation-done.component';
 import { CreationErrorComponent } from './components/creation-error.component';
 import { GenerationProgressComponent } from './components/generation-progress.component';
+import { MakeStepComponent } from './components/make-step.component';
 import { ManualQuestionsComponent } from './components/manual-questions.component';
-import { PdfDropzoneComponent } from './components/pdf-dropzone.component';
+import { SettingsStepComponent } from './components/settings-step.component';
+import { SourceStepComponent } from './components/source-step.component';
 import { WizardStepsComponent } from './components/wizard-steps.component';
 import {
   DEFAULT_QUESTION_COUNT,
   DEFAULT_TIME_BY_AUDIENCE,
-  DIFFICULTY_CHOICES,
   GENERATED_STEPS,
-  KIND_CHOICES,
-  LANGUAGES,
   MANUAL_STEPS,
   NEW_PATH_QUERY_PARAMS,
-  QUIZ_THEMES,
-  SOURCE_CHOICES,
-  TOPIC_SUGGESTIONS,
+  STEP_TITLES,
 } from './create.constants';
-import { pdfProblem } from './create.rules';
-import { CreateKind, CreatePhase, SourceKind, UploadState, WizardStep } from './create.types';
+import { CreateKind, CreatePhase, SourceKind, WizardStep } from './create.types';
+import { LessonUploadService } from './lesson-upload.service';
 
+// Holds every choice of the wizard; each step component only shows and changes its part.
 @Component({
   selector: 'app-create-page',
   imports: [
-    ReactiveFormsModule,
-    LanguageLabelPipe,
-    ThemeLabelPipe,
-    AudiencePickerComponent,
-    ChoiceCardComponent,
     CreationDoneComponent,
     CreationErrorComponent,
     GenerationProgressComponent,
+    MakeStepComponent,
     ManualQuestionsComponent,
-    NumberStepperComponent,
     PageHeaderComponent,
-    PdfDropzoneComponent,
     PixelIconComponent,
+    SettingsStepComponent,
+    SourceStepComponent,
     WizardStepsComponent,
   ],
+  providers: [LessonUploadService],
   templateUrl: './create-page.component.html',
   styleUrl: './create-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreatePageComponent {
   private readonly store = inject(Store);
-  private readonly documentsApi = inject(DocumentsApiService);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(Injector);
+  protected readonly lessonUpload = inject(LessonUploadService);
   private readonly stepHeading = viewChild<ElementRef<HTMLElement>>('stepHeading');
 
   readonly make = input<string>();
 
-  protected readonly sourceChoices = SOURCE_CHOICES;
-  protected readonly kindChoices = KIND_CHOICES;
-  protected readonly suggestions = TOPIC_SUGGESTIONS;
-  protected readonly languages = LANGUAGES;
-  protected readonly difficulties = DIFFICULTY_CHOICES;
-  protected readonly themes = QUIZ_THEMES;
-  protected readonly limits = {
-    topic: TOPIC_MAX_LENGTH,
-    title: QUIZ_TITLE_MAX_LENGTH,
-    minQuestions: MIN_QUESTIONS,
-    maxQuestions: MAX_QUESTIONS,
-    minTime: MIN_TIME_PER_QUESTION,
-    maxTime: MAX_TIME_PER_QUESTION,
-    timeStep: TIME_STEP_SECONDS,
-  };
+  protected readonly stepTitles = STEP_TITLES;
 
   protected readonly step = signal<WizardStep>('source');
   protected readonly source = signal<SourceKind>('TOPIC');
@@ -128,7 +96,6 @@ export class CreatePageComponent {
   protected readonly theme = signal<QuizTheme>('GENERAL');
   protected readonly questionCount = signal(DEFAULT_QUESTION_COUNT);
   protected readonly timePerQuestion = signal(DEFAULT_TIME_BY_AUDIENCE.KIDS);
-  protected readonly upload = signal<UploadState>({ status: 'idle' });
   protected readonly questionForms = signal<QuestionForm[]>(blankQuestions());
   protected readonly manualProblem = signal<string | null>(null);
 
@@ -136,14 +103,14 @@ export class CreatePageComponent {
     nonNullable: true,
     validators: textLength(TOPIC_MIN_LENGTH, TOPIC_MAX_LENGTH),
   });
-  protected readonly title = new FormControl('', {
+  protected readonly quizTitle = new FormControl('', {
     nonNullable: true,
     validators: textLength(QUIZ_TITLE_MIN_LENGTH, QUIZ_TITLE_MAX_LENGTH),
   });
   protected readonly topicInvalid = touchedAndInvalid(this.topic);
-  protected readonly titleInvalid = touchedAndInvalid(this.title);
+  protected readonly quizTitleInvalid = touchedAndInvalid(this.quizTitle);
   protected readonly topicValue = toSignal(this.topic.valueChanges, { initialValue: '' });
-  private readonly titleValue = toSignal(this.title.valueChanges, { initialValue: '' });
+  private readonly quizTitleValue = toSignal(this.quizTitle.valueChanges, { initialValue: '' });
 
   protected readonly user = this.store.selectSignal(authFeature.selectUser);
   protected readonly progress = this.store.selectSignal(quizzesFeature.selectProgress);
@@ -162,15 +129,11 @@ export class CreatePageComponent {
   protected readonly steps = computed(() =>
     this.source() === 'MANUAL' ? MANUAL_STEPS : GENERATED_STEPS,
   );
-  protected readonly lessonDocument = computed(() => {
-    const upload = this.upload();
-    return upload.status === 'ready' ? upload.document : null;
-  });
   protected readonly subject = computed(() => {
     if (this.source() === 'PDF') {
-      return this.lessonDocument()?.fileName ?? '';
+      return this.lessonUpload.document()?.fileName ?? '';
     }
-    return this.source() === 'TOPIC' ? this.topicValue().trim() : this.titleValue().trim();
+    return this.source() === 'TOPIC' ? this.topicValue().trim() : this.quizTitleValue().trim();
   });
   protected readonly workingKind = computed<CreateKind>(() =>
     this.pathCreating() ? 'PATH' : 'QUIZ',
@@ -199,11 +162,6 @@ export class CreatePageComponent {
     this.timePerQuestion.set(DEFAULT_TIME_BY_AUDIENCE[audience]);
   }
 
-  protected suggestTopic(topic: string): void {
-    this.topic.setValue(topic);
-    this.topic.markAsTouched();
-  }
-
   protected showStep(step: WizardStep): void {
     this.step.set(step);
     // The pressed button leaves with the old step, so focus moves to the new step's title.
@@ -228,32 +186,11 @@ export class CreatePageComponent {
       this.generate();
       return;
     }
-    if (this.title.invalid) {
-      this.title.markAsTouched();
+    if (this.quizTitle.invalid) {
+      this.quizTitle.markAsTouched();
       return;
     }
     this.showStep('questions');
-  }
-
-  protected uploadLesson(file: File): void {
-    const problem = pdfProblem(file);
-    if (problem) {
-      this.upload.set({ status: 'failed', message: problem });
-      return;
-    }
-    this.upload.set({ status: 'uploading', fileName: file.name });
-    this.documentsApi
-      .upload(file)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (document) => this.upload.set({ status: 'ready', document }),
-        error: (error: unknown) =>
-          this.upload.set({ status: 'failed', message: readErrorMessage(error) }),
-      });
-  }
-
-  protected removeLesson(): void {
-    this.upload.set({ status: 'idle' });
   }
 
   protected addQuestion(): void {
@@ -287,14 +224,14 @@ export class CreatePageComponent {
 
   protected saveManualQuiz(): void {
     const forms = this.questionForms();
-    if (this.title.invalid || forms.some((form) => form.invalid)) {
-      this.title.markAsTouched();
+    if (this.quizTitle.invalid || forms.some((form) => form.invalid)) {
+      this.quizTitle.markAsTouched();
       forms.forEach((form) => form.markAllAsTouched());
       this.manualProblem.set('Some questions still need work. Look for the red notes.');
       return;
     }
     this.manualProblem.set(null);
-    const title = this.title.value.trim();
+    const title = this.quizTitle.value.trim();
     this.store.dispatch(
       QuizzesActions.create({
         request: {
@@ -332,14 +269,14 @@ export class CreatePageComponent {
     this.clearResults();
     this.step.set('source');
     this.topic.reset();
-    this.title.reset();
-    this.upload.set({ status: 'idle' });
+    this.quizTitle.reset();
+    this.lessonUpload.clear();
     this.questionForms.set(blankQuestions());
   }
 
   // A generated quiz or path is about either the typed topic or the uploaded lesson.
   private sourceRequest(): { topic?: string; documentId?: string } {
-    const document = this.lessonDocument();
+    const document = this.lessonUpload.document();
     if (this.source() === 'PDF' && document) {
       return { documentId: document.id };
     }

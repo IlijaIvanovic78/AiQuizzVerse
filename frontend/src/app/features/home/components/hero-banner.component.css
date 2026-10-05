@@ -19,9 +19,3 @@
   background-color: var(--night-950);
   white-space: nowrap;
 }
-
-/* A cold flame: the streak has not started yet. */
-.flame-out {
-  opacity: 0.4;
-  filter: grayscale(1);
-}

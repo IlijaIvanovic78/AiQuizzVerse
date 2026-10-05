@@ -1,20 +1,19 @@
+import { ICONS_URL, itemIconUrl } from '../../shared/icons';
+
 export type ShopTab = 'heroes' | 'pets' | 'power-ups' | 'coins';
 
 interface ShopTabOption {
   id: ShopTab;
   label: string;
   icon: string;
-  // The 16px pixel icons need crisp scaling; the painted item icons do not.
-  pixelIcon: boolean;
+  pixelated: boolean;
 }
 
-const ICONS_URL = '/assets/images/icons/';
-
 export const SHOP_TABS: ShopTabOption[] = [
-  { id: 'heroes', label: 'Heroes', icon: `${ICONS_URL}sword.webp`, pixelIcon: false },
-  { id: 'pets', label: 'Pets', icon: `${ICONS_URL}heart.png`, pixelIcon: true },
-  { id: 'power-ups', label: 'Power-ups', icon: `${ICONS_URL}potion.webp`, pixelIcon: false },
-  { id: 'coins', label: 'Coins', icon: `${ICONS_URL}coin.png`, pixelIcon: true },
+  { id: 'heroes', label: 'Heroes', icon: itemIconUrl('sword'), pixelated: false },
+  { id: 'pets', label: 'Pets', icon: `${ICONS_URL}heart.png`, pixelated: true },
+  { id: 'power-ups', label: 'Power-ups', icon: itemIconUrl('potion'), pixelated: false },
+  { id: 'coins', label: 'Coins', icon: `${ICONS_URL}coin.png`, pixelated: true },
 ];
 
 type PackArt = 'coins' | 'chest' | 'treasure';

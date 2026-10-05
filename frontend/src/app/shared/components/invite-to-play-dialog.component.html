@@ -17,17 +17,20 @@
             type="radio"
             name="invite-mode"
             class="sr-only"
-            [value]="choice.mode"
+            [attr.aria-labelledby]="'invite-mode-' + choice.mode"
+            [attr.aria-describedby]="'invite-mode-text-' + choice.mode"
             [checked]="mode() === choice.mode"
             (change)="mode.set(choice.mode)"
           />
-          <span class="flex items-center gap-2 font-semibold">
+          <span class="flex items-center gap-2 font-semibold" [id]="'invite-mode-' + choice.mode">
             @if (mode() === choice.mode) {
               <app-pixel-icon name="check" [scale]="1" />
             }
-            {{ choice.label }}
+            {{ choice.title }}
           </span>
-          <span class="text-sm text-muted">{{ choice.text }}</span>
+          <span class="text-sm text-muted" [id]="'invite-mode-text-' + choice.mode">
+            {{ choice.text }}
+          </span>
         </label>
       }
     </div>
@@ -43,7 +46,8 @@
               type="radio"
               name="invite-quiz"
               class="sr-only"
-              [value]="choice.quiz.id"
+              [attr.aria-labelledby]="'invite-quiz-' + choice.quiz.id"
+              [attr.aria-describedby]="'invite-quiz-facts-' + choice.quiz.id"
               [checked]="selectedQuizId() === choice.quiz.id"
               (change)="selectedQuizId.set(choice.quiz.id)"
             />
@@ -53,8 +57,13 @@
               }
             </span>
             <span class="flex min-w-0 flex-1 flex-col gap-1">
-              <span class="font-semibold leading-tight">{{ choice.quiz.title }}</span>
-              <span class="flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span class="font-semibold leading-tight" [id]="'invite-quiz-' + choice.quiz.id">
+                {{ choice.quiz.title }}
+              </span>
+              <span
+                class="flex flex-wrap items-center gap-2 text-sm text-muted"
+                [id]="'invite-quiz-facts-' + choice.quiz.id"
+              >
                 <app-theme-badge [theme]="choice.quiz.theme" />
                 {{ choice.quiz.questionCount }} questions
                 @if (choice.featured) {
@@ -66,7 +75,7 @@
         }
       </div>
     } @else if (loading()) {
-      <app-spinner label="Finding your quizzes..." [showLabel]="true" />
+      <app-spinner label="Finding your quizzes..." />
     } @else {
       <p class="text-muted">
         You don't have a quiz to play yet.

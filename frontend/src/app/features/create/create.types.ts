@@ -1,6 +1,6 @@
 import { DocumentSummary } from '../../core/models/document.model';
 import { Audience } from '../../core/models/quiz.model';
-import { ItemImageName } from '../../shared/components/empty-state.component';
+import { ItemImageName } from '../../shared/icons';
 
 export type SourceKind = 'TOPIC' | 'PDF' | 'MANUAL';
 

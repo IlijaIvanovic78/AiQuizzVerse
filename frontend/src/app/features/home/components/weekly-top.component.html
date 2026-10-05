@@ -15,10 +15,10 @@
         >
           <app-rank-badge [rank]="entry.rank" />
           <app-user-avatar [heroKey]="entry.user.avatarKey" />
-          <span class="min-w-0 flex-1 truncate font-semibold">
-            {{ entry.user.username }}
+          <span class="flex min-w-0 flex-1 items-center gap-2">
+            <span class="truncate font-semibold">{{ entry.user.username }}</span>
             @if (entry.user.id === myUserId()) {
-              <span class="text-sm text-torch-300">(you)</span>
+              <span class="badge badge-torch">You</span>
             }
           </span>
           <span class="shrink-0 text-sm font-semibold text-mana-400">
@@ -28,7 +28,7 @@
       }
     </ol>
   } @else if (status() === 'loading') {
-    <app-spinner label="Counting this week's XP..." [showLabel]="true" />
+    <app-spinner label="Counting this week's XP..." />
   } @else if (status() === 'failed') {
     <p class="text-muted">The scores didn't load this time.</p>
   } @else {

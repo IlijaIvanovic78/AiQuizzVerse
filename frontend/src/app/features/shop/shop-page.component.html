@@ -33,7 +33,7 @@
       (click)="selectTab(tab.id)"
       (keydown)="moveTab($event, index)"
     >
-      <img [src]="tab.icon" alt="" class="tab-icon" [class.pixelated]="tab.pixelIcon" />
+      <img [src]="tab.icon" alt="" class="tab-icon" [class.pixelated]="tab.pixelated" />
       <span class="tab-label">{{ tab.label }}</span>
     </button>
   }
@@ -77,8 +77,8 @@
     }
   } @else if (activeTab() === 'power-ups') {
     <p class="mb-4 text-fog-200">
-      Use power-ups in solo and team games. Every game also gives you 2 free hints. Duels are always
-      a fair fight, so power-ups stay in your bag there.
+      Use power-ups in solo and team games. Every game also gives you {{ freeHints }} free hints.
+      Duels and parties are fair fights, so power-ups stay in your bag there.
     </p>
 
     @if (boosts().length > 0) {
@@ -125,7 +125,7 @@
 
 <ng-template #loadingShelf>
   <div class="flex justify-center py-12">
-    <app-spinner label="Stocking the shelves..." [showLabel]="true" />
+    <app-spinner label="Stocking the shelves..." />
   </div>
 </ng-template>
 

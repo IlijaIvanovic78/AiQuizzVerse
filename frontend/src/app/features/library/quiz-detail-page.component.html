@@ -70,12 +70,7 @@
             [disabled]="startingMatch()"
             (chosen)="chooseMode(quiz, choice.mode)"
           >
-            <img
-              choiceArt
-              alt=""
-              class="h-14 w-auto sm:h-20"
-              [src]="'/assets/images/icons/' + choice.image + '.webp'"
-            />
+            <img choiceArt alt="" class="h-14 w-auto sm:h-20" [src]="itemIconUrl(choice.image)" />
           </app-choice-card>
         </li>
       }
@@ -215,6 +210,6 @@
   </div>
 } @else {
   <div class="panel mt-3 flex justify-center p-10">
-    <app-spinner label="Opening the quiz..." [showLabel]="true" />
+    <app-spinner label="Opening the quiz..." />
   </div>
 }

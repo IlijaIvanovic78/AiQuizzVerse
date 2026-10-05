@@ -51,7 +51,7 @@
       <a class="btn btn-primary" [routerLink]="['/paths', path.id]">Continue</a>
     </div>
   } @else if (status() === 'loading') {
-    <app-spinner label="Looking for your paths..." [showLabel]="true" />
+    <app-spinner label="Looking for your paths..." />
   } @else if (status() === 'failed') {
     <p class="text-muted">Your paths didn't load this time.</p>
   } @else {
@@ -59,7 +59,7 @@
       @if (hasPaths()) {
         You cleared every step of your paths. Amazing work! Ready for a new adventure?
       } @else {
-        Turn any topic into 5 short lessons, with a quiz after each one.
+        Turn any topic into {{ pathStepCount }} short lessons, with a quiz after each one.
       }
     </p>
     <div class="mt-auto">

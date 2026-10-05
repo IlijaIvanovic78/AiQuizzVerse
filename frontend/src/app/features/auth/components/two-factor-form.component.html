@@ -1,34 +1,16 @@
 <div class="flex flex-col items-center text-center">
   <app-pixel-icon name="lock" [scale]="3" />
   <h1 class="mt-3 text-3xl">Two-step check</h1>
-  <p class="mt-2 text-muted">
-    Open your authenticator app and type the 6-digit code you see there.
-  </p>
+  <p class="mt-2 text-muted">Open your authenticator app and type the code you see there.</p>
 </div>
 
 <form class="mt-6 flex flex-col gap-4" [formGroup]="form" (ngSubmit)="submit()">
-  <div>
-    <label for="two-factor-code" class="field-label">Code</label>
-    <input
-      #codeInput
-      id="two-factor-code"
-      class="input text-center font-display text-xl tracking-[0.4em]"
-      inputmode="numeric"
-      autocomplete="one-time-code"
-      maxlength="6"
-      aria-describedby="two-factor-code-error"
-      formControlName="code"
-      [attr.aria-invalid]="codeInvalid()"
-    />
-    <div id="two-factor-code-error">
-      @if (codeInvalid()) {
-        <p class="field-error">
-          <app-pixel-icon name="cross" [scale]="1" />
-          The code has 6 digits.
-        </p>
-      }
-    </div>
-  </div>
+  <app-code-field
+    inputId="two-factor-code"
+    label="Code"
+    [control]="form.controls.code"
+    [invalid]="codeInvalid()"
+  />
 
   @if (error()) {
     <p class="form-alert" role="alert">

@@ -5,15 +5,17 @@ import { Store } from '@ngrx/store';
 import { LeaderboardScope } from '../../core/models/leaderboard.model';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
-import { PodiumComponent, PodiumPlace } from '../../shared/components/podium.component';
+import {
+  PODIUM_SIZE,
+  PodiumComponent,
+  PodiumPlace,
+} from '../../shared/components/podium.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { UserAvatarComponent } from '../../shared/components/user-avatar.component';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { LeaderboardActions } from '../../store/leaderboard/leaderboard.actions';
 import { leaderboardFeature } from '../../store/leaderboard/leaderboard.reducer';
 import { LeaderboardListComponent } from './components/leaderboard-list.component';
-
-const PODIUM_SIZE = 3;
 
 const SCOPE_CHOICES: { scope: LeaderboardScope; label: string }[] = [
   { scope: 'friends', label: 'Friends' },

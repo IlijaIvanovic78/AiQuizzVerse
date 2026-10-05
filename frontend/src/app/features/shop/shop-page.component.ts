@@ -22,6 +22,7 @@ import { PixelIconComponent } from '../../shared/components/pixel-icon.component
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { PricePipe } from '../../shared/pipes/price.pipe';
 import { authFeature } from '../../store/auth/auth.reducer';
+import { FREE_HINTS_PER_MATCH } from '../../store/match/match.constants';
 import { PaymentsActions } from '../../store/shop/payments.actions';
 import { ShopActions } from '../../store/shop/shop.actions';
 import { shopFeature } from '../../store/shop/shop.reducer';
@@ -66,6 +67,7 @@ export class ShopPageComponent {
   protected readonly tabs = SHOP_TABS;
   protected readonly activeTab = signal<ShopTab>('heroes');
   protected readonly monthlyLimitCents = MONTHLY_LIMIT_CENTS;
+  protected readonly freeHints = FREE_HINTS_PER_MATCH;
 
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   protected readonly coins = this.store.selectSignal(authFeature.selectCoins);

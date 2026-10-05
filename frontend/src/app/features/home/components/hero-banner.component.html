@@ -29,23 +29,17 @@
         <p class="mt-1 text-sm text-muted">{{ heroName() }} of the castle arena</p>
       </div>
 
-      <div>
-        <p class="mb-1.5 text-sm font-semibold">
-          {{ xpToGo() }} XP to level {{ user().level + 1 }}
-        </p>
-        <app-xp-bar [current]="user().xpIntoLevel" [total]="user().xpForNextLevel" />
-      </div>
+      <app-level-progress
+        [level]="user().level"
+        [xpIntoLevel]="user().xpIntoLevel"
+        [xpForNextLevel]="user().xpForNextLevel"
+      />
 
       <div class="hud-tile">
-        <app-pixel-icon
-          class="shrink-0"
-          name="flame"
-          [scale]="3"
-          [class.flame-out]="user().streak === 0"
-          label="Streak"
-        />
+        <app-streak-flame [streak]="user().streak" />
         <div class="min-w-0">
           <p class="font-semibold">
+            <span class="sr-only">Daily streak:</span>
             <span class="font-display text-lg">{{ user().streak }}</span>
             {{ streakDays() }} in a row
           </p>

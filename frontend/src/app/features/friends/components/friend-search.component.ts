@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { outputFromObservable, toSignal } from '@angular/core/rxjs-interop';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { UserSearchResult } from '../../../core/models/friend.model';
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
@@ -10,6 +12,7 @@ import { MIN_SEARCH_LENGTH } from '../../../store/friends/friends.constants';
 @Component({
   selector: 'app-friend-search',
   imports: [
+    ReactiveFormsModule,
     RouterLink,
     LevelBadgeComponent,
     RelationActionsComponent,
@@ -21,21 +24,19 @@ import { MIN_SEARCH_LENGTH } from '../../../store/friends/friends.constants';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FriendSearchComponent {
-  readonly query = input.required<string>();
+  protected readonly search = new FormControl('', { nonNullable: true });
+
   readonly results = input.required<UserSearchResult[]>();
   readonly searching = input.required<boolean>();
   readonly busy = input(false);
-  readonly queryChange = output<string>();
+  readonly queryChange = outputFromObservable(this.search.valueChanges);
   readonly add = output<string>();
   readonly accept = output<string>();
   readonly cancel = output<string>();
 
   protected readonly minLength = MIN_SEARCH_LENGTH;
+  protected readonly query = toSignal(this.search.valueChanges, { initialValue: '' });
   protected readonly tooShort = computed(() => this.query().trim().length < MIN_SEARCH_LENGTH);
-
-  protected typed(event: Event): void {
-    this.queryChange.emit((event.target as HTMLInputElement).value);
-  }
 
   // A request id is the id of the friendship it creates, so pending results carry it.
   protected acceptResult(result: UserSearchResult): void {

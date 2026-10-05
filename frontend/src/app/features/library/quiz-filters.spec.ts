@@ -1,5 +1,5 @@
 import { QuizSummary, QuizTheme } from '../../core/models/quiz.model';
-import { countByTheme, filterQuizzes, notInLibrary } from './quiz-filters';
+import { countByTheme, filterQuizzes } from './quiz-filters';
 
 function quiz(id: string, title: string, theme: QuizTheme, topic = title): QuizSummary {
   return {
@@ -37,9 +37,5 @@ describe('quiz filters', () => {
 
   it('keeps only the chosen theme', () => {
     expect(filterQuizzes([planets, rockets, romans], '', 'SPACE')).toEqual([planets, rockets]);
-  });
-
-  it('hides featured quizzes the player already owns', () => {
-    expect(notInLibrary([planets, romans], [planets])).toEqual([romans]);
   });
 });

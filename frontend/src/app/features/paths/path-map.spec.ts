@@ -1,10 +1,11 @@
-import { StepView } from '../../core/models/path.model';
+import { PathSummary, StepView } from '../../core/models/path.model';
 import {
   findNextStep,
   mapHeightRem,
   stopCenterY,
   trailSegmentPath,
   trailSegments,
+  trailSteps,
 } from './path-map';
 
 function step(position: number, unlocked: boolean, cleared: boolean): StepView {
@@ -21,6 +22,25 @@ function step(position: number, unlocked: boolean, cleared: boolean): StepView {
     unlocked,
     cleared,
     reward: { coins: 20, boost: null },
+  };
+}
+
+function pathSummary(stepsCleared: number, totalSteps: number): PathSummary {
+  const nextPosition = stepsCleared + 1;
+  return {
+    id: 'path-1',
+    topic: 'Volcanoes',
+    audience: 'KIDS',
+    language: 'EN',
+    stepsCleared,
+    totalSteps,
+    stars: stepsCleared * 2,
+    maxStars: totalSteps * 3,
+    nextStep:
+      nextPosition <= totalSteps
+        ? { id: `step-${nextPosition}`, position: nextPosition, title: 'Next', quizId: 'quiz' }
+        : null,
+    createdAt: '2026-10-01T10:00:00.000Z',
   };
 }
 
@@ -61,6 +81,23 @@ describe('path map', () => {
       true,
       true,
       false,
+    ]);
+  });
+
+  it('marks the cleared steps, the next step and the locked ones on the small trail', () => {
+    expect(trailSteps(pathSummary(2, 4)).map((trailStep) => trailStep.state)).toEqual([
+      'cleared',
+      'cleared',
+      'next',
+      'locked',
+    ]);
+  });
+
+  it('has no next step on the small trail of a finished path', () => {
+    expect(trailSteps(pathSummary(3, 3)).map((trailStep) => trailStep.state)).toEqual([
+      'cleared',
+      'cleared',
+      'cleared',
     ]);
   });
 });

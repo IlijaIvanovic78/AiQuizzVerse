@@ -23,6 +23,8 @@ export const TIME_STEP_SECONDS = 5;
 
 const OPTIONS_PER_QUESTION = 4;
 const QUESTION_MIN_LENGTH = 3;
+// Answers, hints and explanations only have to be filled in.
+const ANSWER_MIN_LENGTH = 1;
 export const QUESTION_MAX_LENGTH = 300;
 export const OPTION_MAX_LENGTH = 120;
 export const HINT_MAX_LENGTH = 300;
@@ -53,9 +55,8 @@ export function textLength(min: number, max: number): ValidatorFn {
 }
 
 // Options are compared like the server compares them: trimmed and ignoring case.
-export function distinctOptions(control: AbstractControl): ValidationErrors | null {
-  const options: string[] = control.value;
-  const filled = options.map((option) => option.trim().toLowerCase()).filter(Boolean);
+export function distinctOptions(control: AbstractControl<string[]>): ValidationErrors | null {
+  const filled = control.value.map((option) => option.trim().toLowerCase()).filter(Boolean);
   return new Set(filled).size < filled.length ? { sameOptions: true } : null;
 }
 
@@ -63,15 +64,17 @@ export function createQuestionForm(): QuestionForm {
   return new FormGroup({
     text: textControl(QUESTION_MIN_LENGTH, QUESTION_MAX_LENGTH),
     options: new FormArray(
-      Array.from({ length: OPTIONS_PER_QUESTION }, () => textControl(1, OPTION_MAX_LENGTH)),
+      Array.from({ length: OPTIONS_PER_QUESTION }, () =>
+        textControl(ANSWER_MIN_LENGTH, OPTION_MAX_LENGTH),
+      ),
       { validators: distinctOptions },
     ),
     correctIndex: new FormControl(NO_CORRECT_OPTION, {
       nonNullable: true,
       validators: Validators.min(0),
     }),
-    hint: textControl(1, HINT_MAX_LENGTH),
-    explanation: textControl(1, EXPLANATION_MAX_LENGTH),
+    hint: textControl(ANSWER_MIN_LENGTH, HINT_MAX_LENGTH),
+    explanation: textControl(ANSWER_MIN_LENGTH, EXPLANATION_MAX_LENGTH),
   });
 }
 

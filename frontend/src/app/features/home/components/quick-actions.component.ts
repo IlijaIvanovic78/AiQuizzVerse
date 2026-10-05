@@ -33,6 +33,6 @@ export class QuickActionsComponent {
       code.markAsTouched();
       return;
     }
-    this.join.emit(code.value.trim().toUpperCase());
+    this.join.emit(code.value.toUpperCase());
   }
 }

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ICONS_URL } from '../icons';
 
 export type PixelIconName =
   | 'coin'
@@ -13,7 +14,6 @@ export type PixelIconName =
   | 'trophy';
 
 const ICON_SIZE = 16;
-const ICONS_URL = '/assets/images/icons/';
 
 @Component({
   selector: 'app-pixel-icon',

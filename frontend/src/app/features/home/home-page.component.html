@@ -59,7 +59,7 @@
           </ul>
         } @else if (quizzesStatus() === 'loading') {
           <div class="panel p-5">
-            <app-spinner label="Opening your quiz chest..." [showLabel]="true" />
+            <app-spinner label="Opening your quiz chest..." />
           </div>
         } @else {
           <div class="panel flex flex-col items-start gap-3 p-5">
@@ -101,9 +101,9 @@
       [friend]="friend"
       [quizzes]="myQuizzes()"
       [featured]="featuredQuizzes()"
-      [loading]="quizzesStatus() === 'loading'"
+      [loading]="quizzesLoading()"
       [busy]="matchBusy()"
-      (invite)="sendInvite(friend, $event)"
+      (invite)="sendInvite($event)"
       (closed)="closeInvite()"
     />
   }

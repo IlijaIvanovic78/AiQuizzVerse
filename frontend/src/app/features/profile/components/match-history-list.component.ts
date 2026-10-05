@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { MatchHistoryEntry, MatchMode, MatchOutcome } from '../../../core/models/match.model';
+import { MatchHistoryEntry, MatchOutcome } from '../../../core/models/match.model';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
 import { RelativeTimePipe } from '../../../shared/pipes/relative-time.pipe';
 import { ThemeLabelPipe } from '../../../shared/pipes/theme-label.pipe';
+import { MODE_LABELS } from '../../../shared/play-modes';
 import { RECENT_MATCHES_SHOWN } from '../profile.constants';
 
 // A lost duel is still a good fight; the app never says "Defeat".
@@ -12,13 +13,6 @@ const OUTCOME_LOOKS: Record<MatchOutcome, { label: string; badge: string }> = {
   LOSS: { label: 'Good fight', badge: 'badge-fog' },
   DRAW: { label: 'Draw', badge: 'badge-mana' },
   DONE: { label: 'Finished', badge: 'badge-torch' },
-};
-
-const MODE_LABELS: Record<MatchMode, string> = {
-  SOLO: 'Solo',
-  DUEL: 'Duel',
-  TEAM: 'Team',
-  PARTY: 'Party',
 };
 
 @Component({

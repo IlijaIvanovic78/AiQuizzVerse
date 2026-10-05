@@ -1,6 +1,6 @@
 import { ShopItem } from '../../core/models/shop.model';
 
-export type ItemState = 'equipped' | 'owned' | 'level-locked' | 'too-expensive' | 'for-sale';
+type ItemState = 'equipped' | 'owned' | 'level-locked' | 'too-expensive' | 'for-sale';
 
 export function itemState(item: ShopItem, level: number, coins: number): ItemState {
   if (item.equipped) {

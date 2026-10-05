@@ -19,6 +19,7 @@ import {
   PASSWORD_MIN_LENGTH,
   USERNAME_CHECK_DEBOUNCE_MS,
   USERNAME_PATTERN,
+  USERNAME_RULE,
 } from '../../core/auth/auth.constants';
 import { PetSpriteComponent } from '../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
@@ -26,6 +27,7 @@ import { touchedAndInvalid } from '../../shared/forms/form-signals';
 import { AuthActions } from '../../store/auth/auth.actions';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { AuthLayoutComponent } from './components/auth-layout.component';
+import { PasswordFieldComponent } from './components/password-field.component';
 
 type UsernameStatus = 'idle' | 'invalid' | 'checking' | 'available' | 'taken' | 'unknown';
 
@@ -37,6 +39,7 @@ const WELCOME_PETS = ['pet-bunny', 'pet-fox', 'pet-bear'];
     ReactiveFormsModule,
     RouterLink,
     AuthLayoutComponent,
+    PasswordFieldComponent,
     PetSpriteComponent,
     PixelIconComponent,
   ],
@@ -65,19 +68,16 @@ export class RegisterPageComponent {
   protected readonly emailInvalid = touchedAndInvalid(this.form.controls.email);
   protected readonly passwordInvalid = touchedAndInvalid(this.form.controls.password);
   private readonly usernameInvalid = touchedAndInvalid(this.form.controls.username);
-  protected readonly usernameStatus = toSignal(this.watchUsername(), {
-    initialValue: 'idle' as UsernameStatus,
-  });
+  protected readonly usernameStatus = toSignal(this.watchUsername(), { initialValue: 'idle' });
   protected readonly usernameProblem = computed(() => {
     if (this.usernameStatus() === 'taken') {
       return 'Someone already has that name. Try another one.';
     }
     if (this.usernameStatus() === 'invalid' || this.usernameInvalid()) {
-      return 'Use 3 to 20 letters, numbers or _ (no spaces).';
+      return USERNAME_RULE;
     }
     return null;
   });
-  protected readonly showPassword = signal(false);
   protected readonly pending = this.store.selectSignal(authFeature.selectPending);
 
   private readonly password = toSignal(this.form.controls.password.valueChanges, {
@@ -106,10 +106,6 @@ export class RegisterPageComponent {
     }
     this.submitted.set(true);
     this.store.dispatch(AuthActions.register({ request: this.form.getRawValue() }));
-  }
-
-  protected togglePassword(): void {
-    this.showPassword.update((shown) => !shown);
   }
 
   // Waits until the player stops typing, skips repeats and cancels the previous check.

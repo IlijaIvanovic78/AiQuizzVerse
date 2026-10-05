@@ -1,13 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Friend } from '../../core/models/friend.model';
+import { CreateMatchRequest } from '../../core/models/match.model';
 import { PublicUser } from '../../core/models/user.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
-import {
-  InviteToPlayDialogComponent,
-  PlayInvite,
-} from '../../shared/components/invite-to-play-dialog.component';
+import { InviteToPlayDialogComponent } from '../../shared/components/invite-to-play-dialog.component';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { FriendsActions } from '../../store/friends/friends.actions';
@@ -47,11 +45,11 @@ export class FriendsPageComponent {
   protected readonly outgoing = this.store.selectSignal(friendsFeature.selectOutgoing);
   protected readonly searchResults = this.store.selectSignal(friendsFeature.selectSearchResults);
   protected readonly searching = this.store.selectSignal(friendsFeature.selectSearching);
-  protected readonly query = signal('');
 
   protected readonly myQuizzes = this.store.selectSignal(quizzesFeature.selectAllQuizzes);
   protected readonly featuredQuizzes = this.store.selectSignal(quizzesFeature.selectFeatured);
-  protected readonly quizzesLoaded = this.store.selectSignal(quizzesFeature.selectLoaded);
+  protected readonly quizzesLoading = this.store.selectSignal(quizzesFeature.selectLoading);
+  private readonly quizzesLoaded = this.store.selectSignal(quizzesFeature.selectLoaded);
   protected readonly matchBusy = this.store.selectSignal(matchFeature.selectBusy);
 
   protected readonly friendToRemove = signal<Friend | null>(null);
@@ -73,7 +71,6 @@ export class FriendsPageComponent {
 
   // Every keystroke is dispatched; the effect waits for a pause and cancels older searches.
   protected search(query: string): void {
-    this.query.set(query);
     this.store.dispatch(FriendsActions.search({ query }));
   }
 
@@ -106,12 +103,8 @@ export class FriendsPageComponent {
     }
   }
 
-  protected sendInvite(friend: PublicUser, invite: PlayInvite): void {
-    this.store.dispatch(
-      MatchActions.create({
-        request: { quizId: invite.quizId, mode: invite.mode, inviteFriendId: friend.id },
-      }),
-    );
+  protected sendInvite(request: CreateMatchRequest): void {
+    this.store.dispatch(MatchActions.create({ request }));
   }
 }
 

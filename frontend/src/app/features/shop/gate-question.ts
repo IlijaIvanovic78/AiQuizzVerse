@@ -1,6 +1,6 @@
 import { GATE_LEFT_MAX, GATE_LEFT_MIN, GATE_RIGHT_MAX, GATE_RIGHT_MIN } from './shop.constants';
 
-export interface GateQuestion {
+interface GateQuestion {
   left: number;
   right: number;
   answer: number;

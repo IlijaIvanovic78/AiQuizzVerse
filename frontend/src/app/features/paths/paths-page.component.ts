@@ -6,8 +6,8 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { PathsActions } from '../../store/paths/paths.actions';
 import { pathsFeature } from '../../store/paths/paths.reducer';
+import { NEW_PATH_QUERY_PARAMS, PATH_STEP_COUNT } from '../create/create.constants';
 import { PathCardComponent } from './components/path-card.component';
-import { NEW_PATH_QUERY_PARAMS } from '../create/create.constants';
 
 @Component({
   selector: 'app-paths-page',
@@ -28,6 +28,10 @@ export class PathsPageComponent {
   protected readonly loaded = this.store.selectSignal(pathsFeature.selectLoaded);
   protected readonly error = this.store.selectSignal(pathsFeature.selectError);
   protected readonly newPathQuery = NEW_PATH_QUERY_PARAMS;
+  protected readonly stepCount = PATH_STEP_COUNT;
+  protected readonly emptyText =
+    `A learning path turns any topic or lesson into ${PATH_STEP_COUNT} steps. Read a short ` +
+    'study card, take the quiz, collect stars and open the treasure on the way to the castle.';
 
   protected readonly firstLoadFailed = computed(() => !this.loaded() && this.error() !== null);
 

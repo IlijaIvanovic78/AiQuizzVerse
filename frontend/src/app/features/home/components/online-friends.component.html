@@ -35,7 +35,7 @@
       }
     </ul>
   } @else if (status() === 'loading') {
-    <app-spinner label="Looking for your friends..." [showLabel]="true" />
+    <app-spinner label="Looking for your friends..." />
   } @else if (status() === 'failed') {
     <p class="text-muted">Your friends list didn't load this time.</p>
   } @else if (hasFriends()) {

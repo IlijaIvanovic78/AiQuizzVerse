@@ -29,6 +29,7 @@ import {
     SpinnerComponent,
   ],
   templateUrl: './review-page.component.html',
+  styleUrl: './review-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviewPageComponent {

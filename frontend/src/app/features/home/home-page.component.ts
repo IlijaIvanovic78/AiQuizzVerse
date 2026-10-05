@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { CreateMatchRequest } from '../../core/models/match.model';
 import { QuizSummary } from '../../core/models/quiz.model';
 import { PublicUser } from '../../core/models/user.model';
-import {
-  InviteToPlayDialogComponent,
-  PlayInvite,
-} from '../../shared/components/invite-to-play-dialog.component';
+import { InviteToPlayDialogComponent } from '../../shared/components/invite-to-play-dialog.component';
 import { PlayChoice, PlayModalComponent } from '../../shared/components/play-modal.component';
 import { QuizCardComponent } from '../../shared/components/quiz-card.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
@@ -62,6 +60,7 @@ export class HomePageComponent {
 
   protected readonly myQuizzes = this.store.selectSignal(quizzesFeature.selectAllQuizzes);
   protected readonly featuredQuizzes = this.store.selectSignal(quizzesFeature.selectFeatured);
+  protected readonly quizzesLoading = this.store.selectSignal(quizzesFeature.selectLoading);
   private readonly quizzesLoaded = this.store.selectSignal(quizzesFeature.selectLoaded);
   private readonly quizzesError = this.store.selectSignal(quizzesFeature.selectError);
   protected readonly quizzesStatus = computed(() =>
@@ -158,11 +157,7 @@ export class HomePageComponent {
     this.invitedFriend.set(null);
   }
 
-  protected sendInvite(friend: PublicUser, invite: PlayInvite): void {
-    this.store.dispatch(
-      MatchActions.create({
-        request: { quizId: invite.quizId, mode: invite.mode, inviteFriendId: friend.id },
-      }),
-    );
+  protected sendInvite(request: CreateMatchRequest): void {
+    this.store.dispatch(MatchActions.create({ request }));
   }
 }

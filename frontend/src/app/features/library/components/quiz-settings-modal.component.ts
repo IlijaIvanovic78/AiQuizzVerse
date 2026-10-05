@@ -4,8 +4,8 @@ import {
   OnInit,
   inject,
   input,
-  linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UpdateQuizRequest } from '../../../core/models/quiz.model';
@@ -35,7 +35,8 @@ export class QuizSettingsModalComponent implements OnInit {
   readonly closed = output<void>();
 
   protected readonly limits = {
-    title: QUIZ_TITLE_MAX_LENGTH,
+    minTitle: QUIZ_TITLE_MIN_LENGTH,
+    maxTitle: QUIZ_TITLE_MAX_LENGTH,
     minTime: MIN_TIME_PER_QUESTION,
     maxTime: MAX_TIME_PER_QUESTION,
     timeStep: TIME_STEP_SECONDS,
@@ -44,10 +45,12 @@ export class QuizSettingsModalComponent implements OnInit {
     title: ['', textLength(QUIZ_TITLE_MIN_LENGTH, QUIZ_TITLE_MAX_LENGTH)],
   });
   protected readonly titleInvalid = touchedAndInvalid(this.form.controls.title);
-  protected readonly time = linkedSignal(() => this.timePerQuestion());
+  protected readonly time = signal(0);
 
+  // Inputs are not set yet when fields are created, so the form is filled here.
   ngOnInit(): void {
     this.form.setValue({ title: this.quizTitle() });
+    this.time.set(this.timePerQuestion());
   }
 
   protected save(): void {

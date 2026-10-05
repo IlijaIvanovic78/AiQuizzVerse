@@ -40,20 +40,13 @@
 
       <div>
         <label for="login-password" class="field-label">Password</label>
-        <div class="flex gap-2">
-          <input
-            id="login-password"
-            class="input"
-            autocomplete="current-password"
-            aria-describedby="login-password-error"
-            formControlName="password"
-            [type]="showPassword() ? 'text' : 'password'"
-            [attr.aria-invalid]="passwordInvalid()"
-          />
-          <button type="button" class="btn btn-secondary shrink-0" (click)="togglePassword()">
-            {{ showPassword() ? 'Hide' : 'Show' }}<span class="sr-only"> password</span>
-          </button>
-        </div>
+        <app-password-field
+          inputId="login-password"
+          autocomplete="current-password"
+          describedBy="login-password-error"
+          [control]="form.controls.password"
+          [invalid]="passwordInvalid()"
+        />
         <div id="login-password-error">
           @if (passwordInvalid()) {
             <p class="field-error">

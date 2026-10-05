@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   afterNextRender,
   inject,
   input,
@@ -10,12 +9,13 @@ import {
 } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TWO_FACTOR_CODE_PATTERN } from '../../../core/auth/auth.constants';
+import { CodeFieldComponent } from '../../../shared/components/code-field.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { touchedAndInvalid } from '../../../shared/forms/form-signals';
 
 @Component({
   selector: 'app-two-factor-form',
-  imports: [ReactiveFormsModule, PixelIconComponent],
+  imports: [ReactiveFormsModule, CodeFieldComponent, PixelIconComponent],
   templateUrl: './two-factor-form.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,10 +30,10 @@ export class TwoFactorFormComponent {
   });
   protected readonly codeInvalid = touchedAndInvalid(this.form.controls.code);
 
-  private readonly codeInput = viewChild.required<ElementRef<HTMLInputElement>>('codeInput');
+  private readonly codeField = viewChild.required(CodeFieldComponent);
 
   constructor() {
-    afterNextRender(() => this.codeInput().nativeElement.focus());
+    afterNextRender(() => this.codeField().focus());
   }
 
   protected submit(): void {

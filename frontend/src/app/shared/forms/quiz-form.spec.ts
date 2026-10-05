@@ -1,6 +1,10 @@
 import { FormArray, FormControl } from '@angular/forms';
 import { createQuestionForm, distinctOptions, textLength, toQuestionInput } from './quiz-form';
 
+function optionsArray(values: string[]): FormArray<FormControl<string>> {
+  return new FormArray(values.map((value) => new FormControl(value, { nonNullable: true })));
+}
+
 describe('quiz form rules', () => {
   it('trims text before checking its length', () => {
     const title = new FormControl('  ab  ', { validators: textLength(3, 80) });
@@ -12,23 +16,13 @@ describe('quiz form rules', () => {
   });
 
   it('finds options that are the same apart from case and spaces', () => {
-    const options = new FormArray([
-      new FormControl('Mars'),
-      new FormControl(' mars '),
-      new FormControl('Venus'),
-      new FormControl(''),
-    ]);
+    const options = optionsArray(['Mars', ' mars ', 'Venus', '']);
 
     expect(distinctOptions(options)).toEqual({ sameOptions: true });
   });
 
   it('does not count empty options as the same', () => {
-    const options = new FormArray([
-      new FormControl('Mars'),
-      new FormControl(''),
-      new FormControl(''),
-      new FormControl('Venus'),
-    ]);
+    const options = optionsArray(['Mars', '', '', 'Venus']);
 
     expect(distinctOptions(options)).toBeNull();
   });

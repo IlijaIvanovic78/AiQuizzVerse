@@ -27,18 +27,17 @@
       </div>
 
       @if (levelProgress(); as progress) {
-        <div>
-          <p class="mb-1.5 text-sm font-semibold">
-            {{ progress.total - progress.current }} XP to level {{ user().level + 1 }}
-          </p>
-          <app-xp-bar [current]="progress.current" [total]="progress.total" />
-        </div>
+        <app-level-progress
+          [level]="user().level"
+          [xpIntoLevel]="progress.current"
+          [xpForNextLevel]="progress.total"
+        />
       } @else {
         <p class="text-lg font-semibold text-mana-400">{{ user().xp | number }} XP collected</p>
       }
 
       <div class="flex items-center gap-3">
-        <app-pixel-icon name="flame" [scale]="3" [class.opacity-40]="user().streak === 0" />
+        <app-streak-flame [streak]="user().streak" />
         <p class="leading-tight">
           <span class="block font-semibold">{{ streakLabel() }}</span>
           <span class="text-sm text-muted">Daily streak</span>

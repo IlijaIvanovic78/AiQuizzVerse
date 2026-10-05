@@ -2,7 +2,9 @@ import { SpriteEntry } from '../../core/models/sprite.model';
 
 const PLACEHOLDER_FRAME_SIZE = 32;
 
-export type SpriteStyle = Record<string, string>;
+export const DEFAULT_SPRITE_SCALE = 4;
+
+type SpriteStyle = Record<string, string>;
 
 // The sheet is one row of frames, so moving the background by the full sheet width in
 // steps(frames) shows every frame once per loop.

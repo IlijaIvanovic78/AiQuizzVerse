@@ -1,0 +1,128 @@
+@if (subject()) {
+  <p class="mt-2 text-muted">
+    {{ kind() === 'PATH' ? 'A learning path' : 'A quiz' }} about
+    <span class="font-semibold text-parchment-100">{{ subject() }}</span>
+  </p>
+}
+
+@if (source() === 'MANUAL') {
+  <div class="mt-6">
+    <label for="create-title" class="field-label text-lg">Quiz name</label>
+    <input
+      id="create-title"
+      class="input text-lg"
+      placeholder="For example: Planets of our Sun"
+      aria-describedby="create-title-problem"
+      [formControl]="quizTitle()"
+      [attr.maxlength]="limits.maxTitle"
+      [attr.aria-invalid]="quizTitleInvalid()"
+    />
+    <div id="create-title-problem">
+      @if (quizTitleInvalid()) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          Give your quiz a name with at least {{ limits.minTitle }} letters.
+        </p>
+      }
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <p id="theme-label" class="field-label text-lg">Theme</p>
+    <div class="flex flex-wrap gap-2" role="group" aria-labelledby="theme-label">
+      @for (option of themes; track option) {
+        <button
+          type="button"
+          class="chip"
+          [attr.aria-pressed]="theme() === option"
+          (click)="theme.set(option)"
+        >
+          {{ option | themeLabel }}
+        </button>
+      }
+    </div>
+  </div>
+}
+
+<div class="mt-8">
+  <p id="audience-label" class="field-label text-lg">Who is it for?</p>
+  <app-audience-picker
+    role="group"
+    aria-labelledby="audience-label"
+    [value]="audience()"
+    (picked)="audiencePicked.emit($event)"
+  />
+</div>
+
+<div class="mt-8 grid gap-6 md:grid-cols-2">
+  <div>
+    <p id="language-label" class="field-label text-lg">Language</p>
+    <div class="flex flex-wrap gap-2" role="group" aria-labelledby="language-label">
+      @for (option of languages; track option) {
+        <button
+          type="button"
+          class="chip"
+          [attr.aria-pressed]="language() === option"
+          (click)="language.set(option)"
+        >
+          {{ option | languageLabel }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (kind() === 'QUIZ') {
+    <div>
+      <p id="difficulty-label" class="field-label text-lg">Difficulty</p>
+      <div class="flex flex-wrap gap-2" role="group" aria-labelledby="difficulty-label">
+        @for (option of difficulties; track option.value) {
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="difficulty() === option.value"
+            (click)="difficulty.set(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (source() !== 'MANUAL') {
+      <div>
+        <p id="count-label" class="field-label text-lg">Questions</p>
+        <app-number-stepper
+          labelledBy="count-label"
+          name="questions"
+          [value]="questionCount()"
+          [min]="limits.minQuestions"
+          [max]="limits.maxQuestions"
+          (valueChange)="questionCount.set($event)"
+        />
+      </div>
+    }
+
+    <div>
+      <p id="time-label" class="field-label text-lg">Time per question</p>
+      <app-number-stepper
+        labelledBy="time-label"
+        name="seconds"
+        unit="s"
+        [value]="timePerQuestion()"
+        [min]="limits.minTime"
+        [max]="limits.maxTime"
+        [step]="limits.timeStep"
+        (valueChange)="timePerQuestion.set($event)"
+      />
+      <p class="field-hint">Picking who it's for sets a fair time. Change it if you like.</p>
+    </div>
+  } @else {
+    <div class="panel-parchment p-4">
+      <p class="font-semibold">{{ pathSteps }} steps, from easy to master</p>
+      <p class="read-text mt-1">
+        Each step has a short study card and its own quiz. Clear a step to unlock the next one and
+        win its reward.
+      </p>
+    </div>
+  }
+</div>

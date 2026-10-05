@@ -1,4 +1,4 @@
-import { StepView } from '../../core/models/path.model';
+import { PathSummary, StepView } from '../../core/models/path.model';
 import {
   CASTLE_ROW_REM,
   CASTLE_TILE_REM,
@@ -8,7 +8,7 @@ import {
 } from './paths.constants';
 
 // x is a percent of the map width, y is in rem from the top of the map.
-export interface TrailPoint {
+interface TrailPoint {
   x: number;
   y: number;
 }
@@ -16,6 +16,14 @@ export interface TrailPoint {
 export interface TrailSegment {
   d: string;
   done: boolean;
+}
+
+export type TrailStepState = 'cleared' | 'next' | 'locked';
+
+// One stop of the small trail drawn on path cards.
+interface TrailStep {
+  position: number;
+  state: TrailStepState;
 }
 
 export function findNextStep(steps: StepView[]): StepView | null {
@@ -47,4 +55,19 @@ export function trailSegments(points: TrailPoint[], steps: StepView[]): TrailSeg
     d: trailSegmentPath(points[index], point),
     done: steps[index].cleared,
   }));
+}
+
+// Steps unlock one after another, so the first `stepsCleared` steps are the cleared ones.
+export function trailSteps(path: PathSummary): TrailStep[] {
+  return Array.from({ length: path.totalSteps }, (_, index) => {
+    const position = index + 1;
+    return { position, state: trailStepState(position, path) };
+  });
+}
+
+function trailStepState(position: number, path: PathSummary): TrailStepState {
+  if (position <= path.stepsCleared) {
+    return 'cleared';
+  }
+  return position === path.nextStep?.position ? 'next' : 'locked';
 }

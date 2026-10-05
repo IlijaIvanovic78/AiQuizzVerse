@@ -1,0 +1,75 @@
+<ul class="mt-5 grid gap-4 sm:grid-cols-3">
+  @for (choice of choices; track choice.value) {
+    <li>
+      <app-choice-card
+        [title]="choice.title"
+        [text]="choice.text"
+        [selected]="source() === choice.value"
+        (chosen)="source.set(choice.value)"
+      >
+        <img choiceArt alt="" class="h-14 w-auto sm:h-20" [src]="itemIconUrl(choice.image)" />
+      </app-choice-card>
+    </li>
+  }
+</ul>
+
+<div class="mt-8">
+  @switch (source()) {
+    @case ('TOPIC') {
+      <label for="create-topic" class="field-label text-lg">What do you want to learn about?</label>
+      <input
+        id="create-topic"
+        class="input text-lg"
+        placeholder="For example: volcanoes"
+        aria-describedby="create-topic-problem"
+        [formControl]="topic()"
+        [attr.maxlength]="limits.maxTopic"
+        [attr.aria-invalid]="topicInvalid()"
+        (keydown.enter)="topicSubmitted.emit()"
+      />
+      <div id="create-topic-problem">
+        @if (topicInvalid()) {
+          <p class="field-error">
+            <app-pixel-icon name="cross" [scale]="1" />
+            Type a topic with at least {{ limits.minTopic }} letters.
+          </p>
+        }
+      </div>
+      <p id="topic-ideas" class="mt-5 font-semibold text-muted">Need an idea?</p>
+      <div class="mt-2 flex flex-wrap gap-2" role="group" aria-labelledby="topic-ideas">
+        @for (suggestion of suggestions; track suggestion) {
+          <button
+            type="button"
+            class="chip"
+            [attr.aria-pressed]="topicValue() === suggestion"
+            (click)="suggestTopic(suggestion)"
+          >
+            {{ suggestion }}
+          </button>
+        }
+      </div>
+    }
+    @case ('PDF') {
+      <app-pdf-dropzone
+        [state]="upload()"
+        (fileChosen)="fileChosen.emit($event)"
+        (removed)="lessonRemoved.emit()"
+      />
+    }
+    @case ('MANUAL') {
+      <div class="panel-parchment flex items-center gap-4 p-4 sm:p-5">
+        <img
+          src="/assets/images/icons/axes.webp"
+          alt=""
+          width="256"
+          height="204"
+          class="hidden h-16 w-auto sm:block"
+        />
+        <p class="read-text">
+          You'll write {{ limits.minQuestions }} to {{ limits.maxQuestions }} questions. Each one
+          needs 4 answers, a hint and a short explanation of the right answer.
+        </p>
+      </div>
+    }
+  }
+</div>

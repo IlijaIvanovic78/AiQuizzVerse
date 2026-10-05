@@ -7,14 +7,14 @@
         class="input"
         formControlName="title"
         aria-describedby="quiz-settings-title-problem"
-        [attr.maxlength]="limits.title"
+        [attr.maxlength]="limits.maxTitle"
         [attr.aria-invalid]="titleInvalid()"
       />
       <div id="quiz-settings-title-problem">
         @if (titleInvalid()) {
           <p class="field-error">
             <app-pixel-icon name="cross" [scale]="1" />
-            Give your quiz a name with at least 3 letters.
+            Give your quiz a name with at least {{ limits.minTitle }} letters.
           </p>
         }
       </div>

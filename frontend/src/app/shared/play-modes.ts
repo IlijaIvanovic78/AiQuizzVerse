@@ -1,7 +1,11 @@
 import { MatchMode } from '../core/models/match.model';
-import { ItemImageName } from './components/empty-state.component';
+import { ItemImageName } from './icons';
 
-export interface ModeChoice {
+export const MAX_PLAYERS: Record<MatchMode, number> = { SOLO: 1, DUEL: 2, TEAM: 2, PARTY: 4 };
+// Connected players the host needs before the start button works.
+export const PLAYERS_TO_START: Record<MatchMode, number> = { SOLO: 1, DUEL: 2, TEAM: 2, PARTY: 2 };
+
+interface ModeChoice {
   mode: MatchMode;
   title: string;
   text: string;
@@ -29,8 +33,15 @@ export const MODE_CHOICES: ModeChoice[] = [
   },
   {
     mode: 'PARTY',
-    title: 'Party (2-4)',
+    title: `Party (${PLAYERS_TO_START.PARTY}-${MAX_PLAYERS.PARTY})`,
     text: 'The first right answer wins. Sabotage your friends!',
     image: 'potion',
   },
 ];
+
+export const MODE_LABELS: Record<MatchMode, string> = {
+  SOLO: 'Solo',
+  DUEL: 'Duel',
+  TEAM: 'Team',
+  PARTY: 'Party',
+};

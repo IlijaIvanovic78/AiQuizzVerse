@@ -57,26 +57,21 @@
           </p>
         } @else if (usernameStatus() === 'checking') {
           <p class="field-hint">Checking the name...</p>
+        } @else if (usernameStatus() === 'unknown') {
+          <p class="field-hint">We couldn't check the name. You can still try it.</p>
         }
       </div>
     </div>
 
     <div>
       <label for="register-password" class="field-label">Password</label>
-      <div class="flex gap-2">
-        <input
-          id="register-password"
-          class="input"
-          autocomplete="new-password"
-          aria-describedby="register-password-rule"
-          formControlName="password"
-          [type]="showPassword() ? 'text' : 'password'"
-          [attr.aria-invalid]="passwordInvalid()"
-        />
-        <button type="button" class="btn btn-secondary shrink-0" (click)="togglePassword()">
-          {{ showPassword() ? 'Hide' : 'Show' }}<span class="sr-only"> password</span>
-        </button>
-      </div>
+      <app-password-field
+        inputId="register-password"
+        autocomplete="new-password"
+        describedBy="register-password-rule"
+        [control]="form.controls.password"
+        [invalid]="passwordInvalid()"
+      />
       <p
         id="register-password-rule"
         class="flex items-center gap-1.5"

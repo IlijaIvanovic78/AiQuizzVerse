@@ -6,6 +6,7 @@ import {
   inject,
   input,
   signal,
+  untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
@@ -25,6 +26,7 @@ import { PlayChoice, PlayModalComponent } from '../../shared/components/play-mod
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { ThemeBadgeComponent } from '../../shared/components/theme-badge.component';
 import { MAX_QUESTIONS, MIN_QUESTIONS } from '../../shared/forms/quiz-form';
+import { itemIconUrl } from '../../shared/icons';
 import { AudienceLabelPipe } from '../../shared/pipes/audience-label.pipe';
 import { LanguageLabelPipe } from '../../shared/pipes/language-label.pipe';
 import { MODE_CHOICES } from '../../shared/play-modes';
@@ -74,6 +76,7 @@ export class QuizDetailPageComponent {
   readonly quizId = input.required<string>();
 
   protected readonly modeChoices = MODE_CHOICES;
+  protected readonly itemIconUrl = itemIconUrl;
   protected readonly sourceLabels = SOURCE_LABELS;
   protected readonly minQuestions = MIN_QUESTIONS;
 
@@ -105,11 +108,14 @@ export class QuizDetailPageComponent {
   protected readonly friendMode = signal<MatchMode | null>(null);
 
   constructor() {
-    effect(() => this.store.dispatch(QuizzesActions.loadDetail({ quizId: this.quizId() })));
+    effect(() => {
+      const quizId = this.quizId();
+      untracked(() => this.load(quizId));
+    });
   }
 
   protected reload(): void {
-    this.store.dispatch(QuizzesActions.loadDetail({ quizId: this.quizId() }));
+    this.load(this.quizId());
   }
 
   protected chooseMode(quiz: QuizDetail, mode: MatchMode): void {
@@ -162,8 +168,12 @@ export class QuizDetailPageComponent {
     this.editingDetails.set(false);
   }
 
+  // The dialog stays open and busy until the quiz is gone and the page leaves for the library.
   protected deleteQuiz(quiz: QuizDetail): void {
     this.store.dispatch(QuizzesActions.delete({ quizId: quiz.id }));
-    this.deletingQuiz.set(false);
+  }
+
+  private load(quizId: string): void {
+    this.store.dispatch(QuizzesActions.loadDetail({ quizId }));
   }
 }

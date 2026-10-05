@@ -9,8 +9,7 @@
     autocomplete="off"
     spellcheck="false"
     aria-describedby="friend-search-status"
-    [value]="query()"
-    (input)="typed($event)"
+    [formControl]="search"
   />
 
   <div id="friend-search-status" class="mt-4" aria-live="polite">
@@ -42,7 +41,7 @@
         }
       </ul>
     } @else if (searching()) {
-      <app-spinner label="Searching the kingdom..." [showLabel]="true" />
+      <app-spinner label="Searching the kingdom..." />
     } @else {
       <p class="text-muted">
         No hero called "{{ query().trim() }}" yet. Check the spelling with your friend.

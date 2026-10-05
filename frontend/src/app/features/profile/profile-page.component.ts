@@ -1,4 +1,3 @@
-import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -33,7 +32,6 @@ import { ProfileView } from '../../core/models/profile.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { SoundService } from '../../core/sound/sound.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
-import { PixelIconName } from '../../shared/components/pixel-icon.component';
 import { RelationActionsComponent } from '../../shared/components/relation-actions.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { StatTileComponent } from '../../shared/components/stat-tile.component';
@@ -50,18 +48,8 @@ import { MatchHistoryListComponent } from './components/match-history-list.compo
 import { ProfileHeroCardComponent } from './components/profile-hero-card.component';
 import { ProfileSettingsComponent } from './components/profile-settings.component';
 import { PurchaseListComponent } from './components/purchase-list.component';
-
-type ProfileState =
-  | { status: 'loading' }
-  | { status: 'ready'; profile: ProfileView }
-  | { status: 'missing' }
-  | { status: 'failed'; message: string };
-
-interface StatTile {
-  label: string;
-  value: string | number;
-  icon: PixelIconName;
-}
+import { failedState, statTilesFor } from './profile.rules';
+import { ProfileState } from './profile.types';
 
 const LOADING: ProfileState = { status: 'loading' };
 
@@ -247,27 +235,4 @@ export class ProfilePageComponent {
       this.retry$.next();
     }
   }
-}
-
-function failedState(error: unknown): ProfileState {
-  if (error instanceof HttpErrorResponse && error.status === HttpStatusCode.NotFound) {
-    return { status: 'missing' };
-  }
-  return { status: 'failed', message: readErrorMessage(error) };
-}
-
-function statTilesFor({ stats, user, relation }: ProfileView): StatTile[] {
-  const tiles: StatTile[] = [
-    { label: 'Matches played', value: stats.matchesPlayed, icon: 'bolt' },
-    { label: 'Wins', value: stats.wins, icon: 'trophy' },
-    { label: 'Questions answered', value: stats.questionsAnswered, icon: 'check' },
-    { label: 'Accuracy', value: `${stats.accuracy}%`, icon: 'star-empty' },
-    { label: 'Quizzes created', value: stats.quizzesCreated, icon: 'heart' },
-    { label: 'Path stars', value: stats.pathStars, icon: 'star' },
-    { label: 'Best streak', value: user.longestStreak, icon: 'flame' },
-  ];
-  if (relation === 'SELF') {
-    tiles.push({ label: 'Mistakes to review', value: stats.mistakesToReview, icon: 'cross' });
-  }
-  return tiles;
 }

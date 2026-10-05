@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-
-export type ItemImageName = 'sword' | 'axes' | 'chest' | 'shield' | 'potion' | 'treasure';
+import { ItemImageName, itemIconUrl } from '../icons';
 
 @Component({
   selector: 'app-empty-state',
@@ -24,5 +23,5 @@ export class EmptyStateComponent {
   readonly text = input('');
   readonly image = input<ItemImageName>('treasure');
 
-  protected readonly imageUrl = computed(() => `/assets/images/icons/${this.image()}.webp`);
+  protected readonly imageUrl = computed(() => itemIconUrl(this.image()));
 }

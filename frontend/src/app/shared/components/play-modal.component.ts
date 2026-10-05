@@ -9,7 +9,8 @@ import {
 import { RouterLink } from '@angular/router';
 import { Friend } from '../../core/models/friend.model';
 import { CreateMatchRequest, MatchMode } from '../../core/models/match.model';
-import { MODE_CHOICES } from '../play-modes';
+import { itemIconUrl } from '../icons';
+import { MAX_PLAYERS, MODE_CHOICES } from '../play-modes';
 import { ChoiceCardComponent } from './choice-card.component';
 import { LevelBadgeComponent } from './level-badge.component';
 import { ModalComponent } from './modal.component';
@@ -59,6 +60,8 @@ export class PlayModalComponent {
   readonly closed = output<void>();
 
   protected readonly modeChoices = MODE_CHOICES;
+  protected readonly maxPartyPlayers = MAX_PLAYERS.PARTY;
+  protected readonly itemIconUrl = itemIconUrl;
   protected readonly chosenMode = linkedSignal(() => this.startMode());
   protected readonly title = computed(() => {
     const mode = this.chosenMode();

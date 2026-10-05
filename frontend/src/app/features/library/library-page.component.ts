@@ -10,6 +10,7 @@ import { PixelIconComponent } from '../../shared/components/pixel-icon.component
 import { PlayChoice, PlayModalComponent } from '../../shared/components/play-modal.component';
 import { QuizCardComponent } from '../../shared/components/quiz-card.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
+import { notInLibrary } from '../../shared/featured-quizzes';
 import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
 import { MatchActions } from '../../store/match/match.actions';
@@ -17,7 +18,7 @@ import { matchFeature } from '../../store/match/match.reducer';
 import { QuizzesActions } from '../../store/quizzes/quizzes.actions';
 import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
 import { ThemeFilterComponent } from './components/theme-filter.component';
-import { countByTheme, filterQuizzes, notInLibrary } from './quiz-filters';
+import { countByTheme, filterQuizzes } from './quiz-filters';
 
 @Component({
   selector: 'app-library-page',

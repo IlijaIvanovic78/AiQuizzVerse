@@ -12,6 +12,7 @@
     [class]="dialogClass()"
     [attr.aria-labelledby]="titleId"
     animate.enter="modal-enter"
+    (keydown.escape)="closeOnEscape($event)"
     (keydown)="keepFocusInside($event)"
   >
     <header class="mb-4 flex items-start justify-between gap-3">

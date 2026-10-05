@@ -9,6 +9,7 @@ import { touchedAndInvalid } from '../../shared/forms/form-signals';
 import { AuthActions } from '../../store/auth/auth.actions';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { AuthLayoutComponent } from './components/auth-layout.component';
+import { PasswordFieldComponent } from './components/password-field.component';
 import { TwoFactorFormComponent } from './components/two-factor-form.component';
 
 const WELCOME_HEROES = ['mini-sword-man', 'mini-mage', 'mini-archer-man'];
@@ -21,6 +22,7 @@ const WELCOME_PET = 'pet-fox';
     RouterLink,
     AuthLayoutComponent,
     HeroSpriteComponent,
+    PasswordFieldComponent,
     PetSpriteComponent,
     PixelIconComponent,
     TwoFactorFormComponent,
@@ -39,7 +41,6 @@ export class LoginPageComponent {
   });
   protected readonly emailInvalid = touchedAndInvalid(this.form.controls.email);
   protected readonly passwordInvalid = touchedAndInvalid(this.form.controls.password);
-  protected readonly showPassword = signal(false);
   protected readonly pending = this.store.selectSignal(authFeature.selectPending);
   protected readonly twoFactorToken = this.store.selectSignal(authFeature.selectTwoFactorToken);
 
@@ -63,9 +64,5 @@ export class LoginPageComponent {
 
   protected backToLogin(): void {
     this.store.dispatch(AuthActions.twoFactorCancelled());
-  }
-
-  protected togglePassword(): void {
-    this.showPassword.update((shown) => !shown);
   }
 }

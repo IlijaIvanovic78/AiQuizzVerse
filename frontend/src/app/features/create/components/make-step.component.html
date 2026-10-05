@@ -1,0 +1,19 @@
+<ul class="mt-5 grid gap-4 sm:grid-cols-2">
+  @for (choice of choices; track choice.value) {
+    <li>
+      <app-choice-card
+        [title]="choice.title"
+        [text]="choice.text"
+        [selected]="kind() === choice.value"
+        (chosen)="kind.set(choice.value)"
+      >
+        <img choiceArt alt="" class="h-14 w-auto sm:h-20" [src]="itemIconUrl(choice.image)" />
+      </app-choice-card>
+    </li>
+  }
+</ul>
+@if (kind() === 'PATH') {
+  <p class="mt-5 text-muted">
+    A learning path counts as {{ pathCost }} of your {{ dailyLimit }} creations for today.
+  </p>
+}

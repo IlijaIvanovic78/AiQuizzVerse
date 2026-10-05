@@ -53,12 +53,12 @@ export class CheckoutPageComponent {
   constructor() {
     effect(() => {
       const purchaseId = this.purchaseId();
-      untracked(() => this.store.dispatch(PaymentsActions.loadPurchase({ purchaseId })));
+      untracked(() => this.load(purchaseId));
     });
   }
 
   protected reload(): void {
-    this.store.dispatch(PaymentsActions.loadPurchase({ purchaseId: this.purchaseId() }));
+    this.load(this.purchaseId());
   }
 
   protected pay(): void {
@@ -67,6 +67,10 @@ export class CheckoutPageComponent {
 
   protected cancel(): void {
     this.returnWithStatus(CANCELLED_PAYMENT_STATUS);
+  }
+
+  private load(purchaseId: string): void {
+    this.store.dispatch(PaymentsActions.loadPurchase({ purchaseId }));
   }
 
   // Like a real provider, the checkout only sends the player back with a status.

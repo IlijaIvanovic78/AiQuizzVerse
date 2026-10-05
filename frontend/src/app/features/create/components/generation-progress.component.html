@@ -13,28 +13,11 @@
       <div class="walker" [style.--walked]="walked()">
         @if (petKey(); as petKey) {
           <span class="walker-pet">
-            <app-pet-sprite class="md:hidden" [petKey]="petKey" [scale]="1" [decorative]="true" />
-            <app-pet-sprite
-              class="hidden md:inline-block"
-              [petKey]="petKey"
-              [scale]="2"
-              [decorative]="true"
-            />
+            <app-pet-sprite [petKey]="petKey" [scale]="petScale()" [decorative]="true" />
           </span>
         }
         <span class="walker-hero">
-          <app-hero-sprite
-            class="md:hidden"
-            [heroKey]="heroKey()"
-            [scale]="2"
-            [decorative]="true"
-          />
-          <app-hero-sprite
-            class="hidden md:inline-block"
-            [heroKey]="heroKey()"
-            [scale]="3"
-            [decorative]="true"
-          />
+          <app-hero-sprite [heroKey]="heroKey()" [scale]="heroScale()" [decorative]="true" />
         </span>
       </div>
     </div>

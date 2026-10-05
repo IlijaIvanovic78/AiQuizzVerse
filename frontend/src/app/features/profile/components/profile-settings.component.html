@@ -19,7 +19,7 @@
       @if (nameInvalid()) {
         <p class="field-error">
           <app-pixel-icon name="cross" [scale]="1" />
-          Use 3 to 20 letters, numbers or _ (no spaces).
+          {{ usernameRule }}
         </p>
       } @else {
         <p class="field-hint">Friends find you by this name. Don't use your real name.</p>
@@ -40,29 +40,20 @@
       }
     </h3>
     <p class="mt-1 max-w-2xl text-muted">
-      After your password, the app also asks for a 6-digit code from an authenticator app on a
-      phone. Ask a grown-up to help you set it up.
+      After your password, the app also asks for a code from an authenticator app on a phone. Ask a
+      grown-up to help you set it up.
     </p>
 
     @if (user().twoFaEnabled) {
       @if (turningOff()) {
-        <form class="mt-4 max-w-md" [formGroup]="codeForm" (ngSubmit)="submitCode()">
-          <label for="settings-off-code" class="field-label">Code from your app</label>
-          <input
-            id="settings-off-code"
-            class="input font-display tracking-widest"
-            inputmode="numeric"
-            autocomplete="one-time-code"
-            maxlength="6"
-            formControlName="code"
-            [attr.aria-invalid]="codeInvalid()"
+        <form class="mt-4" [formGroup]="codeForm" (ngSubmit)="submitCode()">
+          <app-code-field
+            class="max-w-xs"
+            inputId="settings-off-code"
+            label="Code from your app"
+            [control]="codeControl"
+            [invalid]="codeInvalid()"
           />
-          @if (codeInvalid()) {
-            <p class="field-error">
-              <app-pixel-icon name="cross" [scale]="1" />
-              Type the 6 digits from your app.
-            </p>
-          }
           <div class="mt-3 flex flex-wrap gap-2">
             <button type="submit" class="btn btn-danger" [disabled]="pending()">Turn off</button>
             <button type="button" class="btn btn-ghost" (click)="stopTurningOff()">Cancel</button>
@@ -89,22 +80,13 @@
           <p class="text-sm font-semibold">2. Can't scan? Type this key instead</p>
           <code class="secret mt-1">{{ setup.secret }}</code>
           <form class="mt-4" [formGroup]="codeForm" (ngSubmit)="submitCode()">
-            <label for="settings-on-code" class="field-label">3. Type the code the app shows</label>
-            <input
-              id="settings-on-code"
-              class="input max-w-xs font-display tracking-widest"
-              inputmode="numeric"
-              autocomplete="one-time-code"
-              maxlength="6"
-              formControlName="code"
-              [attr.aria-invalid]="codeInvalid()"
+            <app-code-field
+              class="max-w-xs"
+              inputId="settings-on-code"
+              label="3. Type the code the app shows"
+              [control]="codeControl"
+              [invalid]="codeInvalid()"
             />
-            @if (codeInvalid()) {
-              <p class="field-error">
-                <app-pixel-icon name="cross" [scale]="1" />
-                Type the 6 digits from your app.
-              </p>
-            }
             <div class="mt-3 flex flex-wrap gap-2">
               <button type="submit" class="btn btn-success" [disabled]="pending()">Turn on</button>
               <button type="button" class="btn btn-ghost" (click)="cancelSetup()">Cancel</button>

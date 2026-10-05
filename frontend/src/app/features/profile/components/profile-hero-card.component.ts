@@ -3,8 +3,9 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { ProfileView } from '../../../core/models/profile.model';
 import { ArenaStageComponent } from '../../../shared/components/arena-stage.component';
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
+import { LevelProgressComponent } from '../../../shared/components/level-progress.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
-import { XpBarComponent } from '../../../shared/components/xp-bar.component';
+import { StreakFlameComponent } from '../../../shared/components/streak-flame.component';
 
 interface LevelProgress {
   current: number;
@@ -18,8 +19,9 @@ interface LevelProgress {
     DecimalPipe,
     ArenaStageComponent,
     LevelBadgeComponent,
+    LevelProgressComponent,
     PixelIconComponent,
-    XpBarComponent,
+    StreakFlameComponent,
   ],
   templateUrl: './profile-hero-card.component.html',
   host: { class: 'block' },

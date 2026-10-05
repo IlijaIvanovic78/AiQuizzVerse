@@ -1,6 +1,7 @@
 import { HttpStatusCode } from '@angular/common/http';
 import { Audience, Difficulty, QuizLanguage, QuizTheme } from '../../core/models/quiz.model';
 import { GenerationStep } from '../../core/models/realtime-events.model';
+import { MAX_QUESTIONS, MIN_QUESTIONS } from '../../shared/forms/quiz-form';
 import { AudienceChoice, CreateKind, PictureChoice, SourceKind, WizardStep } from './create.types';
 
 // Home and the paths page link here with ?make=path to open the wizard on a learning path.
@@ -23,6 +24,8 @@ export const DEFAULT_TIME_BY_AUDIENCE: Record<Audience, number> = {
 
 export const DEFAULT_QUESTION_COUNT = 5;
 export const PATH_STEP_COUNT = 5;
+// The server writes this many quizzes per player a day; a path counts once for every step.
+export const DAILY_CREATION_LIMIT = 15;
 export const MAX_PDF_MEGABYTES = 10;
 export const MAX_PDF_BYTES = MAX_PDF_MEGABYTES * 1024 * 1024;
 export const PDF_MIME_TYPE = 'application/pdf';
@@ -36,6 +39,13 @@ export const STEP_LABELS: Record<WizardStep, string> = {
   make: 'What to make',
   settings: 'Settings',
   questions: 'Questions',
+};
+
+export const STEP_TITLES: Record<WizardStep, string> = {
+  source: 'Where should the questions come from?',
+  make: 'What should the quiz master make?',
+  settings: 'Set up your quest',
+  questions: 'Write your questions',
 };
 
 export const SOURCE_CHOICES: PictureChoice<SourceKind>[] = [
@@ -63,13 +73,13 @@ export const KIND_CHOICES: PictureChoice<CreateKind>[] = [
   {
     value: 'QUIZ',
     title: 'Quick quiz',
-    text: 'One round of 3 to 15 questions.',
+    text: `One round of ${MIN_QUESTIONS} to ${MAX_QUESTIONS} questions.`,
     image: 'shield',
   },
   {
     value: 'PATH',
     title: 'Learning path',
-    text: '5 steps from easy to master, each with a study card.',
+    text: `${PATH_STEP_COUNT} steps from easy to master, each with a study card.`,
     image: 'treasure',
   },
 ];

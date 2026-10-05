@@ -14,7 +14,7 @@
   </app-empty-state>
 } @else if (!loaded()) {
   <div class="panel flex justify-center p-10">
-    <app-spinner label="Opening your notebook..." [showLabel]="true" />
+    <app-spinner label="Opening your notebook..." />
   </div>
 } @else if (total() === 0) {
   <app-empty-state
@@ -50,8 +50,7 @@
         (click)="practice()"
       >
         @if (starting()) {
-          <app-spinner label="Getting ready" />
-          Getting ready...
+          <app-spinner label="Getting ready..." />
         } @else {
           Practice now
         }
@@ -70,14 +69,14 @@
 
   <section class="panel mb-6 p-4" aria-labelledby="how-title">
     <h2 id="how-title" class="mb-3 font-semibold">How the notebook works</h2>
-    <ol class="flex flex-wrap items-center gap-2">
-      <li class="badge badge-ruby">Missed</li>
+    <ol class="review-stages flex flex-wrap items-center gap-2">
+      <li class="flex items-center"><span class="badge badge-ruby">Missed</span></li>
       @for (days of intervals; track days) {
-        <li class="h-[3px] w-4 bg-fog-400" aria-hidden="true"></li>
-        <li class="badge">Again in {{ days }} {{ days === 1 ? 'day' : 'days' }}</li>
+        <li class="flex items-center">
+          <span class="badge">Again in {{ days }} {{ days === 1 ? 'day' : 'days' }}</span>
+        </li>
       }
-      <li class="h-[3px] w-4 bg-fog-400" aria-hidden="true"></li>
-      <li class="badge badge-jade">Mastered!</li>
+      <li class="flex items-center"><span class="badge badge-jade">Mastered!</span></li>
     </ol>
     <p class="mt-3 text-sm text-muted">
       Get a question right on its review day and it moves on. Miss it again and it starts over.

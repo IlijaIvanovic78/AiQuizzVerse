@@ -13,6 +13,7 @@ export interface PodiumPlace {
 }
 
 const PODIUM_PLACES = [1, 2, 3];
+export const PODIUM_SIZE = PODIUM_PLACES.length;
 const WINNER_SCALE = 5;
 const RUNNER_UP_SCALE = 4;
 const HERO_ENTER_DELAY_MS = 120;

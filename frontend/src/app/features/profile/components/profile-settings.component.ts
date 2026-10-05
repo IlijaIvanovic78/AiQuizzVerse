@@ -9,15 +9,20 @@ import {
   untracked,
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TWO_FACTOR_CODE_PATTERN, USERNAME_PATTERN } from '../../../core/auth/auth.constants';
+import {
+  TWO_FACTOR_CODE_PATTERN,
+  USERNAME_PATTERN,
+  USERNAME_RULE,
+} from '../../../core/auth/auth.constants';
 import { TwoFactorSetup } from '../../../core/models/auth.model';
 import { CurrentUser } from '../../../core/models/user.model';
+import { CodeFieldComponent } from '../../../shared/components/code-field.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { touchedAndInvalid } from '../../../shared/forms/form-signals';
 
 @Component({
   selector: 'app-profile-settings',
-  imports: [ReactiveFormsModule, PixelIconComponent],
+  imports: [ReactiveFormsModule, CodeFieldComponent, PixelIconComponent],
   templateUrl: './profile-settings.component.html',
   styleUrl: './profile-settings.component.css',
   host: { class: 'block' },
@@ -51,10 +56,11 @@ export class ProfileSettingsComponent {
     }),
   });
   private readonly nameControl = this.nameForm.controls.username;
-  private readonly codeControl = this.codeForm.controls.code;
+  protected readonly codeControl = this.codeForm.controls.code;
   protected readonly nameInvalid = touchedAndInvalid(this.nameControl);
   protected readonly codeInvalid = touchedAndInvalid(this.codeControl);
   protected readonly turningOff = signal(false);
+  protected readonly usernameRule = USERNAME_RULE;
 
   private readonly username = computed(() => this.user().username);
   private readonly twoFactorEnabled = computed(() => this.user().twoFaEnabled);

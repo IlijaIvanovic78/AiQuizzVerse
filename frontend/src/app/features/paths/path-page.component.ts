@@ -13,6 +13,7 @@ import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { StepView } from '../../core/models/path.model';
 import { ReadAloudService } from '../../core/sound/read-aloud.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
 import { ModalComponent } from '../../shared/components/modal.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
@@ -37,6 +38,7 @@ import { MAX_STARS_PER_STEP, SOURCE_LABELS } from './paths.constants';
     RouterLink,
     AudienceLabelPipe,
     LanguageLabelPipe,
+    ConfirmDialogComponent,
     EmptyStateComponent,
     ModalComponent,
     PixelIconComponent,
@@ -96,6 +98,11 @@ export class PathPageComponent {
   });
   protected readonly dialogOpen = signal(false);
   protected readonly confirmingDelete = signal(false);
+  protected readonly deleteMessage = computed(
+    () =>
+      `"${this.path()?.topic}" and its ${this.steps().length} step quizzes will be gone ` +
+      'for good, together with the stars you collected on it.',
+  );
 
   // The step panel sits next to the map on wide screens; smaller ones open it as a dialog.
   protected readonly isWide = screenMatches(DESKTOP_UP);
@@ -103,13 +110,13 @@ export class PathPageComponent {
   constructor() {
     effect(() => {
       const pathId = this.pathId();
-      untracked(() => this.openPath(pathId));
+      untracked(() => this.load(pathId));
     });
     inject(DestroyRef).onDestroy(() => this.readAloud.stop());
   }
 
   protected reload(): void {
-    this.store.dispatch(PathsActions.loadDetail({ pathId: this.pathId() }));
+    this.load(this.pathId());
   }
 
   protected selectStep(step: StepView): void {
@@ -142,7 +149,7 @@ export class PathPageComponent {
     this.store.dispatch(PathsActions.delete({ pathId: this.pathId() }));
   }
 
-  private openPath(pathId: string): void {
+  private load(pathId: string): void {
     this.selectedStepId.set(null);
     this.dialogOpen.set(false);
     this.store.dispatch(PathsActions.loadDetail({ pathId }));

@@ -1,6 +1,6 @@
 import { HttpStatusCode } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { CreationError } from '../../../store/quizzes/quizzes.reducer';
+import { CreationError } from '../../../core/api/api-error';
 import { creationErrorTitle } from '../create.rules';
 
 @Component({

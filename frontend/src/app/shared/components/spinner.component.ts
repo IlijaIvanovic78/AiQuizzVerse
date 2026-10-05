@@ -14,15 +14,14 @@ const BLINK_DELAY_MS = 300;
           ></span>
         }
       </span>
-      <span [class.sr-only]="!showLabel()">{{ label() }}</span>
+      <span>{{ label() }}</span>
     </span>
   `,
   host: { class: 'inline-flex' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SpinnerComponent {
-  readonly label = input('Loading');
-  readonly showLabel = input(false);
+  readonly label = input.required<string>();
 
   protected readonly blocks = [0, 1, 2];
   protected readonly blinkDelay = BLINK_DELAY_MS;

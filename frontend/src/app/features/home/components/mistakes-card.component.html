@@ -11,7 +11,7 @@
   </div>
 
   @if (status() === 'loading') {
-    <app-spinner label="Opening your notebook..." [showLabel]="true" />
+    <app-spinner label="Opening your notebook..." />
   } @else if (status() === 'failed') {
     <p class="text-muted">Your notebook didn't load this time.</p>
   } @else if (dueToday() > 0) {

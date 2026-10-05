@@ -93,18 +93,13 @@
   }
 
   @if (confirmingDelete()) {
-    <app-modal title="Delete this path?" size="sm" (closed)="confirmingDelete.set(false)">
-      <p>
-        "{{ path.topic }}" and its {{ steps().length }} step quizzes will be gone for good, together
-        with the stars you collected on it.
-      </p>
-      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <button type="button" class="btn btn-ghost" (click)="confirmingDelete.set(false)">
-          Keep it
-        </button>
-        <button type="button" class="btn btn-danger" (click)="deletePath()">Delete path</button>
-      </div>
-    </app-modal>
+    <app-confirm-dialog
+      title="Delete this path?"
+      confirmLabel="Delete path"
+      [message]="deleteMessage()"
+      (confirmed)="deletePath()"
+      (closed)="confirmingDelete.set(false)"
+    />
   }
 } @else if (error() && !loading()) {
   <app-empty-state
@@ -117,6 +112,6 @@
   </app-empty-state>
 } @else {
   <div class="panel flex justify-center px-6 py-16">
-    <app-spinner label="Drawing the map..." [showLabel]="true" />
+    <app-spinner label="Drawing the map..." />
   </div>
 }

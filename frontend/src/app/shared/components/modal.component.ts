@@ -36,7 +36,6 @@ let nextModalId = 0;
   selector: 'app-modal',
   imports: [PixelIconComponent],
   templateUrl: './modal.component.html',
-  host: { '(document:keydown.escape)': 'closed.emit()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ModalComponent {
@@ -66,6 +65,13 @@ export class ModalComponent {
     if (event.target === event.currentTarget) {
       this.closed.emit();
     }
+  }
+
+  // Escape reaches only the dialog that holds the focus, which is the one on top. It stops here,
+  // so a dialog opened inside another one does not close both.
+  protected closeOnEscape(event: Event): void {
+    event.stopPropagation();
+    this.closed.emit();
   }
 
   // Tab and Shift+Tab wrap around inside the dialog instead of leaving it.

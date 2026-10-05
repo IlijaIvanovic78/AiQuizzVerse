@@ -5,11 +5,11 @@
 >
   <div class="trail-strip" aria-hidden="true">
     <ol class="trail-pips">
-      @for (pip of pips(); track pip.position) {
-        <li class="pip" [class]="'pip-' + pip.state" [class.pip-castle]="pip.isCastle">
+      @for (pip of pips(); track pip.position; let isCastle = $last) {
+        <li class="pip" [class]="'pip-' + pip.state" [class.pip-castle]="isCastle">
           @switch (pip.state) {
             @case ('cleared') {
-              <app-pixel-icon name="check" [scale]="pip.isCastle ? 2 : 1" />
+              <app-pixel-icon name="check" [scale]="isCastle ? 2 : 1" />
             }
             @case ('locked') {
               <app-pixel-icon name="lock" [scale]="1" />
