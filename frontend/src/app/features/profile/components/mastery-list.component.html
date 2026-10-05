@@ -1,0 +1,27 @@
+<section class="panel h-full p-5" aria-labelledby="mastery-title">
+  <h2 id="mastery-title" class="text-xl">Mastery by theme</h2>
+
+  @if (rows().length > 0) {
+    <ul class="mt-4 flex flex-col gap-4">
+      @for (row of rows(); track row.theme) {
+        <li>
+          <div class="mb-1 flex items-baseline justify-between gap-3">
+            <span class="font-semibold">{{ row.theme | themeLabel }}</span>
+            <span class="text-sm">
+              <span class="font-semibold">{{ row.accuracy }}%</span>
+              <span class="text-muted"> · {{ row.answered }} answered</span>
+            </span>
+          </div>
+          <app-progress-bar
+            size="sm"
+            [value]="row.fraction"
+            [tone]="row.tone"
+            [label]="(row.theme | themeLabel) + ' accuracy'"
+          />
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="mt-3 text-muted">No themes yet. Play a few quizzes to find the strongest topics.</p>
+  }
+</section>

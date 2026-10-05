@@ -1,0 +1,51 @@
+<section class="panel overflow-hidden" aria-labelledby="profile-name">
+  <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+    <app-arena-stage
+      class="border-b-3 border-outline lg:border-b-0 lg:border-r-3"
+      [heroKey]="user().avatarKey"
+      [petKey]="user().petKey"
+    >
+      <app-pixel-icon name="trophy" [scale]="3" />
+      <span
+        class="mt-1 whitespace-nowrap rounded border-3 border-outline bg-night-950 px-2 text-sm"
+      >
+        {{ winsLabel() }}
+      </span>
+    </app-arena-stage>
+
+    <div class="flex flex-col justify-center gap-5 p-5 lg:p-6">
+      <div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 id="profile-name" class="break-all text-3xl text-parchment-100">
+            {{ user().username }}
+          </h1>
+          <app-level-badge [level]="user().level" />
+        </div>
+        <p class="mt-1 text-sm text-muted">
+          Adventurer since {{ user().memberSince | date: 'MMMM y' }}
+        </p>
+      </div>
+
+      @if (levelProgress(); as progress) {
+        <div>
+          <p class="mb-1.5 text-sm font-semibold">
+            {{ progress.total - progress.current }} XP to level {{ user().level + 1 }}
+          </p>
+          <app-xp-bar [current]="progress.current" [total]="progress.total" />
+        </div>
+      } @else {
+        <p class="text-lg font-semibold text-mana-400">{{ user().xp | number }} XP collected</p>
+      }
+
+      <div class="flex items-center gap-3">
+        <app-pixel-icon name="flame" [scale]="3" [class.opacity-40]="user().streak === 0" />
+        <p class="leading-tight">
+          <span class="block font-semibold">{{ streakLabel() }}</span>
+          <span class="text-sm text-muted">Daily streak</span>
+        </p>
+      </div>
+
+      <ng-content />
+    </div>
+  </div>
+</section>

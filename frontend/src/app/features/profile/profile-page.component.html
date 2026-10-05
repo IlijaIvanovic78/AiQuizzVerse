@@ -1,0 +1,95 @@
+@switch (state().status) {
+  @case ('loading') {
+    <div class="panel p-6">
+      <app-spinner label="Opening the hero's book..." [showLabel]="true" />
+    </div>
+  }
+  @case ('missing') {
+    <app-empty-state
+      title="No hero by that name"
+      text="Check the spelling of the nickname, or find your friends from the friends page."
+      image="shield"
+    >
+      <a class="btn btn-primary" routerLink="/friends">Go to friends</a>
+    </app-empty-state>
+  }
+  @case ('failed') {
+    <app-empty-state
+      role="alert"
+      title="We couldn't open this profile"
+      [text]="failedMessage() ?? ''"
+      image="potion"
+    >
+      <button type="button" class="btn btn-secondary" (click)="retry()">Try again</button>
+    </app-empty-state>
+  }
+}
+
+@if (profile(); as profile) {
+  <div class="flex flex-col gap-5 md:gap-6">
+    <app-profile-hero-card [profile]="profile" [levelProgress]="levelProgress()">
+      @if (friendRelation(); as relation) {
+        <app-relation-actions
+          [relation]="relation"
+          [username]="profile.user.username"
+          [busy]="friendsBusy()"
+          (add)="sendRequest(profile)"
+          (accept)="acceptRequest(profile)"
+          (cancel)="cancelRequest(profile)"
+        />
+      } @else {
+        <a class="btn btn-secondary btn-sm self-start" routerLink="/shop">Change hero or pet</a>
+      }
+    </app-profile-hero-card>
+
+    <section aria-labelledby="profile-stats-title">
+      <h2 id="profile-stats-title" class="sr-only">Stats</h2>
+      <ul class="grid grid-cols-2 gap-3 md:grid-cols-4">
+        @for (tile of statTiles(); track tile.label) {
+          <li>
+            <app-stat-tile
+              class="h-full"
+              [label]="tile.label"
+              [value]="tile.value"
+              [icon]="tile.icon"
+            />
+          </li>
+        }
+      </ul>
+    </section>
+
+    @if (isMe()) {
+      <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-2">
+        <app-mastery-list [mastery]="profile.mastery" />
+        <app-match-history-list [entries]="history()" [loaded]="historyLoaded()" />
+      </div>
+
+      @if (me(); as me) {
+        <div class="grid grid-cols-1 items-start gap-5 md:gap-6 lg:grid-cols-12">
+          <app-profile-settings
+            class="lg:col-span-7"
+            [user]="me"
+            [pending]="settingsPending()"
+            [twoFactorSetup]="twoFactorSetup()"
+            [loadingSetup]="loadingSetup()"
+            [muted]="sound.muted()"
+            (rename)="rename($event)"
+            (startTwoFactorSetup)="startTwoFactorSetup()"
+            (cancelTwoFactorSetup)="cancelTwoFactorSetup()"
+            (enableTwoFactor)="enableTwoFactor($event)"
+            (disableTwoFactor)="disableTwoFactor($event)"
+            (toggleSound)="sound.toggleMuted()"
+            (logout)="logout()"
+          />
+          <app-purchase-list
+            class="lg:col-span-5"
+            [purchases]="purchases()"
+            [loading]="purchasesLoading()"
+          />
+        </div>
+      }
+    } @else {
+      <app-mastery-list [mastery]="profile.mastery" />
+    }
+  </div>
+}
