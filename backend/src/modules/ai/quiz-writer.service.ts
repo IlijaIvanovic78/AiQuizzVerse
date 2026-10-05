@@ -48,13 +48,13 @@ export class QuizWriterService {
   async writePathStep(
     request: PathStepRequest,
     context: string | null,
-    previousTitles: string[],
+    earlierGoals: string[],
   ): Promise<GeneratedPathStep> {
-    let step = await this.draftPathStep(writePathStepMessages(request, context, previousTitles));
+    let step = await this.draftPathStep(writePathStepMessages(request, context, earlierGoals));
     const review = await this.reviewDraft(request, step, context);
     if (!review.approved) {
       step = await this.draftPathStep(
-        revisePathStepMessages(request, context, previousTitles, step, review.problems),
+        revisePathStepMessages(request, context, earlierGoals, step, review.problems),
       );
     }
     return {

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { LearningPath, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { specificStepTitle } from '../ai/ai.rules';
 import { GeneratedPathStep } from '../ai/ai.schemas';
 import { QuizWriterService } from '../ai/quiz-writer.service';
 import { DocumentsService } from '../documents/documents.service';
@@ -37,9 +38,21 @@ export class PathGenerationService {
 
   private async writeAndSave(userId: string, dto: CreatePathDto): Promise<PathDetail> {
     const context = dto.documentId ? await this.documents.getContext(userId, dto.documentId) : null;
-    const steps = await this.writeSteps(userId, dto, context);
+    const subject = await this.pathSubject(userId, dto);
+    const steps = await this.writeSteps(userId, dto, context, subject);
     const pathId = await this.savePath(userId, dto, steps);
     return this.paths.findDetail(userId, pathId);
+  }
+
+  /** The typed topic, or the lesson's file name for a path made from a PDF. */
+  private async pathSubject(userId: string, dto: CreatePathDto): Promise<string> {
+    if (dto.topic) {
+      return dto.topic;
+    }
+    if (dto.documentId) {
+      return this.documents.getLessonName(userId, dto.documentId);
+    }
+    throw new BadRequestException(TOPIC_OR_DOCUMENT_MESSAGE);
   }
 
   // All five steps are written in parallel; if one fails, Promise.all fails and
@@ -48,6 +61,7 @@ export class PathGenerationService {
     userId: string,
     dto: CreatePathDto,
     context: string | null,
+    subject: string,
   ): Promise<GeneratedPathStep[]> {
     const requests = buildStepRequests({
       topic: dto.topic ?? null,
@@ -63,7 +77,7 @@ export class PathGenerationService {
         const step = await this.quizWriter.writePathStep(request, context, goals);
         done += 1;
         this.reportProgress(userId, done);
-        return step;
+        return { ...step, title: specificStepTitle(step.title, request.goal, subject) };
       }),
     );
   }

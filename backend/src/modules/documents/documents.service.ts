@@ -8,6 +8,7 @@ import {
   MAX_STORED_CHARS,
   MIN_TEXT_CHARS,
   NO_TEXT_MESSAGE,
+  PDF_EXTENSION,
 } from './documents.constants';
 import { DocumentSummary } from './documents.types';
 
@@ -69,6 +70,18 @@ export class DocumentsService {
       throw new NotFoundException(DOCUMENT_NOT_FOUND_MESSAGE);
     }
     return document.content.slice(0, MAX_CONTEXT_CHARS);
+  }
+
+  /** The file name without ".pdf", for places that need a short name of the lesson. */
+  async getLessonName(ownerId: string, documentId: string): Promise<string> {
+    const document = await this.prisma.document.findFirst({
+      where: { id: documentId, ownerId },
+      select: { fileName: true },
+    });
+    if (!document) {
+      throw new NotFoundException(DOCUMENT_NOT_FOUND_MESSAGE);
+    }
+    return document.fileName.replace(PDF_EXTENSION, '');
   }
 
   private async readPdfText(data: Buffer): Promise<string> {

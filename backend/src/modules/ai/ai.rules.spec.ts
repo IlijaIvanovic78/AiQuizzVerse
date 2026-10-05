@@ -1,6 +1,11 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { GeneratedQuestion } from './ai.schemas';
-import { cleanKeyPoints, hintRevealsAnswer, validateAndShuffle } from './ai.rules';
+import {
+  cleanKeyPoints,
+  hintRevealsAnswer,
+  specificStepTitle,
+  validateAndShuffle,
+} from './ai.rules';
 
 function makeQuestion(changes: Partial<GeneratedQuestion> = {}): GeneratedQuestion {
   return {
@@ -107,5 +112,26 @@ describe('cleanKeyPoints', () => {
     const points = [' One ', '', 'Two', 'Three', '   ', 'Four', 'Five', 'Six'];
 
     expect(cleanKeyPoints(points)).toEqual(['One', 'Two', 'Three', 'Four', 'Five']);
+  });
+});
+
+describe('specificStepTitle', () => {
+  it('keeps a title that is specific to the topic', () => {
+    expect(specificStepTitle(' Meet the dinosaurs ', 'First steps', 'Dinosaurs')).toBe(
+      'Meet the dinosaurs',
+    );
+  });
+
+  it('adds the topic to a title that only repeats the step goal', () => {
+    expect(specificStepTitle('First steps', 'First steps', 'Dinosaurs')).toBe(
+      'First steps: Dinosaurs',
+    );
+    expect(specificStepTitle('master CHALLENGE!', 'Master challenge', 'Dinosaurs')).toBe(
+      'Master challenge: Dinosaurs',
+    );
+  });
+
+  it('uses the goal and the topic when the title is empty', () => {
+    expect(specificStepTitle('  ', 'Key facts', 'Volcanoes')).toBe('Key facts: Volcanoes');
   });
 });

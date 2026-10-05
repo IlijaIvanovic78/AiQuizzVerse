@@ -28,7 +28,9 @@ export const reviewSchema = z.object({
 });
 
 export const pathStepSchema = z.object({
-  title: z.string().describe('Short name of this step, in the quiz language'),
+  title: z
+    .string()
+    .describe('What this step teaches about the topic, in 2-5 words, never just the step goal'),
   theme: z.enum(QuizTheme).describe('The category that fits best, GENERAL if none fits'),
   keyPoints: z
     .array(z.string())

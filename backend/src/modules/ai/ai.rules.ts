@@ -31,6 +31,15 @@ export function cleanKeyPoints(keyPoints: string[]): string[] {
     .slice(0, MAX_KEY_POINTS);
 }
 
+/** A step title that only repeats the step goal ("First steps") gets the topic added to it. */
+export function specificStepTitle(title: string, goal: string, topic: string): string {
+  const trimmed = title.trim();
+  if (trimmed.length > 0 && toWordString(trimmed) !== toWordString(goal)) {
+    return trimmed;
+  }
+  return `${goal}: ${topic}`;
+}
+
 /** True when the hint contains the whole correct answer as separate words. */
 export function hintRevealsAnswer(hint: string, answer: string): boolean {
   const answerWords = toWordString(answer);
