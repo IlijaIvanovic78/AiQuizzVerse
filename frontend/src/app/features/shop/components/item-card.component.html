@@ -16,6 +16,12 @@
       @case ('owned') {
         <span class="stage-badge badge badge-fog">Owned</span>
       }
+      @case ('chest-only') {
+        <span class="stage-badge badge badge-mana">
+          <app-pixel-icon name="chest-golden" [scale]="1" />
+          Found in chests
+        </span>
+      }
       @case ('level-locked') {
         <span class="stage-lock">
           <app-pixel-icon name="lock" [scale]="2" />
@@ -58,6 +64,10 @@
         >
           Equip
         </button>
+      }
+      @case ('chest-only') {
+        <p class="text-sm text-muted">Can't be bought. Open chests to find it!</p>
+        <a class="btn btn-secondary btn-sm mt-auto w-full" routerLink="/chests">Treasure room</a>
       }
       @case ('level-locked') {
         <app-coin-amount [amount]="item().price" size="sm" />

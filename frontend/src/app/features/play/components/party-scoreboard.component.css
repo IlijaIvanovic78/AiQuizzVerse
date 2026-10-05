@@ -55,13 +55,8 @@
   color: var(--fog-400);
 }
 
-.badge-frozen {
-  background-color: var(--mana-600);
-  color: var(--parchment-100);
-}
-
-.badge-ink {
-  background-color: #c9b8ff;
+.badge-shield {
+  background-color: var(--ice);
   color: var(--night-950);
 }
 

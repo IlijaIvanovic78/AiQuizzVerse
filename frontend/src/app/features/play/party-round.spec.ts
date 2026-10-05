@@ -1,6 +1,13 @@
 import { MatchPlayerView } from '../../core/models/match.model';
-import { SabotageHit } from '../../store/match/match.reducer';
-import { effectEndsAt, sabotageNotice, sabotageTargets, secondsLeft } from './party-round';
+import { SabotageBlock, SabotageHit } from '../../store/match/match.reducer';
+import {
+  blockNotice,
+  effectEndsAt,
+  lastingHits,
+  sabotageNotice,
+  sabotageTargets,
+  secondsLeft,
+} from './party-round';
 
 function hit(changes: Partial<SabotageHit>): SabotageHit {
   return {
@@ -41,6 +48,29 @@ describe('effectEndsAt', () => {
   });
 });
 
+describe('lastingHits', () => {
+  it('keeps the newest effect that still lasts on each player', () => {
+    const hits = [
+      hit({ type: 'INK', durationMs: 4000 }),
+      hit({ type: 'FREEZE', fromUserId: 'owl', durationMs: 3000, landedAt: 10_500 }),
+      hit({ type: 'MIRROR', targetUserId: 'owl', durationMs: 5000 }),
+    ];
+
+    expect(lastingHits(hits, 12_000)).toEqual({ hero: 'FREEZE', owl: 'MIRROR' });
+    expect(lastingHits(hits, 13_800)).toEqual({ hero: 'INK', owl: 'MIRROR' });
+    expect(lastingHits(hits, 15_000)).toEqual({});
+  });
+
+  it('leaves out a scramble and a shield, which have no duration', () => {
+    const hits = [
+      hit({ type: 'SCRAMBLE', durationMs: 0 }),
+      hit({ type: 'SHIELD', fromUserId: 'owl', targetUserId: 'owl', durationMs: 0 }),
+    ];
+
+    expect(lastingHits(hits, 10_000)).toEqual({});
+  });
+});
+
 describe('secondsLeft', () => {
   it('rounds up, so the last second still shows 1', () => {
     expect(secondsLeft(13_000, 12_100)).toBe(1);
@@ -65,6 +95,40 @@ describe('sabotageNotice', () => {
 
   it('says You for the player who threw it', () => {
     expect(sabotageNotice(hit({ targetUserId: 'owl' }), 'fox', names)).toBe('You froze wise_owl!');
+  });
+
+  it('tells the player what the new sabotages hit', () => {
+    expect(sabotageNotice(hit({ type: 'FOG' }), 'hero', names)).toBe(
+      'quick_fox fogged your question!',
+    );
+    expect(sabotageNotice(hit({ type: 'QUAKE' }), 'hero', names)).toBe(
+      'quick_fox shook your answers!',
+    );
+  });
+
+  it('announces a shield without a target', () => {
+    const shield = hit({ type: 'SHIELD', fromUserId: 'owl', targetUserId: 'owl', durationMs: 0 });
+
+    expect(sabotageNotice(shield, 'hero', names)).toBe('wise_owl raised a shield!');
+    expect(sabotageNotice(shield, 'owl', names)).toBe('You raised a shield!');
+  });
+});
+
+describe('blockNotice', () => {
+  const block: SabotageBlock = {
+    matchId: 'match-1',
+    index: 0,
+    type: 'INK',
+    fromUserId: 'fox',
+    targetUserId: 'owl',
+    fromCharges: 0,
+    landedAt: 10_000,
+  };
+
+  it('tells each player whose shield stopped whose sabotage', () => {
+    expect(blockNotice(block, 'owl', names)).toBe("Your shield blocked quick_fox's ink!");
+    expect(blockNotice(block, 'fox', names)).toBe("wise_owl's shield blocked your ink!");
+    expect(blockNotice(block, 'hero', names)).toBe("wise_owl's shield blocked quick_fox's ink!");
   });
 });
 

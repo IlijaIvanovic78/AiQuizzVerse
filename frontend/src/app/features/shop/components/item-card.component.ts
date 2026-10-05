@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ShopItem } from '../../../core/models/shop.model';
 import { CoinAmountComponent } from '../../../shared/components/coin-amount.component';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
@@ -8,7 +9,13 @@ import { itemState } from '../item-state';
 
 @Component({
   selector: 'app-item-card',
-  imports: [CoinAmountComponent, HeroSpriteComponent, PetSpriteComponent, PixelIconComponent],
+  imports: [
+    RouterLink,
+    CoinAmountComponent,
+    HeroSpriteComponent,
+    PetSpriteComponent,
+    PixelIconComponent,
+  ],
   templateUrl: './item-card.component.html',
   styleUrl: './item-card.component.css',
   host: { class: 'block h-full' },

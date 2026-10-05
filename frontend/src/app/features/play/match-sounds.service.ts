@@ -24,6 +24,7 @@ export class MatchSoundsService {
   private readonly mode = this.store.selectSignal(matchFeature.selectMode);
   private readonly round = this.store.selectSignal(matchFeature.selectRound);
   private readonly result = this.store.selectSignal(matchFeature.selectResult);
+  private readonly wrongTry = this.store.selectSignal(matchFeature.selectSecondChanceOption);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly meId = computed(() => this.user()?.id ?? '');
 
@@ -41,6 +42,12 @@ export class MatchSoundsService {
     effect(() => {
       const result = this.result();
       untracked(() => this.celebrate(result));
+    });
+    // A second chance means the first pick was wrong, even though the round goes on.
+    effect(() => {
+      if (this.wrongTry() !== null) {
+        untracked(() => this.sound.playWrong());
+      }
     });
   }
 

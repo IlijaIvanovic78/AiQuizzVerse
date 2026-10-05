@@ -9,7 +9,7 @@ import {
   output,
   viewChildren,
 } from '@angular/core';
-import { SabotageType } from '../../../core/models/match.model';
+import { AttackType, SabotageType } from '../../../core/models/match.model';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar.component';
 import { ArenaFighter } from '../arena-fighter';
@@ -20,6 +20,8 @@ import { SabotageIconComponent } from './sabotage-icon.component';
 interface SeatStatus {
   text: string;
   badgeClass: string;
+  // Sabotage badges get their color from SABOTAGES instead of a class.
+  badgeColor: string | null;
   pixelIcon: PixelIconName | null;
   sabotageIcon: SabotageType | null;
 }
@@ -45,7 +47,7 @@ export class PartyScoreboardComponent {
   readonly fighters = input.required<ArenaFighter[]>();
   readonly winnerId = input<string | null>(null);
   // Set while the player picks who to hit with this sabotage.
-  readonly targetType = input<SabotageType | null>(null);
+  readonly targetType = input<AttackType | null>(null);
   readonly targetIds = input<string[]>([]);
   readonly target = output<string>();
 
@@ -79,14 +81,18 @@ export class PartyScoreboardComponent {
     if (fighter.id === this.winnerId()) {
       return seatStatus('Got it first!', 'badge-torch', 'trophy');
     }
+    if (fighter.blocked) {
+      return { ...seatStatus('Blocked!', 'badge-shield animate-pop'), sabotageIcon: 'SHIELD' };
+    }
     if (fighter.lockedOut) {
       return seatStatus('Locked out', 'badge-ruby', 'cross');
     }
-    if (fighter.frozen) {
-      return { ...seatStatus('Frozen', 'badge-frozen'), sabotageIcon: 'FREEZE' };
+    if (fighter.hitBy) {
+      const { status, badgeColor } = SABOTAGES[fighter.hitBy];
+      return { ...seatStatus(status, 'text-night-950'), badgeColor, sabotageIcon: fighter.hitBy };
     }
-    if (fighter.inked) {
-      return { ...seatStatus('Inked', 'badge-ink'), sabotageIcon: 'INK' };
+    if (fighter.shielded) {
+      return { ...seatStatus('Shielded', 'badge-shield'), sabotageIcon: 'SHIELD' };
     }
     return fighter.answered ? seatStatus('Answered', 'badge-jade', 'check') : null;
   }
@@ -97,5 +103,5 @@ function seatStatus(
   badgeClass: string,
   pixelIcon: PixelIconName | null = null,
 ): SeatStatus {
-  return { text, badgeClass, pixelIcon, sabotageIcon: null };
+  return { text, badgeClass, badgeColor: null, pixelIcon, sabotageIcon: null };
 }

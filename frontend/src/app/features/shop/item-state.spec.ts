@@ -9,6 +9,7 @@ function item(changes: Partial<ShopItem>): ShopItem {
     price: 250,
     minLevel: 5,
     isStarter: false,
+    isChestOnly: false,
     owned: false,
     equipped: false,
     ...changes,
@@ -26,6 +27,11 @@ describe('itemState', () => {
 
   it('locks items above the player level', () => {
     expect(itemState(item({}), 4, 1000)).toBe('level-locked');
+  });
+
+  it('sends the player to the chests for an item the shop does not sell', () => {
+    expect(itemState(item({ isChestOnly: true, price: 0 }), 9, 1000)).toBe('chest-only');
+    expect(itemState(item({ isChestOnly: true, owned: true }), 9, 0)).toBe('owned');
   });
 
   it('asks for more coins when the price is too high', () => {

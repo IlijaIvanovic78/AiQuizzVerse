@@ -65,6 +65,10 @@
     </section>
   }
 
+  @if (result().chestsEarned.length > 0) {
+    <app-chests-earned [chests]="result().chestsEarned" />
+  }
+
   @if (showChest()) {
     <app-treasure-chest [correct]="teamCorrect()" [total]="chestTotal()" [label]="chestLabel()" />
   }

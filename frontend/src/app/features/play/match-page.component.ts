@@ -16,6 +16,7 @@ import { MatchMode, MatchResult } from '../../core/models/match.model';
 import { MatchBoostType } from '../../core/models/shop.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { TreasureChestComponent } from '../../shared/components/treasure-chest.component';
 import { authFeature } from '../../store/auth/auth.reducer';
@@ -30,6 +31,7 @@ import { ArenaBannerComponent } from './components/arena-banner.component';
 import { BattleArenaComponent } from './components/battle-arena.component';
 import { BoostsBarComponent } from './components/boosts-bar.component';
 import { CountdownOverlayComponent } from './components/countdown-overlay.component';
+import { FogCloudComponent } from './components/fog-cloud.component';
 import { FrostFrameComponent } from './components/frost-frame.component';
 import { GetReadyComponent } from './components/get-ready.component';
 import { InkSplashComponent } from './components/ink-splash.component';
@@ -76,6 +78,7 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
     ConfirmDialogComponent,
     CountdownOverlayComponent,
     EmptyStateComponent,
+    FogCloudComponent,
     FrostFrameComponent,
     GetReadyComponent,
     InkSplashComponent,
@@ -83,6 +86,7 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
     MatchLobbyComponent,
     MatchResultsComponent,
     PartyScoreboardComponent,
+    PixelIconComponent,
     QuestionCardComponent,
     RevealPanelComponent,
     SabotageBarComponent,
@@ -125,6 +129,7 @@ export class MatchPageComponent {
   protected readonly boostsUsed = this.store.selectSignal(matchFeature.selectBoostsUsedThisRound);
   protected readonly removedOptions = this.store.selectSignal(matchFeature.selectEliminatedOptions);
   protected readonly hint = this.store.selectSignal(matchFeature.selectHint);
+  protected readonly wrongTry = this.store.selectSignal(matchFeature.selectSecondChanceOption);
   protected readonly result = this.store.selectSignal(matchFeature.selectResult);
   protected readonly busy = this.store.selectSignal(matchFeature.selectBusy);
   private readonly error = this.store.selectSignal(matchFeature.selectError);
@@ -207,6 +212,9 @@ export class MatchPageComponent {
   );
   protected readonly answersPaused = computed(
     () => this.sittingOut() || this.party.frozenSecondsLeft() > 0,
+  );
+  protected readonly secondChanceOpen = computed(
+    () => this.phase() === 'question' && this.wrongTry() !== null && this.myAnswer() === null,
   );
   protected readonly myPick = computed(() => {
     const roundView = this.roundView();
@@ -315,6 +323,7 @@ export class MatchPageComponent {
       question !== null &&
       optionIndex < question.options.length &&
       !this.removedOptions().includes(optionIndex) &&
+      optionIndex !== this.wrongTry() &&
       !this.answersPaused();
     if (canPick) {
       this.store.dispatch(MatchActions.answer({ optionIndex }));
@@ -360,8 +369,9 @@ export class MatchPageComponent {
       leftUserIds: this.leftUserIds(),
       charges: this.charges(),
       lockedOutUserIds: this.lockedOutUserIds(),
-      frozenUserIds: this.party.frozenUserIds(),
-      inkedUserIds: this.party.inkedUserIds(),
+      hitByUserId: this.party.hitByUserId(),
+      shieldedUserIds: this.party.shieldedUserIds(),
+      blockedUserIds: this.party.blockedUserIds(),
     };
     return match.players.map((player) => toFighter(player, moment));
   }

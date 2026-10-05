@@ -122,13 +122,58 @@
   opacity: 0.6;
 }
 
-.answer-removed {
+.answer-removed,
+.answer-tried {
   opacity: 0.45;
 }
 
-.answer-removed .answer-text {
+.answer-removed .answer-text,
+.answer-tried .answer-text {
   text-decoration: line-through;
   text-decoration-thickness: 3px;
+}
+
+/* QUAKE: every button shakes on its own beat, so the row never stands still. */
+.answers-quaking > li {
+  animation: quake 480ms steps(4) infinite;
+}
+
+.answers-quaking > li:nth-child(even) {
+  animation-duration: 560ms;
+  animation-direction: reverse;
+}
+
+/* MIRROR: the letters are flipped, but the buttons and their keys stay where they are. */
+.answers-mirrored .answer-text {
+  display: inline-block;
+  transform: scaleX(-1);
+}
+
+/* Without motion the quake still knocks the buttons out of line. */
+@media (prefers-reduced-motion: reduce) {
+  .answers-quaking > li:nth-child(odd) {
+    transform: translate(-6px, 3px) rotate(-1.5deg);
+  }
+
+  .answers-quaking > li:nth-child(even) {
+    transform: translate(6px, -3px) rotate(1.5deg);
+  }
+}
+
+@keyframes quake {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(-7px, 3px) rotate(-2deg);
+  }
+  50% {
+    transform: translate(6px, -4px) rotate(1.5deg);
+  }
+  75% {
+    transform: translate(-3px, 5px) rotate(-1deg);
+  }
 }
 
 @keyframes answer-bump {

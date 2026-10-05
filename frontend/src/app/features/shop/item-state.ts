@@ -1,6 +1,12 @@
 import { ShopItem } from '../../core/models/shop.model';
 
-type ItemState = 'equipped' | 'owned' | 'level-locked' | 'too-expensive' | 'for-sale';
+type ItemState =
+  | 'equipped'
+  | 'owned'
+  | 'chest-only'
+  | 'level-locked'
+  | 'too-expensive'
+  | 'for-sale';
 
 export function itemState(item: ShopItem, level: number, coins: number): ItemState {
   if (item.equipped) {
@@ -8,6 +14,9 @@ export function itemState(item: ShopItem, level: number, coins: number): ItemSta
   }
   if (item.owned) {
     return 'owned';
+  }
+  if (item.isChestOnly) {
+    return 'chest-only';
   }
   if (level < item.minLevel) {
     return 'level-locked';

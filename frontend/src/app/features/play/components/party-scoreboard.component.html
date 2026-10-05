@@ -25,7 +25,11 @@
               [ngTemplateOutletContext]="{ $implicit: seat }"
             />
             @if (seat.status; as status) {
-              <span class="badge" [class]="status.badgeClass">
+              <span
+                class="badge"
+                [class]="status.badgeClass"
+                [style.background-color]="status.badgeColor"
+              >
                 @if (status.pixelIcon) {
                   <app-pixel-icon [name]="status.pixelIcon" [scale]="1" />
                 }

@@ -1,4 +1,4 @@
-import { MatchMode, MatchPlayerView } from '../../core/models/match.model';
+import { AttackType, MatchMode, MatchPlayerView } from '../../core/models/match.model';
 import { RoundPlayerResult, RoundResultEvent } from '../../core/models/realtime-events.model';
 import { PublicUser } from '../../core/models/user.model';
 import { HeroAction } from '../../shared/components/hero-sprite.component';
@@ -18,8 +18,10 @@ export interface ArenaFighter {
   // Party only: sabotage charges and what happened to the player in this round.
   charges: number;
   lockedOut: boolean;
-  frozen: boolean;
-  inked: boolean;
+  hitBy: AttackType | null;
+  shielded: boolean;
+  // A sabotage just bounced off this player's shield.
+  blocked: boolean;
 }
 
 export interface FighterMoment {
@@ -30,8 +32,9 @@ export interface FighterMoment {
   leftUserIds: string[];
   charges: Record<string, number>;
   lockedOutUserIds: string[];
-  frozenUserIds: string[];
-  inkedUserIds: string[];
+  hitByUserId: Record<string, AttackType>;
+  shieldedUserIds: string[];
+  blockedUserIds: string[];
 }
 
 export interface ArenaSides {
@@ -73,8 +76,9 @@ export function restingFighter(
     away: false,
     charges: 0,
     lockedOut: false,
-    frozen: false,
-    inked: false,
+    hitBy: null,
+    shielded: false,
+    blocked: false,
   };
 }
 
@@ -91,8 +95,9 @@ export function toFighter(player: MatchPlayerView, moment: FighterMoment): Arena
     away: user.id !== moment.meId && moment.leftUserIds.includes(user.id),
     charges: moment.charges[user.id] ?? player.charges,
     lockedOut,
-    frozen: moment.frozenUserIds.includes(user.id),
-    inked: moment.inkedUserIds.includes(user.id),
+    hitBy: moment.hitByUserId[user.id] ?? null,
+    shielded: moment.shieldedUserIds.includes(user.id),
+    blocked: moment.blockedUserIds.includes(user.id),
   };
 }
 

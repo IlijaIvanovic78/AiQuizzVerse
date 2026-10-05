@@ -3,7 +3,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { MatchMode, MatchResult, MatchResultPlayer } from '../../../core/models/match.model';
-import { BOOST_LABELS } from '../../../shared/components/boost-icon.component';
+import { CHEST_NAMES } from '../../../shared/chests';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import {
   PODIUM_SIZE,
@@ -31,6 +31,7 @@ import {
 } from '../match-result';
 import { LEVEL_UP_DELAY_MS } from '../play.constants';
 import { BattleArenaComponent } from './battle-arena.component';
+import { ChestsEarnedComponent } from './chests-earned.component';
 import { MistakeListComponent } from './mistake-list.component';
 
 const HEADLINE_COLORS: Record<ResultTone, string> = {
@@ -58,6 +59,7 @@ const LEFT_NOTES: Record<MatchMode, string> = {
   imports: [
     RouterLink,
     BattleArenaComponent,
+    ChestsEarnedComponent,
     MistakeListComponent,
     PixelIconComponent,
     PodiumComponent,
@@ -106,8 +108,8 @@ export class MatchResultsComponent {
     if (!reward) {
       return null;
     }
-    const boost = reward.boost ? ` and a power-up: ${BOOST_LABELS[reward.boost]}` : '';
-    return `+${reward.coins} coins${boost}`;
+    const chest = reward.chest ? ` and a ${CHEST_NAMES[reward.chest].toLowerCase()}` : '';
+    return `+${reward.coins} coins${chest}`;
   });
 
   protected readonly sides = computed(() => {

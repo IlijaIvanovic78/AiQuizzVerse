@@ -3,7 +3,15 @@ import { PixelIconComponent, PixelIconName } from '../../../shared/components/pi
 import { ANSWER_KEYS, SHORT_OPTION_LENGTH } from '../play.constants';
 import { OtherPick } from '../round-view';
 
-type AnswerState = 'open' | 'picked' | 'locked-out' | 'correct' | 'wrong' | 'dimmed' | 'removed';
+type AnswerState =
+  | 'open'
+  | 'picked'
+  | 'locked-out'
+  | 'correct'
+  | 'wrong'
+  | 'dimmed'
+  | 'removed'
+  | 'tried';
 
 interface AnswerNote {
   text: string;
@@ -18,6 +26,7 @@ const NOTES: Record<AnswerState, AnswerNote | null> = {
   correct: { text: 'Right answer', icon: 'check' },
   wrong: { text: 'Your answer', icon: 'cross' },
   removed: { text: 'Removed', icon: 'cross' },
+  tried: { text: 'Not this one', icon: 'cross' },
 };
 
 @Component({
@@ -34,12 +43,17 @@ export class AnswerGridComponent {
   // Known only after the round, when the right answer is shown.
   readonly correctIndex = input<number | null>(null);
   readonly removed = input<number[]>([]);
+  // My wrong first pick, crossed out while a second chance lets me try again.
+  readonly wrongTry = input<number | null>(null);
   readonly otherPicks = input<OtherPick[]>([]);
   // Party: my pick was wrong, so I sit out the rest of this question.
   readonly lockedOut = input(false);
   // No answer can be picked for now: a party freeze, or the player came back in the middle
   // of the question and waits for the next one.
   readonly paused = input(false);
+  // Party sabotages: QUAKE shakes the buttons around, MIRROR flips the answer texts.
+  readonly quaking = input(false);
+  readonly mirrored = input(false);
   readonly picked = output<number>();
 
   // Short answers fit two in a row, which keeps all four on a phone screen.
@@ -73,6 +87,9 @@ export class AnswerGridComponent {
     }
     if (this.removed().includes(index)) {
       return 'removed';
+    }
+    if (index === this.wrongTry()) {
+      return 'tried';
     }
     if (myPick === null) {
       return 'open';

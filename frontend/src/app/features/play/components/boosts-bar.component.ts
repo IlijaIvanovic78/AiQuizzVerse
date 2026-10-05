@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatchBoostType } from '../../../core/models/shop.model';
 import { BoostIconComponent } from '../../../shared/components/boost-icon.component';
+import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { EXTRA_TIME_SECONDS } from '../play.constants';
 
 interface BoostLook {
@@ -17,11 +18,16 @@ const BOOSTS: BoostLook[] = [
     label: `+${EXTRA_TIME_SECONDS} s`,
     description: `Adds ${EXTRA_TIME_SECONDS} seconds to the timer`,
   },
+  {
+    type: 'SECOND_CHANCE',
+    label: '2nd chance',
+    description: 'If your answer is wrong, you can try once more for half the points',
+  },
 ];
 
 @Component({
   selector: 'app-boosts-bar',
-  imports: [BoostIconComponent],
+  imports: [BoostIconComponent, PixelIconComponent],
   templateUrl: './boosts-bar.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +41,9 @@ export class BoostsBarComponent {
   readonly disabled = input(false);
   readonly used = output<MatchBoostType>();
 
+  protected readonly secondChanceOn = computed(() =>
+    this.usedThisRound().includes('SECOND_CHANCE'),
+  );
   protected readonly boosts = computed(() =>
     BOOSTS.map((boost) => {
       const count = this.uses()[boost.type];

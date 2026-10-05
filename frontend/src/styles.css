@@ -46,6 +46,11 @@
   --outline: theme('colors.outline');
   --input-bg: #fffdf7;
 
+  /* Party effects: ice for freezes and shields, violet ink, teal mirror. */
+  --ice: #bfe8ff;
+  --ink-violet: #c9b8ff;
+  --mirror-teal: #9be3d0;
+
   /* Text colors that change on parchment panels. */
   --muted: var(--fog-300);
   --danger-text: var(--ruby-400);

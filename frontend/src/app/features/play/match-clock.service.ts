@@ -52,9 +52,15 @@ export class MatchClockService {
     { initialValue: null },
   );
 
+  // The timer stopped at the wrong first answer, so a second chance starts it again.
+  private readonly secondChance$ = this.actions$.pipe(
+    ofType(MatchSocketActions.secondChanceOffered),
+    map(() => this.deadlineAt()),
+  );
+
   // A new deadline (next question or extra time) restarts the timer through switchMap.
   readonly remainingMs = toSignal(
-    toObservable(this.deadlineAt).pipe(
+    merge(toObservable(this.deadlineAt), this.secondChance$).pipe(
       switchMap((deadlineAt) => (deadlineAt === null ? of(null) : this.timeLeftUntil(deadlineAt))),
     ),
     { initialValue: null },

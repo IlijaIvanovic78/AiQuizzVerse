@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { ArenaFighter } from '../arena-fighter';
+import { SABOTAGES } from '../play.constants';
 import { SabotageIconComponent } from './sabotage-icon.component';
 
 @Component({
@@ -18,4 +19,6 @@ export class ArenaFighterComponent {
   readonly flip = input(false);
   // Status bubbles show only their icon when two heroes share a platform.
   readonly compact = input(false);
+
+  protected readonly sabotages = SABOTAGES;
 }

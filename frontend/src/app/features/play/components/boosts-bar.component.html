@@ -7,7 +7,7 @@
       </p>
     }
   </div>
-  <ul class="grid grid-cols-3 gap-2">
+  <ul class="grid grid-cols-2 gap-2 sm:grid-cols-4">
     @for (boost of boosts(); track boost.type) {
       @let noteId = 'boost-note-' + boost.type;
       <li>
@@ -38,4 +38,10 @@
       </li>
     }
   </ul>
+  @if (secondChanceOn()) {
+    <p class="mt-2 flex items-center gap-2 text-sm text-muted" role="status">
+      <app-pixel-icon name="second-chance" [scale]="1" />
+      Second chance is on for this question.
+    </p>
+  }
 </div>

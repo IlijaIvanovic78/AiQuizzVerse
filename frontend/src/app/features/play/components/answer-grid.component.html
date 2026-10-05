@@ -1,6 +1,8 @@
 <ol
   class="grid gap-3"
   [class]="shortOptions() ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-1'"
+  [class.answers-quaking]="quaking()"
+  [class.answers-mirrored]="mirrored()"
   aria-label="Answers"
 >
   @for (answer of answers(); track $index) {

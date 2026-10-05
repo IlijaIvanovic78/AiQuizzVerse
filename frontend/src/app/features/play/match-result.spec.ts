@@ -26,6 +26,7 @@ function result(changes: Partial<MatchResult>): MatchResult {
     path: null,
     leveledUp: false,
     coinCapReached: false,
+    chestsEarned: [],
     ...changes,
   };
 }

@@ -11,7 +11,7 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  border: 4px solid #bfe8ff;
+  border: 4px solid var(--ice);
   border-radius: 4px;
   background-color: rgba(159, 220, 255, 0.3);
   box-shadow:
@@ -51,7 +51,7 @@
   border: 3px solid var(--outline);
   border-radius: 4px;
   background-color: var(--night-900);
-  color: #bfe8ff;
+  color: var(--ice);
   font-size: 1.25rem;
   font-weight: 600;
   box-shadow: 0 4px 0 var(--outline);

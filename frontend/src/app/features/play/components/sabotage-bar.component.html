@@ -17,8 +17,9 @@
       <button type="button" class="btn btn-secondary btn-sm" (click)="cancel.emit()">Cancel</button>
     </div>
   } @else {
+    <!-- Phones keep the buttons short; the descriptions are still read out by screen readers. -->
     <ul class="grid grid-cols-3 gap-2">
-      @for (type of choices; track type) {
+      @for (type of attacks; track type) {
         @let sabotage = sabotages[type];
         <li>
           <button
@@ -30,13 +31,28 @@
           >
             <app-sabotage-icon [type]="type" />
             <span>{{ sabotage.label }}</span>
-            <span class="text-xs font-normal leading-tight text-fog-200">
+            <span class="sr-only text-xs font-normal leading-tight text-fog-200 sm:not-sr-only">
               {{ sabotage.description }}
             </span>
           </button>
         </li>
       }
     </ul>
+    <button
+      type="button"
+      class="btn btn-secondary btn-sm mt-2 w-full justify-start gap-3 py-2 text-left"
+      [disabled]="!canShield()"
+      aria-describedby="sabotage-hint"
+      (click)="shield.emit()"
+    >
+      <app-sabotage-icon type="SHIELD" />
+      <span class="flex flex-col">
+        <span>{{ shielded() ? 'Shield up!' : 'Shield' }}</span>
+        <span class="text-xs font-normal leading-tight text-fog-200">
+          Blocks the next sabotage aimed at you on this question
+        </span>
+      </span>
+    </button>
     <p id="sabotage-hint" class="mt-2 text-sm text-muted">{{ hint() }}</p>
   }
 </section>

@@ -1,0 +1,14 @@
+@if (active()) {
+  <div class="fog" animate.enter="fog-enter" animate.leave="fog-leave">
+    @for (puff of puffs; track $index) {
+      <app-pixel-icon
+        class="puff"
+        name="fog"
+        [scale]="4"
+        [style.top.%]="puff.top"
+        [style.left.%]="puff.left"
+        [style.animation-delay.ms]="puff.delayMs"
+      />
+    }
+  </div>
+}

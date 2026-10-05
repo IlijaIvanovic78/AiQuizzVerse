@@ -1,9 +1,18 @@
+@if (fighter().shielded) {
+  <span class="shield-bubble" aria-hidden="true"></span>
+}
+
 @if (fighter().points !== null) {
   <span class="points-anchor" aria-hidden="true">
     <span class="points animate-float-up font-display">+{{ fighter().points }}</span>
   </span>
 } @else if (fighter().away) {
   <span class="bubble">Away</span>
+} @else if (fighter().blocked) {
+  <span class="bubble bubble-shield animate-pop">
+    <app-sabotage-icon type="SHIELD" [scale]="1" />
+    Blocked!
+  </span>
 } @else if (fighter().lockedOut) {
   <span class="bubble bubble-out">
     <app-pixel-icon name="cross" [scale]="1" />
@@ -11,18 +20,11 @@
       Out
     }
   </span>
-} @else if (fighter().frozen) {
-  <span class="bubble bubble-frozen">
-    <app-sabotage-icon type="FREEZE" [scale]="1" />
+} @else if (fighter().hitBy; as type) {
+  <span class="bubble" [style.background-color]="sabotages[type].badgeColor">
+    <app-sabotage-icon [type]="type" [scale]="1" />
     @if (!compact()) {
-      Frozen
-    }
-  </span>
-} @else if (fighter().inked) {
-  <span class="bubble bubble-inked">
-    <app-sabotage-icon type="INK" [scale]="1" />
-    @if (!compact()) {
-      Inked
+      {{ sabotages[type].status }}
     }
   </span>
 } @else if (fighter().answered && !fighter().isMe) {

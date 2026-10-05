@@ -7,11 +7,11 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       class="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night-950/60 px-4 py-8"
     >
       <img
-        src="/assets/images/logo.webp"
+        src="/assets/images/logo.png"
         alt="AI QuizVerse"
-        width="720"
-        height="211"
-        class="h-auto w-full max-w-xs md:max-w-sm"
+        width="162"
+        height="32"
+        class="pixelated h-[64px] w-auto md:h-[96px]"
       />
       <div class="panel-parchment w-full p-5 sm:p-8" [class]="wide() ? 'max-w-4xl' : 'max-w-md'">
         <ng-content />

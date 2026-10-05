@@ -141,6 +141,18 @@
             Welcome back! This question already counts as done for you. The next one is yours.
           </p>
         }
+        @if (secondChanceOpen()) {
+          <p
+            class="animate-banner-in flex items-center gap-3 rounded border-3 border-outline bg-torch-400 px-3 py-2 text-night-950 shadow-[0_3px_0_theme(colors.outline)]"
+            role="status"
+          >
+            <app-pixel-icon name="second-chance" [scale]="2" />
+            <span>
+              <span class="block font-semibold">Second chance! Try again</span>
+              <span class="block text-sm">A right answer now gives half the points.</span>
+            </span>
+          </p>
+        }
         @if (showQuestion() && question(); as question) {
           <!-- The wrappers give the party sabotage effects a place to cover. -->
           <div class="relative flex flex-col gap-3">
@@ -160,9 +172,12 @@
                 [myPick]="myPick()"
                 [correctIndex]="phase() === 'reveal' ? (round()?.correctIndex ?? null) : null"
                 [removed]="phase() === 'question' ? removedOptions() : []"
+                [wrongTry]="phase() === 'question' ? wrongTry() : null"
                 [otherPicks]="phase() === 'reveal' ? (roundView()?.otherPicks ?? []) : []"
                 [lockedOut]="party.lockedOut()"
                 [paused]="answersPaused()"
+                [quaking]="party.quaking()"
+                [mirrored]="party.mirrored()"
                 (picked)="answer($event)"
               />
               @if (isParty()) {
@@ -171,6 +186,7 @@
             </div>
             @if (isParty()) {
               <app-ink-splash [active]="party.inked()" />
+              <app-fog-cloud [active]="party.fogged()" />
             }
           </div>
         } @else if (match(); as match) {
@@ -191,10 +207,13 @@
               [charges]="party.myCharges()"
               [chosen]="party.chosenType()"
               [canSabotage]="party.canSabotage()"
+              [canShield]="party.canShield()"
+              [shielded]="party.shielded()"
               [usedThisRound]="party.usedThisRound()"
               [hasTargets]="party.targetIds().length > 0"
               (choose)="party.choose($event)"
               (cancel)="party.cancel()"
+              (shield)="party.raiseShield()"
             />
           } @else {
             <app-boosts-bar
