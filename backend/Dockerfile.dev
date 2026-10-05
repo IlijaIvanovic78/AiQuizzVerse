@@ -8,13 +8,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY prisma ./prisma
-COPY prisma.config.ts ./
-RUN npx prisma generate
-
 COPY . .
 
 EXPOSE 3000
 
-# Apply migrations, seed the shop items and start Nest in watch mode
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma db seed && npm run start:dev"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx prisma db seed && npm run start:dev"]

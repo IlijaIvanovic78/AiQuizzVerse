@@ -1,6 +1,6 @@
 services:
   db:
-    image: pgvector/pgvector:pg16
+    image: postgres:16-alpine
     container_name: quizverse-db
     restart: unless-stopped
     ports:
@@ -25,12 +25,21 @@ services:
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-3000}:3000"
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
     environment:
       # Inside the compose network the database is reachable as "db", not localhost
       DATABASE_URL: postgresql://${POSTGRES_USER:-quizverse}:${POSTGRES_PASSWORD:-quizverse}@db:5432/${POSTGRES_DB:-quizverse}?schema=public
       BACKEND_PORT: 3000
       NODE_ENV: development
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4200}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-dev-access-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-15m}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-7d}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -52,6 +61,8 @@ services:
     restart: unless-stopped
     ports:
       - "${FRONTEND_PORT:-4200}:4200"
+    environment:
+      API_PROXY_TARGET: http://backend:3000
     volumes:
       - ./frontend:/app
       - /app/node_modules
