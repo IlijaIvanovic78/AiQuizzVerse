@@ -6,31 +6,109 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum Audience {
+  KIDS
+  TEENS
+  ADULTS
+}
+
+enum QuizLanguage {
+  EN
+  SR
+}
+
+enum QuizTheme {
+  SPACE
+  HISTORY
+  SCIENCE
+  NATURE
+  GEOGRAPHY
+  MATH
+  LANGUAGE
+  ART
+  MUSIC
+  SPORTS
+  TECHNOLOGY
+  GENERAL
+}
+
+enum QuizKind {
+  STANDARD
+  PATH_STEP
+  REVIEW
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+enum MatchMode {
+  SOLO
+  DUEL
+  TEAM
+}
+
+enum MatchStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+enum ItemType {
+  AVATAR
+  PET
+}
+
+enum BoostType {
+  HINT
+  FIFTY_FIFTY
+  EXTRA_TIME
+  STREAK_FREEZE
+}
+
+enum PurchaseStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
 model User {
-  id               String       @id @default(uuid())
-  email            String       @unique
-  username         String       @unique
-  passwordHash     String       @map("password_hash")
-  twoFaSecret      String?      @map("two_fa_secret")
-  twoFaEnabled     Boolean      @default(false) @map("two_fa_enabled")
-  refreshToken     String?      @map("refresh_token")
-  avatarUrl        String?      @map("avatar_url")
-  petUrl           String?      @map("pet_url")
-  xp               Int          @default(0)
-  coins            Int          @default(0)
-  level            Int          @default(1)
-  streak           Int          @default(0)
-  longestStreak    Int          @default(0) @map("longest_streak")
-  lastPlayedAt     DateTime?    @map("last_played_at")
-  createdAt        DateTime     @default(now()) @map("created_at")
-  updatedAt        DateTime     @default(now()) @updatedAt @map("updated_at")
-  receivedRequests Friendship[]  @relation("ReceivedRequests")
-  sentRequests     Friendship[]  @relation("SentRequests")
+  id               String    @id @default(uuid())
+  email            String    @unique
+  username         String    @unique
+  passwordHash     String    @map("password_hash")
+  twoFaSecret      String?   @map("two_fa_secret")
+  twoFaEnabled     Boolean   @default(false) @map("two_fa_enabled")
+  refreshTokenHash String?   @map("refresh_token_hash")
+  avatarKey        String?   @map("avatar_key")
+  petKey           String?   @map("pet_key")
+  xp               Int       @default(0)
+  coins            Int       @default(100)
+  streak           Int       @default(0)
+  longestStreak    Int       @default(0) @map("longest_streak")
+  lastPlayedOn     DateTime? @map("last_played_on") @db.Date
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  sentRequests     Friendship[]   @relation("SentRequests")
+  receivedRequests Friendship[]   @relation("ReceivedRequests")
+  documents        Document[]
   quizzes          Quiz[]
+  paths            LearningPath[]
+  hostedMatches    Match[]
   matchPlayers     MatchPlayer[]
-  userItems        UserItem[]
-  userBoosts       UserBoost[]
-  rankedJourneys   RankedJourney[]
+  reviewCards      ReviewCard[]
+  items            UserItem[]
+  boosts           UserBoost[]
+  purchases        Purchase[]
 
   @@map("users")
 }
@@ -41,216 +119,221 @@ model Friendship {
   receiverId String           @map("receiver_id")
   status     FriendshipStatus @default(PENDING)
   createdAt  DateTime         @default(now()) @map("created_at")
-  receiver   User             @relation("ReceivedRequests", fields: [receiverId], references: [id])
-  sender     User             @relation("SentRequests", fields: [senderId], references: [id])
+
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@unique([senderId, receiverId])
+  @@index([receiverId])
   @@map("friendships")
 }
 
-enum FriendshipStatus {
-  PENDING
-  ACCEPTED
-}
+model Document {
+  id             String   @id @default(uuid())
+  ownerId        String   @map("owner_id")
+  fileName       String   @map("file_name")
+  content        String
+  characterCount Int      @map("character_count")
+  createdAt      DateTime @default(now()) @map("created_at")
 
-enum QuizTheme {
-  SPACE
-  HISTORY
-  PROGRAMMING
-  SCIENCE
-  GEOGRAPHY
-  LITERATURE
-  MATH
-  GENERAL
-  CUSTOM
-}
+  owner   User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  quizzes Quiz[]
+  paths   LearningPath[]
 
-enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
-  EXPERT
+  @@index([ownerId])
+  @@map("documents")
 }
 
 model Quiz {
-  id              String     @id @default(uuid())
+  id              String       @id @default(uuid())
   title           String
-  theme           QuizTheme  @default(GENERAL)
-  difficulty      Difficulty @default(MEDIUM)
-  numQuestions    Int        @map("num_questions")
-  timePerQuestion Int        @default(30) @map("time_per_question")
-  createdById     String     @map("created_by_id")
-  sourceType      String     @default("prompt") @map("source_type")
-  createdAt       DateTime   @default(now()) @map("created_at")
+  topic           String
+  theme           QuizTheme
+  difficulty      Difficulty
+  audience        Audience
+  language        QuizLanguage
+  kind            QuizKind     @default(STANDARD)
+  timePerQuestion Int          @map("time_per_question")
+  ownerId         String       @map("owner_id")
+  documentId      String?      @map("document_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  createdBy  User       @relation(fields: [createdById], references: [id])
-  questions  Question[]
-  matches    Match[]
-  rankedStages RankedStage[]
+  owner     User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  document  Document?  @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  questions Question[]
+  matches   Match[]
+  pathStep  PathStep?
 
+  @@index([ownerId, kind])
   @@map("quizzes")
 }
 
 model Question {
-  id            String  @id @default(uuid())
-  quizId        String  @map("quiz_id")
-  text          String
-  options       Json
-  correctAnswer Int     @map("correct_answer")
-  explanation   String?
+  id               String   @id @default(uuid())
+  quizId           String   @map("quiz_id")
+  position         Int
+  text             String
+  options          String[]
+  correctIndex     Int      @map("correct_index")
+  explanation      String
+  hint             String
+  sourceQuestionId String?  @map("source_question_id")
 
-  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  reviewCards ReviewCard[]
 
+  @@unique([quizId, position])
   @@map("questions")
 }
 
-model DocumentChunk {
-  id         String   @id @default(uuid())
-  content    String
-  embedding  Bytes    @map("embedding")
-  sourceFile String   @map("source_file")
-  userId     String   @map("user_id")
-  createdAt  DateTime @default(now()) @map("created_at")
+model LearningPath {
+  id         String       @id @default(uuid())
+  ownerId    String       @map("owner_id")
+  topic      String
+  documentId String?      @map("document_id")
+  audience   Audience
+  language   QuizLanguage
+  createdAt  DateTime     @default(now()) @map("created_at")
 
-  @@map("document_chunks")
+  owner    User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  document Document?  @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  steps    PathStep[]
+
+  @@index([ownerId])
+  @@map("learning_paths")
 }
 
-// ── Game Engine ──────────────────────────────────────────
+model PathStep {
+  id           String     @id @default(uuid())
+  pathId       String     @map("path_id")
+  position     Int
+  title        String
+  keyPoints    String[]   @map("key_points")
+  difficulty   Difficulty
+  quizId       String     @unique @map("quiz_id")
+  stars        Int        @default(0)
+  bestAccuracy Int        @default(0) @map("best_accuracy")
+  completedAt  DateTime?  @map("completed_at")
 
-enum MatchType {
-  PVP
-  COOP
-  RANKED
-  SOLO
-}
+  path LearningPath @relation(fields: [pathId], references: [id], onDelete: Cascade)
+  quiz Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
-enum MatchStatus {
-  WAITING
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
+  @@unique([pathId, position])
+  @@map("path_steps")
 }
 
 model Match {
   id         String      @id @default(uuid())
-  type       MatchType
+  mode       MatchMode
   status     MatchStatus @default(WAITING)
   quizId     String      @map("quiz_id")
+  hostId     String      @map("host_id")
   inviteCode String?     @unique @map("invite_code")
+  stepReward Json?       @map("step_reward")
   createdAt  DateTime    @default(now()) @map("created_at")
+  startedAt  DateTime?   @map("started_at")
   endedAt    DateTime?   @map("ended_at")
 
-  quiz    Quiz          @relation(fields: [quizId], references: [id])
+  quiz    Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  host    User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
   players MatchPlayer[]
 
+  @@index([status])
   @@map("matches")
 }
 
 model MatchPlayer {
-  id       String  @id @default(uuid())
-  matchId  String  @map("match_id")
-  userId   String  @map("user_id")
-  score    Int     @default(0)
-  isWinner Boolean @default(false) @map("is_winner")
-  answers  Json?
+  id           String   @id @default(uuid())
+  matchId      String   @map("match_id")
+  userId       String   @map("user_id")
+  score        Int      @default(0)
+  correctCount Int      @default(0) @map("correct_count")
+  isWinner     Boolean  @default(false) @map("is_winner")
+  xpEarned     Int      @default(0) @map("xp_earned")
+  coinsEarned  Int      @default(0) @map("coins_earned")
+  leveledUp    Boolean  @default(false) @map("leveled_up")
+  answers      Json     @default("[]")
+  joinedAt     DateTime @default(now()) @map("joined_at")
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id])
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([matchId, userId])
+  @@index([userId])
   @@map("match_players")
 }
 
-// ── Shop & Avatar ────────────────────────────────────────
+model ReviewCard {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  questionId    String   @map("question_id")
+  timesWrong    Int      @default(1) @map("times_wrong")
+  correctStreak Int      @default(0) @map("correct_streak")
+  dueOn         DateTime @map("due_on") @db.Date
+  createdAt     DateTime @default(now()) @map("created_at")
 
-enum ItemType {
-  HAT
-  ARMOR
-  WEAPON
-  SHIELD
-  BADGE
-  PET
-  AVATAR
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, dueOn])
+  @@map("review_cards")
 }
 
 model Item {
-  id        String   @id @default(uuid())
+  id        String   @id
   name      String
   type      ItemType
-  imagePath String   @map("image_path")
   price     Int
   minLevel  Int      @default(1) @map("min_level")
+  isStarter Boolean  @default(false) @map("is_starter")
 
-  userItems UserItem[]
+  owners UserItem[]
 
   @@map("items")
 }
 
 model UserItem {
-  id         String  @id @default(uuid())
-  userId     String  @map("user_id")
-  itemId     String  @map("item_id")
-  isEquipped Boolean @default(false) @map("is_equipped")
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  itemId     String   @map("item_id")
+  acquiredAt DateTime @default(now()) @map("acquired_at")
 
-  user User @relation(fields: [userId], references: [id])
-  item Item @relation(fields: [itemId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  item Item @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@unique([userId, itemId])
   @@map("user_items")
-}
-
-// ── Boosts ───────────────────────────────────────────────
-
-enum BoostType {
-  HINT
-  EXTRA_TIME
-  FIFTY_FIFTY
-  DOUBLE_POINTS
-  SHIELD
-  STREAK_FREEZE
 }
 
 model UserBoost {
   id       String    @id @default(uuid())
   userId   String    @map("user_id")
   type     BoostType
-  quantity Int       @default(1)
+  quantity Int       @default(0)
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, type])
   @@map("user_boosts")
 }
 
-// ── Ranked Journey ───────────────────────────────────────
+model Purchase {
+  id          String         @id @default(uuid())
+  userId      String         @map("user_id")
+  packageId   String         @map("package_id")
+  coins       Int
+  amountCents Int            @map("amount_cents")
+  currency    String
+  status      PurchaseStatus @default(PENDING)
+  provider    String
+  providerRef String?        @map("provider_ref")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  paidAt      DateTime?      @map("paid_at")
 
-model RankedJourney {
-  id           String   @id @default(uuid())
-  userId       String   @map("user_id")
-  topic        String
-  totalStages  Int      @map("total_stages")
-  currentStage Int      @default(0) @map("current_stage")
-  isCompleted  Boolean  @default(false) @map("is_completed")
-  createdAt    DateTime @default(now()) @map("created_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user   User          @relation(fields: [userId], references: [id])
-  stages RankedStage[]
-
-  @@map("ranked_journeys")
-}
-
-model RankedStage {
-  id           String     @id @default(uuid())
-  journeyId    String     @map("journey_id")
-  stageNumber  Int        @map("stage_number")
-  quizId       String     @map("quiz_id")
-  difficulty   Difficulty
-  isCompleted  Boolean    @default(false) @map("is_completed")
-  score        Int?
-  earnedReward Json?      @map("earned_reward")
-
-  journey RankedJourney @relation(fields: [journeyId], references: [id], onDelete: Cascade)
-  quiz    Quiz          @relation(fields: [quizId], references: [id])
-
-  @@map("ranked_stages")
+  @@index([userId, createdAt])
+  @@map("purchases")
 }
