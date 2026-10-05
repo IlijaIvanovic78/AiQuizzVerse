@@ -1,0 +1,107 @@
+<app-auth-layout>
+  <div class="-mt-4 flex items-end justify-center -space-x-6" aria-hidden="true">
+    @for (pet of pets; track pet) {
+      <app-pet-sprite [petKey]="pet" [scale]="3" [decorative]="true" />
+    }
+  </div>
+  <h1 class="text-center text-3xl">Join the adventure</h1>
+  <p class="mt-2 text-center text-muted">
+    Make an account to save your heroes, coins and progress.
+  </p>
+
+  <form class="mt-6 flex flex-col gap-4" [formGroup]="form" (ngSubmit)="submit()">
+    <div>
+      <label for="register-email" class="field-label">Email</label>
+      <input
+        id="register-email"
+        type="email"
+        class="input"
+        autocomplete="email"
+        aria-describedby="register-email-error"
+        formControlName="email"
+        [attr.aria-invalid]="emailInvalid()"
+      />
+      <div id="register-email-error">
+        @if (emailInvalid()) {
+          <p class="field-error">
+            <app-pixel-icon name="cross" [scale]="1" />
+            Type a real email address, like name&#64;example.com.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label for="register-username" class="field-label">Nickname</label>
+      <input
+        id="register-username"
+        class="input"
+        autocomplete="username"
+        aria-describedby="register-username-help register-username-status"
+        formControlName="username"
+        [attr.aria-invalid]="usernameProblem() !== null"
+      />
+      <p id="register-username-help" class="field-hint">
+        Pick a nickname. Don't use your real name.
+      </p>
+      <div id="register-username-status" aria-live="polite">
+        @if (usernameProblem(); as problem) {
+          <p class="field-error">
+            <app-pixel-icon name="cross" [scale]="1" />
+            {{ problem }}
+          </p>
+        } @else if (usernameStatus() === 'available') {
+          <p class="field-ok">
+            <app-pixel-icon name="check" [scale]="1" />
+            Great name, it's free!
+          </p>
+        } @else if (usernameStatus() === 'checking') {
+          <p class="field-hint">Checking the name...</p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <label for="register-password" class="field-label">Password</label>
+      <div class="flex gap-2">
+        <input
+          id="register-password"
+          class="input"
+          autocomplete="new-password"
+          aria-describedby="register-password-rule"
+          formControlName="password"
+          [type]="showPassword() ? 'text' : 'password'"
+          [attr.aria-invalid]="passwordInvalid()"
+        />
+        <button type="button" class="btn btn-secondary shrink-0" (click)="togglePassword()">
+          {{ showPassword() ? 'Hide' : 'Show' }}<span class="sr-only"> password</span>
+        </button>
+      </div>
+      <p
+        id="register-password-rule"
+        class="flex items-center gap-1.5"
+        [class]="passwordRuleClass()"
+      >
+        <app-pixel-icon [name]="passwordLengthOk() ? 'check' : 'cross'" [scale]="1" />
+        {{ passwordMin }} to {{ passwordMax }} characters
+        <span class="sr-only">{{ passwordLengthOk() ? '(done)' : '(not yet)' }}</span>
+      </p>
+    </div>
+
+    @if (error()) {
+      <p class="form-alert" role="alert">
+        <app-pixel-icon name="cross" />
+        {{ error() }}
+      </p>
+    }
+
+    <button type="submit" class="btn btn-primary btn-lg mt-2 w-full" [disabled]="pending()">
+      {{ pending() ? 'Creating your account...' : 'Create account' }}
+    </button>
+  </form>
+
+  <p class="mt-6 text-center">
+    Already have an account?
+    <a routerLink="/login" class="link">Log in</a>
+  </p>
+</app-auth-layout>

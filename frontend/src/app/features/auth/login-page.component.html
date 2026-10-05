@@ -1,0 +1,84 @@
+<app-auth-layout>
+  @if (twoFactorToken()) {
+    <app-two-factor-form
+      [pending]="pending()"
+      [error]="error()"
+      (codeSubmitted)="submitCode($event)"
+      (back)="backToLogin()"
+    />
+  } @else {
+    <div class="-mt-4 flex items-end justify-center -space-x-6" aria-hidden="true">
+      @for (hero of heroes; track hero) {
+        <app-hero-sprite [heroKey]="hero" [scale]="3" [decorative]="true" />
+      }
+      <app-pet-sprite [petKey]="pet" [scale]="3" [decorative]="true" />
+    </div>
+    <h1 class="text-center text-3xl">Welcome back, hero!</h1>
+    <p class="mt-2 text-center text-muted">Log in to continue your adventure.</p>
+
+    <form class="mt-6 flex flex-col gap-4" [formGroup]="form" (ngSubmit)="submit()">
+      <div>
+        <label for="login-email" class="field-label">Email</label>
+        <input
+          id="login-email"
+          type="email"
+          class="input"
+          autocomplete="email"
+          aria-describedby="login-email-error"
+          formControlName="email"
+          [attr.aria-invalid]="emailInvalid()"
+        />
+        <div id="login-email-error">
+          @if (emailInvalid()) {
+            <p class="field-error">
+              <app-pixel-icon name="cross" [scale]="1" />
+              Type the email you signed up with.
+            </p>
+          }
+        </div>
+      </div>
+
+      <div>
+        <label for="login-password" class="field-label">Password</label>
+        <div class="flex gap-2">
+          <input
+            id="login-password"
+            class="input"
+            autocomplete="current-password"
+            aria-describedby="login-password-error"
+            formControlName="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            [attr.aria-invalid]="passwordInvalid()"
+          />
+          <button type="button" class="btn btn-secondary shrink-0" (click)="togglePassword()">
+            {{ showPassword() ? 'Hide' : 'Show' }}<span class="sr-only"> password</span>
+          </button>
+        </div>
+        <div id="login-password-error">
+          @if (passwordInvalid()) {
+            <p class="field-error">
+              <app-pixel-icon name="cross" [scale]="1" />
+              Type your password.
+            </p>
+          }
+        </div>
+      </div>
+
+      @if (error()) {
+        <p class="form-alert" role="alert">
+          <app-pixel-icon name="cross" />
+          {{ error() }}
+        </p>
+      }
+
+      <button type="submit" class="btn btn-primary btn-lg mt-2 w-full" [disabled]="pending()">
+        {{ pending() ? 'Logging in...' : 'Log in' }}
+      </button>
+    </form>
+
+    <p class="mt-6 text-center">
+      New here?
+      <a routerLink="/register" class="link">Create an account</a>
+    </p>
+  }
+</app-auth-layout>

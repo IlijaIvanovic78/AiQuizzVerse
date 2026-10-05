@@ -1,0 +1,38 @@
+.hero-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background-color: var(--parchment-200);
+  text-align: center;
+  box-shadow: inset 0 -4px 0 rgba(59, 42, 26, 0.2);
+  transition: transform 120ms ease-out;
+}
+
+.hero-choice:hover {
+  transform: translateY(-3px);
+}
+
+.hero-choice-selected,
+.hero-choice-selected:hover {
+  border-color: var(--torch-600);
+  background-color: var(--parchment-300);
+  transform: translateY(-3px);
+}
+
+/* Each hero stands in a small window of the castle arena. */
+.hero-stage {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 10rem;
+  border-bottom: 3px solid var(--outline);
+  background: var(--night-900) url('/assets/images/arena-small.webp') center 72% / 220%;
+}
