@@ -15,7 +15,9 @@ hero with a pet and level up by learning:
 3. **Remember**: every missed question becomes a card in the mistakes notebook and comes back
    after 1, 3 and 7 days until it is answered right three times.
 4. **Earn and spend**: XP and levels, a daily streak, coins for heroes, pets and power-ups.
-   Coin packs can be bought behind a grown-up gate (demo checkout or Stripe test mode only).
+   Chests are earned by playing and learning (never bought) and hold coins, power-ups or, rarely,
+   a hero or pet. Coin packs can be bought behind a grown-up gate (demo checkout or Stripe test
+   mode only).
 
 ## Running it
 
@@ -37,7 +39,7 @@ frontend/
   proxy.conf.js        dev proxy: /api -> backend (prefix stripped), /socket.io -> backend (ws)
   tailwind.config.js   palette and font families
   src/styles.css       fonts, CSS variables, .panel / .btn, animations
-  src/assets/          images/ (arena, logo, icons, textures), sprites/ (manifest.json, sheets)
+  src/assets/          images/ (arena, logo, icons, chests, textures), sprites/ (manifest.json, sheets)
   src/app/             core/, store/, features/, shared/, layout/, app.config.ts, app.routes.ts
 docker-compose.yml     db, backend, frontend
 ```
@@ -65,6 +67,7 @@ A backend module holds its controller, service, `constants`, `types`, `dto/`, a 
 | Review | `modules/review` | Mistakes notebook and practice quizzes |
 | Matches | `modules/matches` | Match REST API, `/game` gateway, the in-memory `MatchSession`, saving results |
 | Shop | `modules/shop` | Heroes, pets and power-ups: buy, equip, claim a starter hero |
+| Chests | `modules/chests` | Earned chests, drop tables and odds, opening; pure rules in `chests.rules.ts` |
 | Payments | `modules/payments` | Coin packs, payment provider factory, checkout / confirm / cancel |
 | Leaderboard | `modules/leaderboard` | Weekly XP ranking for friends or everyone |
 | Health | `modules/health` | `GET /health` runs `SELECT 1` through Prisma |
@@ -76,8 +79,10 @@ Auth ──────────┬─> Users
                └─> Quizzes ─────┬─> Ai
 LearningPaths ─┬─> Quizzes      ├─> Documents
                ├─> Ai           └─> Realtime
-               └─> Documents, Realtime
-Matches ───────> LearningPaths, Review, Progression, Realtime
+               └─> Documents, Realtime, Chests
+Matches ───────> LearningPaths, Review, Progression, Realtime, Chests
+Chests ────────┬─> Realtime
+               └─> Shop
 Profile ───────┬─> Users, Review
                └─> Friends ───────> Realtime
 Leaderboard ───> Friends
@@ -98,7 +103,8 @@ trusts one proxy hop (the Angular dev proxy), so `req.ip` for the login rate lim
 
 `backend/prisma/schema.prisma`: snake_case names through `@map` / `@@map`, uuid ids except
 `Item`, child relations cascade on delete unless noted. Migrations start with `init`; later ones
-add quiz soft delete, quiz source, PARTY mode, an `ended_at` index and `coin_cap_reached`.
+add quiz soft delete, quiz source, PARTY mode, an `ended_at` index, `coin_cap_reached` and
+chests.
 
 - **User**: unique email and username, `passwordHash`, `twoFaSecret`, `twoFaEnabled`,
   `refreshTokenHash`, `avatarKey`, `petKey`, `xp`, `coins`, `streak`, `longestStreak`,
@@ -120,15 +126,20 @@ add quiz soft delete, quiz source, PARTY mode, an `ended_at` index and `coin_cap
   `xpEarned`, `coinsEarned`, `coinCapReached`, `leveledUp`, `answers` (Json list of
   `{ questionId, optionIndex, correct, points }`, option index in the stored order).
 - **ReviewCard**: unique User-Question pair with `timesWrong`, `correctStreak`, `dueOn` (date).
-- **Item** (id = sprite key, e.g. `mini-mage`) and **UserItem**: M:N User-Item. **UserBoost**:
-  power-up stock per user and type, `@@unique([userId, type])`.
+- **Item** (id = sprite key, e.g. `mini-mage`; `isChestOnly` items are never sold) and
+  **UserItem**: M:N User-Item. **UserBoost**: power-up stock per user and type (HINT,
+  FIFTY_FIFTY, EXTRA_TIME, SECOND_CHANCE, STREAK_FREEZE), `@@unique([userId, type])`.
+- **UserChest**: `type` (WOODEN / SILVER / GOLDEN), `source` (DAILY_MATCH / VICTORY / PATH_STEP /
+  LEVEL_UP / STREAK), `earnedAt`, `openedAt`, `reward` (Json, set when opened) and `matchId`
+  (the match that earned it, `onDelete: SetNull`). User 1:N, `@@index([userId, openedAt])`.
 - **Purchase**: a coin pack purchase (`coins`, `amountCents`, `status` PENDING / PAID /
   CANCELLED, `provider`, `providerRef`, `paidAt`). User 1:N.
 
-`backend/prisma/seed.ts` upserts the shop items, two demo users (friends, with items and boosts)
+`backend/prisma/seed.ts` upserts the shop items (`seed-data/items.ts`: 27 heroes and 25 pets,
+six of them chest-only), two demo users (friends, with items, boosts and a few unopened chests)
 and four featured quizzes (`seed-quiz-*` ids), and adds some match history only while the demo
-user has no finished match. User data is upserted with `update: {}`, so a restart never resets
-progress.
+user has no finished match. User data is upserted with `update: {}` and chests are added only
+while the user has none, so a restart never resets progress.
 
 ### Auth
 
@@ -160,9 +171,9 @@ Socket.IO with two namespaces behind the same handshake middleware
 (`WsAuthService.middleware` checks `handshake.auth.token` and sets `socket.data.userId`). The
 default namespace `/` (`realtime/realtime.gateway.ts`) only sends: `friend:online`,
 `friend:offline`, `friend:request`, `friend:accepted`, `friend:request-removed`,
-`friend:removed`, `duel:invite`, `quiz:progress`, `coins:updated`. The `/game` namespace
-(`matches/match.gateway.ts`) carries everything inside a match. Every socket joins the room
-`user:<userId>` in its namespace, so all tabs of a user get their events. Services never touch
+`friend:removed`, `duel:invite`, `quiz:progress`, `coins:updated`, `chest:earned`. The `/game`
+namespace (`matches/match.gateway.ts`) carries everything inside a match. Every socket joins the
+room `user:<userId>` in its namespace, so all tabs of a user get their events. Services never touch
 sockets; they call `NotificationsService.emitToUser(userId, event, payload)`, typed against
 `ServerToClientEvents`. Presence (`presence.service.ts`) keeps `Map<userId, Set<socketId>>`:
 the first socket makes the user online, and they go offline 3 seconds after the last socket
@@ -236,11 +247,29 @@ quantity: { gte: 1 } } })`; nothing updated releases the reservation and sends a
 hints per match are free. HINT sends the hint, FIFTY_FIFTY removes two wrong options (in the
 player's order), EXTRA_TIME adds 15 s.
 
-**Sabotage** (PARTY): 1 charge at the start, +1 per round won (max 2), one sabotage per
-question. `party-rules.ts` decides if an attempt is allowed (question open, a charge left,
-target is another connected player who has not answered). INK is drawn only by the clients
-(4 s), FREEZE makes the server refuse the target's answers for 3 s, SCRAMBLE gives the target a
-new private option order and sends them `match:options`. The room gets `match:sabotaged`.
+**Second chance** (SOLO and TEAM, 20 coins in the shop, also in chests). Using it sets the
+player's `secondChance` to `armed` for the open question (`session-player.ts` keeps the state
+and resets it every question). `submitAnswer` checks `secondChanceCovers` before the answer goes
+into `answers$`: armed, this question, the player may still answer, and the answer is wrong.
+Then the answer is not counted at all (so `take(n)` does not end the round), the state becomes
+`spent` and only that player gets `match:second-chance { matchId, index, wrongOption }`. The next
+answer goes through the normal pipeline; `pointsFor` gives it `secondTryPoints` from
+`scoring.ts`: 50 when correct (`SECOND_CHANCE_POINTS`, half the base points, no speed bonus),
+0 when wrong. A correct first answer simply scores as usual and the power-up is spent.
+
+**Sabotage** (PARTY): 1 charge at the start, +1 per round won (max 2), one sabotage action per
+question. `SABOTAGE_TYPES` and the durations are in `matches.constants.ts`; `SabotageDto`
+validates the type with `@IsIn` and needs `targetUserId` for everything except SHIELD.
+`party-rules.ts` decides if an attempt is allowed (party, question open, not used this question,
+a charge left, and a target that is another connected player who has not answered; a shield only
+before you answer). The server enforces only what it must: FREEZE makes it refuse the target's
+answers for 3 s and SCRAMBLE gives the target a new private option order and sends them
+`match:options`. INK (4 s), FOG (4 s, blurred question and answers), QUAKE (4 s, shaking
+buttons) and MIRROR (5 s, mirrored answer texts) are only validated and broadcast; the clients
+draw them from `match:sabotaged { type, durationMs }`. SHIELD takes no target, costs a charge
+and protects the player who raises it until the question ends: the room sees it through
+`match:sabotaged`, and the next sabotage aimed at that player is stopped, the room gets
+`match:sabotage-blocked` and the attacker still loses the charge.
 
 **Leaving and coming back.** A player is gone only when none of their sockets is left in the
 `match:<id>` room (`fetchSockets()`). Outside SOLO a gone player gives up the open question and
@@ -256,10 +285,12 @@ left, or the last round result.
 `match.updateMany({ where: { status: 'IN_PROGRESS' } })` and does nothing if another call ended
 the match first. It saves every MatchPlayer row, and for each rewarded player calls
 `ProgressionService.rewardMatchPlayer` and `ReviewService.recordAnswers` with the transaction
-client; for a finished PATH_STEP quiz it calls `LearningPathsService.recordStepResult` and keeps
-the reward in `Match.stepReward`. After the commit each rewarded player gets their own
-`match:finished` and `coins:updated`, and the session leaves the registry, also when saving failed. An abandoned
-match rewards only the players still connected, for correct answers only.
+client, then `ChestsService.grantForMatch`; for a finished PATH_STEP quiz it calls
+`LearningPathsService.recordStepResult` and keeps the reward in `Match.stepReward`. After the
+commit each rewarded player gets their own `match:finished` (with `chestsEarned`),
+`coins:updated` and one `chest:earned` per new chest, and the session leaves the registry, also
+when saving failed. An abandoned match rewards only the players still connected, for correct
+answers only.
 
 **Rewards** (`progression/progression.rules.ts`): +10 XP and +2 coins per correct answer (1.5x
 XP on HARD), +10 XP / +5 coins for finishing with a correct answer, duel or party win +30 / +15,
@@ -298,9 +329,68 @@ interactive `$transaction` creates the path, five PATH_STEP quizzes (via
 once, each prompt gets the focus of every step and the goals of the earlier ones. A step is
 unlocked when it is first or the previous one is cleared. Stars are 1 / 2 / 3 at 60 /
 80 / 100% accuracy. Best result and first clear are conditional `updateMany` calls, so the
-first-clear reward (`STEP_REWARDS`: coins, plus a boost for every step except the second, outside
-the daily cap) is paid once.
+first-clear reward (`STEP_REWARDS`: coins outside the daily cap, plus a chest: wooden for steps 1
+and 3, silver for 2 and 4, golden for 5) is paid once.
 Deleting a path soft-deletes its step quizzes and deletes the path in one transaction.
+
+### Chests
+
+`backend/src/modules/chests/`: the rules are pure functions in `chests.rules.ts` (with Jest
+tests), the numbers are in `chests.constants.ts`, and `ChestsService` does the database work.
+
+**Earning.** Chests are only granted by the server, inside the transaction that saves the
+result. `MatchResultsService` calls `ChestsService.grantForMatch` for every rewarded player, and
+`chestsForMatch` decides what they get:
+
+| Source | Chest | Rule |
+| --- | --- | --- |
+| DAILY_MATCH | WOODEN | first FINISHED match of the UTC day with at least 60% |
+| VICTORY | WOODEN | a DUEL or PARTY win, at most two a UTC day |
+| LEVEL_UP | SILVER | one per level gained |
+| STREAK | GOLDEN | the streak reaches a multiple of 7 |
+| PATH_STEP | from `STEP_REWARDS` | first clear: steps 1 and 3 WOODEN, 2 and 4 SILVER, 5 GOLDEN |
+
+`grantForMatch` first locks the user row (`SELECT ... FOR UPDATE`) and then counts today's
+daily and victory chests, so two matches that end at the same moment cannot both take the last
+chest of the day. `UserChest.matchId` remembers the match, so the result screen
+(`MatchResult.chestsEarned`) and `chest:earned` events show exactly the chests of that match.
+
+**Drop tables.** `DROP_TABLES` gives every chest type a few weighted rows, and one roll picks a
+row:
+
+| Chest | Coins | Power-ups | Shop hero or pet (price up to 150) | Chest-only hero or pet |
+| --- | --- | --- | --- | --- |
+| WOODEN | 20-40 (70) | 1 (27) | 3 | - |
+| SILVER | 50-90 (50) | 2 (35) | 12 | 3 |
+| GOLDEN | 120-200 (35) | 3 + 1 streak freeze (35) | 20 | 10 |
+
+Power-ups are drawn from HINT, FIFTY_FIFTY, EXTRA_TIME and SECOND_CHANCE; the streak freeze only
+comes from golden chests (it has no shop price). Starter heroes are never in a chest. A skin row
+whose pool is empty is left out, so the other rows share its chance. A skin the player already
+owns becomes coins (its shop price, or 150 for a chest-only one) and the reward says
+`duplicate: true`. `GET /chests/odds` turns the weights into percentages, and the treasure room
+shows them, so the chances are public.
+
+**Opening** (`POST /chests/:id/open`). `open` finds the chest by id and owner (404 for someone
+else's chest) and answers 409 if it is already open. `rollReward` loads the items and what the
+player owns and calls `rollChest(type, pools, ownedItemIds, Math.random)`: the random function is
+a parameter, so tests pass one that returns fixed numbers. The roll only reads, so it happens
+before the transaction. Then one `$transaction` runs
+`userChest.updateMany({ where: { id, openedAt: null }, data: { openedAt, reward } })`; with
+`count === 0` another request opened the chest first, so it throws 409 and nothing is paid.
+Otherwise it pays in the same transaction: power-ups by `upsert` with `increment`, a new item as
+a `UserItem` row, coins by `increment`. After the commit the user gets `coins:updated`, and the
+response is `{ chest, reward, coins }`. A double click, two tabs or a retry therefore open a
+chest once.
+
+**Why chests cannot be bought.** The app is for kids. A random reward that you pay for is a loot
+box, which works like gambling and is banned or limited in some countries. So money only buys a
+fixed number of coins (behind the grown-up gate and the monthly limit), coins only buy the exact
+item you picked, and randomness exists only in chests that are earned. In code there is no route
+that creates a chest: `ChestsController` only lists chests, shows the odds and opens one, and
+`grant` / `grantForMatch` are called only from saving a match and clearing a path step. A
+chest-only item answers 400 in `POST /shop/items/:id/buy` (`assertCanBuy`), and the streak freeze
+has `price: null` in `BOOST_CATALOG`, so buying it answers 400 too.
 
 ### Mistakes notebook
 
@@ -363,7 +453,8 @@ registered in `app.config.ts`:
 | `duelInvite` | the invite shown in the dialog |
 | `paths` | path list, open path, path generation |
 | `review` | the mistakes deck |
-| `shop` | entity adapter of items (by price), boosts, coin packs, purchases |
+| `shop` | entity adapter of items (by price, chest-only last), boosts, coin packs, purchases |
+| `chests` | entity adapter of unopened chests (newest first, `removeOne` after opening), recent rewards, odds, the chest being opened |
 | `friends` | entity adapter keyed by `friendshipId` (by username), requests, search results |
 | `leaderboard`, `matchHistory` | weekly ranking, recent matches |
 
@@ -376,9 +467,9 @@ the store: `TokenStorageService` reads localStorage every time, so another tab's
 goes in the `auth` callback, and an `unauthorized` connect error triggers one shared token
 refresh and a reconnect. Socket events reach the UI only through effects:
 
-- `store/realtime/realtime.effects.ts` `merge`s the nine default-namespace streams
-  (`friendRequest$`, ..., `coinsUpdated$`, `quizProgress$`) into one stream of actions. A second,
-  non-dispatching effect shows the friend toasts.
+- `store/realtime/realtime.effects.ts` `merge`s the ten default-namespace streams
+  (`friendRequest$`, ..., `coinsUpdated$`, `quizProgress$`, `chestEarned$`) into one stream of
+  actions. Two non-dispatching effects show the friend and chest toasts.
 - `store/match/match.effects.ts` (`socketEvents$`) starts on `MatchActions.entered`, merges every
   `/game` event filtered to the open match, and stops with
   `takeUntil(actions$.pipe(ofType(MatchActions.left)))`.
@@ -402,6 +493,32 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
 `authGuard` keeps the attempted URL as `returnUrl`, so a `/join/CODE` link survives the login.
 `/play/:matchId` has a `canDeactivate` guard that asks before quitting a running match.
 
+### Chests, second chance and sabotage on screen
+
+- **Treasure room** (`/chests`, `features/chests/`): a grid of unopened chests (closed frame,
+  type, why it was earned, date), Open and "Open all" (one by one, each with its own reveal), the
+  recent rewards, a "Chances" panel from `GET /chests/odds` and the note that chests can't be
+  bought. The opening dialog plays the 4-frame chest strip (shake, lid half open, open), then the
+  reward pops out with pixel sparkles and a jingle; an item shows its animated sprite, a
+  duplicate says how many coins it became. The `chests` slice keeps the unopened chests in an
+  entity adapter: `chest:earned` adds one (`addOne`), opening removes one (`removeOne`), and the
+  `open$` effect uses `exhaustMap`, so a second click is ignored while the first request runs.
+  The top bar shows a chest icon with the unopened count (also in the avatar menu on phones),
+  Home has a "Chests to open" card, the results screen a "Chests earned" row, the path map the
+  chest tier of each step, and `chest:earned` shows a toast with an Open button.
+- **Second chance**: a button in the boosts bar (SOLO and TEAM). On `match:second-chance` the
+  reducer clears my answer and keeps the wrong option, which the answer grid crosses out, a
+  "Second chance! Try again" banner shows, and `MatchClockService` restarts the timer bar,
+  which had stopped at the first answer.
+- **Sabotage**: the party sabotage bar has INK, FREEZE, SCRAMBLE, FOG, QUAKE and MIRROR (pick
+  one, then tap a hero) and a SHIELD button without a target. `PartyRoundService` turns the
+  sabotages of the question into signals (`fogged`, `quaking`, `mirrored`, ...) from each event's
+  arrival time and `durationMs`. FOG is a blur overlay (`fog-cloud.component`), QUAKE and MIRROR
+  are CSS classes on the answer grid (shaking buttons, `scaleX(-1)` on the answer texts), a
+  shielded player gets a bubble on their hero, and a blocked sabotage shows "Blocked!". All
+  animations are off under `prefers-reduced-motion` (the quake then only knocks the buttons out
+  of line).
+
 ### Design system
 
 - Palette in `tailwind.config.js`, repeated as CSS variables in `src/styles.css`: `night`
@@ -417,24 +534,40 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
 - `.panel`, `.panel-parchment` and `.btn-*`: flat fills, 3px dark outline, inset pixel bevel,
   stone and parchment textures. Animations are CSS keyframes and Angular `animate.enter` /
   `animate.leave`, all off under `prefers-reduced-motion`.
-- Pixel assets: `arena.webp` / `arena-small.webp`, `logo.webp`, item icons (`.webp`), 16x16
-  icons (`.png`, `image-rendering: pixelated`). Heroes and pets come from
-  `assets/sprites/manifest.json` (single-row strips); `shared/components/sprite-style.ts`
-  computes size, `background-size` and a `steps(frames)` animation. `SpriteManifestService`
-  loads the manifest with `fetch` and preloads the sheets with `Promise.all`.
+- Pixel logo: `images/logo.png` (162x32, a small emblem and the "AI QuizVerse" lettering in
+  pixel art) replaced the old smooth `logo.webp`; `images/logo-mark.png` (32x32, the emblem) is
+  the small version for phones and the favicon. Both are shown with `image-rendering: pixelated`
+  and only at whole scales (1x in the top bar, 2x and 3x on the login pages), so every pixel
+  stays square.
+- Pixel assets: `arena.webp` / `arena-small.webp`, item icons (`.webp`), 16x16 icons (`.png`,
+  `image-rendering: pixelated`, among them `fog`, `quake`, `mirror`, `shield-bubble`,
+  `second-chance` and one per chest tier), and 32x32 chest strips in `images/chests/`
+  (`wooden`, `silver`, `golden`; frames: closed, shaking, lid half open, open with glints).
+- Heroes and pets come from `assets/sprites/manifest.json` (single-row strips, 32x32 frames);
+  the manifest `key` is the `Item.id` from the seed. `shared/components/sprite-style.ts` computes
+  size, `background-size` and a `steps(frames)` animation. `SpriteManifestService` loads the
+  manifest with `fetch` and preloads the sheets with `Promise.all`. The ten newer heroes (Fire
+  Mage, Frost Knight, Shadow Archer, Forest Ranger, Desert Nomad, Storm Lancer, Crimson Prince,
+  Sun Paladin, and the chest-only Golden King and Void Archmage) are palette swaps of the older
+  hero strips with small added details, with the same frame count as the hero they are based
+  on. The ten newer pets are a hand-drawn baby dragon (four
+  colors), a hand-drawn slime (three colors) and recolors of the fox, wolf and bunny, all with 4
+  frames; the blue and gold dragons, the pink slime and the golden bunny are chest-only.
 
 ## Testing
 
 - Backend (Jest, `docker compose exec backend npx jest`): `*.spec.ts` next to the code for the
   pure parts (scoring, option order, party rules, levels, stars, streak, coin cap, review
-  intervals, AI question checks, payment limits, dates, shuffle, mappers, generation limits).
+  intervals, AI question checks, payment limits, dates, shuffle, mappers, generation limits,
+  chest earning and drop rolls).
   `match-session.spec.ts` drives the real `MatchSession` with a fake server that records emitted
-  events and Jest fake timers: rounds, deadlines, reveals, disconnects, power-ups and sabotage
-  without a database or sockets. `backend/test/app.e2e-spec.ts` boots `AppModule` and checks
-  `GET /health`.
+  events and Jest fake timers: rounds, deadlines, reveals, disconnects, power-ups (second chance
+  included), sabotage and shields without a database or sockets. `chests.rules.spec.ts` passes a
+  `randomSequence(...)` function instead of `Math.random`, so every roll has a known result.
+  `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
 - Frontend (Vitest, `npx ng test --watch=false`): reducers (quizzes, match, paths, leaderboard,
-  duel invite) and pure helpers (filters, path map, round view, match result, gate question,
-  pipes, sprite style, quiz form).
+  duel invite, chests) and pure helpers (filters, path map, round view, match result, party
+  round, chest reward, shop item state, gate question, pipes, sprite style, quiz form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev
