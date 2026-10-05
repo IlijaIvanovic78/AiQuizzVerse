@@ -12,7 +12,7 @@
 
     <nav
       aria-label="Main"
-      class="order-last -mx-3 hidden w-full md:block xl:order-none xl:mx-0 xl:w-auto xl:flex-1"
+      class="order-last -mx-2 hidden w-full md:block xl:order-none xl:mx-0 xl:w-auto xl:flex-1"
     >
       <ul class="flex flex-wrap gap-1 xl:justify-center">
         @for (link of links; track link.path) {
@@ -46,9 +46,7 @@
           (click)="toggleMenu()"
         >
           <span class="sr-only">Menu for {{ user().username }}</span>
-          <span class="avatar-frame">
-            <app-hero-sprite [heroKey]="user().avatarKey" [scale]="2" [decorative]="true" />
-          </span>
+          <app-user-avatar [heroKey]="user().avatarKey" />
           <app-level-badge class="hidden sm:inline-flex" [level]="user().level" />
         </button>
 

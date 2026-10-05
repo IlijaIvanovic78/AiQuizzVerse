@@ -11,8 +11,8 @@ import {
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CurrentUser } from '../core/models/user.model';
 import { CoinAmountComponent } from '../shared/components/coin-amount.component';
-import { HeroSpriteComponent } from '../shared/components/hero-sprite.component';
 import { LevelBadgeComponent } from '../shared/components/level-badge.component';
+import { UserAvatarComponent } from '../shared/components/user-avatar.component';
 import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
 
 @Component({
@@ -21,8 +21,8 @@ import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
     RouterLink,
     RouterLinkActive,
     CoinAmountComponent,
-    HeroSpriteComponent,
     LevelBadgeComponent,
+    UserAvatarComponent,
   ],
   templateUrl: './top-bar.component.html',
   styleUrl: './top-bar.component.css',

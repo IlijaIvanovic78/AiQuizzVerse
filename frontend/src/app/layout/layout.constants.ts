@@ -1,4 +1,4 @@
-export interface NavLink {
+interface NavLink {
   path: string;
   label: string;
 }
@@ -23,7 +23,7 @@ export const PHONE_MENU_LINKS: NavLink[] = [
   { path: '/leaderboard', label: 'Leaderboard' },
 ];
 
-export interface PhoneTab extends NavLink {
+interface PhoneTab extends NavLink {
   // Tabs without an icon show the player's own hero.
   icon: string | null;
 }

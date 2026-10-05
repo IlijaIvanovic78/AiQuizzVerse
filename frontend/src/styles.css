@@ -58,6 +58,16 @@
     line-height: 1.5;
   }
 
+  /* Pixelify Sans draws the "fi" ligature like an "A", so "first" would read "Arst".
+     Form controls reset the font in the browser stylesheet, so they need the rule too. */
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-variant-ligatures: no-common-ligatures;
+  }
+
   h1,
   h2,
   h3,
@@ -419,18 +429,6 @@
   }
 }
 
-/* The element sets --fly-x and --fly-y to the distance to the chest. */
-@keyframes coin-fly {
-  from {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: translate(var(--fly-x, 0), var(--fly-y, -80px)) scale(0.6);
-    opacity: 0;
-  }
-}
-
 @keyframes coin-burst {
   from {
     transform: translate(0, 0) scale(0.5);
@@ -547,12 +545,6 @@
   }
 }
 
-@keyframes fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
 @keyframes blink {
   0%,
   100% {
@@ -573,10 +565,6 @@
 
 .animate-shake {
   animation: shake 350ms linear;
-}
-
-.animate-coin-fly {
-  animation: coin-fly 700ms ease-in forwards;
 }
 
 .animate-coin-burst {
@@ -623,10 +611,6 @@
 
 .fade-enter {
   animation: fade-in 150ms ease-out;
-}
-
-.fade-leave {
-  animation: fade-out 150ms ease-in forwards;
 }
 
 .modal-enter {
