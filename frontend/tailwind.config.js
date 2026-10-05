@@ -45,7 +45,7 @@ module.exports = {
         outline: '#0b0814',
       },
       fontFamily: {
-        ui: ['"Pixelify Sans"', 'system-ui', 'sans-serif'],
+        ui: ['"Pixel Digits"', '"Pixelify Sans"', 'system-ui', 'sans-serif'],
         display: ['"Press Start 2P"', 'monospace'],
         read: ['"Atkinson Hyperlegible"', 'system-ui', 'sans-serif'],
       },

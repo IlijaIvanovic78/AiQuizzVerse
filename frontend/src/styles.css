@@ -4,6 +4,16 @@
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 
+/* Pixelify Sans draws 4, 5 and 6 so that they read like A, S and 8,
+   so digits in the UI font are taken from Press Start 2P, scaled down. */
+@font-face {
+  font-family: 'Pixel Digits';
+  src: url('@fontsource/press-start-2p/files/press-start-2p-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  size-adjust: 70%;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
