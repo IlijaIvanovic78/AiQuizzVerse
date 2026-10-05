@@ -68,9 +68,11 @@ const DEMO_FRIEND: DemoUser = {
   boosts: STARTER_BOOSTS,
 };
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
-});
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is not set. Add it to backend/.env.');
+}
+const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) });
 
 async function seedItems(): Promise<void> {
   for (const item of SEED_ITEMS) {
@@ -132,7 +134,7 @@ async function copyStarterQuizzesOnce(userId: string): Promise<void> {
     return;
   }
   const starters = await prisma.quiz.findMany({
-    where: { id: { in: STARTER_QUIZ_IDS } },
+    where: { id: { in: STARTER_QUIZ_IDS }, deletedAt: null },
     include: { questions: { orderBy: { position: 'asc' } } },
   });
   await prisma.$transaction(
@@ -214,25 +216,16 @@ function toPlayerRows(
   questionCount: number,
 ): SeedPlayerRow[] {
   const winnerIds = findWinnerIds(mode, runs, questionCount);
-  const outcomePlayers = runs.map((run) => ({
-    score: run.score,
-    isWinner: winnerIds.includes(run.userId),
-  }));
-  return runs.map((run, index) => {
-    const outcome = playerOutcome(mode, outcomePlayers[index], outcomePlayers);
+  const players = runs.map((run) => ({ ...run, isWinner: winnerIds.includes(run.userId) }));
+  return players.map((player) => {
     const reward = matchReward({
       mode,
       difficulty,
-      correctCount: run.correctCount,
-      outcome,
+      correctCount: player.correctCount,
+      outcome: playerOutcome(mode, player, players),
       abandoned: false,
     });
-    return {
-      ...run,
-      isWinner: outcomePlayers[index].isWinner,
-      xpEarned: reward.xp,
-      coinsEarned: reward.coins,
-    };
+    return { ...player, xpEarned: reward.xp, coinsEarned: reward.coins };
   });
 }
 
