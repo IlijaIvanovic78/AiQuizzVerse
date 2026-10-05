@@ -10,12 +10,22 @@ export interface ResultHeadline {
   tone: ResultTone;
 }
 
+export interface RankedPlayer {
+  rank: number;
+  player: MatchResultPlayer;
+}
+
+const PLACE_NAMES = ['first', 'second', 'third', 'fourth'];
+
 export function accuracyPercent(correct: number, total: number): number {
   return total > 0 ? Math.round((correct / total) * 100) : 0;
 }
 
+// In a party only wrong answers count: a question someone else answered first is no mistake,
+// and the server does not put it in the Mistakes notebook either.
 export function missedQuestions(result: MatchResult): MatchResultQuestion[] {
-  return result.questions.filter((question) => question.myAnswer !== question.correctIndex);
+  const missed = result.questions.filter((question) => question.myAnswer !== question.correctIndex);
+  return result.mode === 'PARTY' ? missed.filter((question) => question.myAnswer !== null) : missed;
 }
 
 // All right answers in the match: the player's own in solo, both players' in a team.
@@ -27,9 +37,21 @@ export function findPlayer(result: MatchResult, userId: string): MatchResultPlay
   return result.players.find((player) => player.user.id === userId) ?? null;
 }
 
+// Highest score first; players with the same score share a place, like 1, 1, 3.
+export function rankPlayers(players: MatchResultPlayer[]): RankedPlayer[] {
+  const byScore = [...players].sort((a, b) => b.score - a.score);
+  return byScore.map((player) => ({
+    rank: 1 + byScore.filter((other) => other.score > player.score).length,
+    player,
+  }));
+}
+
 export function resultHeadline(result: MatchResult, meId: string): ResultHeadline {
   if (result.mode === 'DUEL') {
     return duelHeadline(result, meId);
+  }
+  if (result.mode === 'PARTY') {
+    return partyHeadline(result, meId);
   }
   if (result.mode === 'TEAM') {
     return teamHeadline(result, meId);
@@ -64,6 +86,23 @@ function duelHeadline(result: MatchResult, meId: string): ResultHeadline {
     title: 'Draw!',
     subtitle: `You and ${rivalName} are evenly matched.`,
     tone: 'draw',
+  };
+}
+
+function partyHeadline(result: MatchResult, meId: string): ResultHeadline {
+  const ranked = rankPlayers(result.players);
+  const mine = ranked.find((entry) => entry.player.user.id === meId);
+  if (mine?.player.isWinner) {
+    return { title: 'Victory!', subtitle: 'You knew the most answers first!', tone: 'victory' };
+  }
+  if (mine?.rank === 1) {
+    return { title: 'Draw!', subtitle: 'You share first place. What a close party!', tone: 'draw' };
+  }
+  const place = PLACE_NAMES[(mine?.rank ?? ranked.length) - 1] ?? 'last';
+  return {
+    title: 'Good fight!',
+    subtitle: `You finished ${place} of ${ranked.length}. Ask for a rematch!`,
+    tone: 'almost',
   };
 }
 

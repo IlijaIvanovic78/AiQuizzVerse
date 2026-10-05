@@ -7,7 +7,7 @@ export interface OtherPick {
   optionIndex: number | null;
 }
 
-type AnswerState = 'open' | 'picked' | 'correct' | 'wrong' | 'dimmed' | 'removed';
+type AnswerState = 'open' | 'picked' | 'locked-out' | 'correct' | 'wrong' | 'dimmed' | 'removed';
 
 interface AnswerNote {
   text: string;
@@ -18,6 +18,7 @@ const NOTES: Record<AnswerState, AnswerNote | null> = {
   open: null,
   dimmed: null,
   picked: { text: 'Locked in', icon: 'lock' },
+  'locked-out': { text: 'Locked out', icon: 'cross' },
   correct: { text: 'Right answer', icon: 'check' },
   wrong: { text: 'Your answer', icon: 'cross' },
   removed: { text: 'Removed', icon: 'cross' },
@@ -38,6 +39,11 @@ export class AnswerGridComponent {
   readonly correctIndex = input<number | null>(null);
   readonly removed = input<number[]>([]);
   readonly otherPicks = input<OtherPick[]>([]);
+  // Party: my pick was wrong, so I sit out the rest of this question.
+  readonly lockedOut = input(false);
+  // No answer can be picked for now: a party freeze, or the player came back in the middle
+  // of the question and waits for the next one.
+  readonly paused = input(false);
   readonly picked = output<number>();
 
   // Short answers fit two in a row, which keeps all four on a phone screen.
@@ -55,7 +61,7 @@ export class AnswerGridComponent {
         pickedBy: this.otherPicks()
           .filter((pick) => pick.optionIndex === index)
           .map((pick) => pick.name),
-        disabled: state !== 'open',
+        disabled: state !== 'open' || this.paused(),
       };
     }),
   );
@@ -75,7 +81,10 @@ export class AnswerGridComponent {
     if (myPick === null) {
       return 'open';
     }
-    return index === myPick ? 'picked' : 'dimmed';
+    if (index !== myPick) {
+      return 'dimmed';
+    }
+    return this.lockedOut() ? 'locked-out' : 'picked';
   }
 
   private noteFor(state: AnswerState, index: number): AnswerNote | null {

@@ -1,7 +1,7 @@
 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
   <section class="panel p-4 md:p-5" aria-labelledby="invite-code-title">
     <h2 id="invite-code-title" class="text-xl">Invite code</h2>
-    <p class="text-muted">Your friend opens "Join a game" and types this code.</p>
+    <p class="text-muted">Friends open "Join a game" and type this code.</p>
     <p class="my-4 flex justify-center gap-1.5 sm:gap-2">
       <span class="sr-only">Invite code {{ spokenCode() }}</span>
       @for (letter of letters(); track $index) {
@@ -44,29 +44,40 @@
     </div>
 
     <div>
-      <h3 class="mb-2 font-semibold">Players {{ match().players.length }}/{{ playersNeeded }}</h3>
-      @for (player of match().players; track player.user.id) {
-        <div
-          class="mb-2 flex items-center gap-2 rounded border-2 border-outline bg-night-700 py-1 pl-1 pr-3"
-        >
-          <span class="flex h-11 w-11 shrink-0 items-end justify-center overflow-hidden">
-            <app-hero-sprite [heroKey]="player.user.avatarKey" [scale]="2" [decorative]="true" />
-          </span>
-          <span class="min-w-0 flex-1 truncate font-semibold">
-            {{ player.user.id === meId() ? 'You' : player.user.username }}
-          </span>
-          @if (player.user.id === match().hostId) {
-            <span class="badge badge-torch">Host</span>
-          }
-          @if (player.user.id !== meId()) {
-            @if (player.isConnected) {
-              <span class="badge badge-jade">Here</span>
-            } @else {
-              <span class="badge badge-fog">Not here yet</span>
+      <h3 class="mb-2 font-semibold">Players {{ match().players.length }}/{{ maxPlayers() }}</h3>
+      @for (player of seats(); track $index) {
+        @if (player) {
+          <div
+            class="mb-2 flex items-center gap-2 rounded border-2 border-outline bg-night-700 py-1 pl-1 pr-3"
+          >
+            <span class="flex h-11 w-11 shrink-0 items-end justify-center overflow-hidden">
+              <app-hero-sprite [heroKey]="player.user.avatarKey" [scale]="2" [decorative]="true" />
+            </span>
+            <span class="min-w-0 flex-1 truncate font-semibold">
+              {{ player.user.id === meId() ? 'You' : player.user.username }}
+            </span>
+            @if (player.user.id === match().hostId) {
+              <span class="badge badge-torch">Host</span>
             }
-          }
-          <app-level-badge class="hidden sm:inline-flex" [level]="player.user.level" />
-        </div>
+            @if (player.user.id !== meId()) {
+              @if (player.isConnected) {
+                <span class="badge badge-jade">Here</span>
+              } @else {
+                <span class="badge badge-fog">Not here yet</span>
+              }
+            }
+            <app-level-badge class="hidden sm:inline-flex" [level]="player.user.level" />
+          </div>
+        } @else {
+          <div
+            class="mb-2 flex items-center gap-2 rounded border-2 border-dashed border-night-500 py-1 pl-1 pr-3 text-muted"
+          >
+            <span class="grid h-11 w-11 shrink-0 place-items-center" aria-hidden="true">
+              <span class="animate-blink font-display">?</span>
+            </span>
+            <span>Waiting...</span>
+          </div>
+        }
       }
     </div>
 
@@ -80,10 +91,10 @@
         {{ startLabel() }}
       </button>
 
-      @if (match().players.length < playersNeeded) {
+      @if (!isFull()) {
         <div>
           <h3 class="mb-2 font-semibold">Friends online</h3>
-          @for (friend of friends(); track friend.friendshipId) {
+          @for (friend of invitableFriends(); track friend.friendshipId) {
             <div
               class="mb-2 flex items-center gap-2 rounded border-2 border-outline bg-night-700 py-1 pl-1 pr-2"
             >

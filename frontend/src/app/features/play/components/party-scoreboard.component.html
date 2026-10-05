@@ -1,0 +1,72 @@
+<div class="panel px-2 py-2 sm:px-3">
+  <ul class="seats">
+    @for (seat of seats(); track seat.fighter.id) {
+      <li>
+        @if (seat.pickable) {
+          <button
+            #targetButton
+            type="button"
+            class="seat seat-pickable"
+            [disabled]="!seat.canBeHit"
+            (click)="target.emit(seat.fighter.id)"
+          >
+            <ng-container
+              [ngTemplateOutlet]="seatContent"
+              [ngTemplateOutletContext]="{ $implicit: seat }"
+            />
+            <span class="badge" [class.badge-torch]="seat.canBeHit">
+              {{ seat.canBeHit ? command() + ' them!' : "Can't be hit" }}
+            </span>
+          </button>
+        } @else {
+          <div class="seat" [class.seat-me]="seat.fighter.isMe">
+            <ng-container
+              [ngTemplateOutlet]="seatContent"
+              [ngTemplateOutletContext]="{ $implicit: seat }"
+            />
+            @if (seat.status; as status) {
+              <span class="badge" [class]="status.badgeClass">
+                @if (status.pixelIcon) {
+                  <app-pixel-icon [name]="status.pixelIcon" [scale]="1" />
+                }
+                @if (status.sabotageIcon) {
+                  <app-sabotage-icon [type]="status.sabotageIcon" [scale]="1" />
+                }
+                {{ status.text }}
+              </span>
+            } @else {
+              <span class="badge badge-quiet">Thinking...</span>
+            }
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</div>
+
+<ng-template #seatContent let-seat>
+  <span class="flex min-w-0 items-center gap-2">
+    <app-user-avatar [heroKey]="seat.fighter.heroKey" />
+    <span class="min-w-0 flex-1">
+      <span class="block truncate font-semibold" [class.text-torch-300]="seat.fighter.isMe">
+        {{ seat.fighter.isMe ? 'You' : seat.fighter.name }}
+      </span>
+      <span class="flex flex-wrap items-center gap-x-2">
+        <span class="font-display text-sm text-gold">{{ seat.fighter.score }}</span>
+        <span class="flex items-center" aria-hidden="true">
+          @for (slot of chargeSlots; track slot) {
+            <app-pixel-icon
+              name="bolt"
+              [scale]="1"
+              [class.opacity-25]="slot >= seat.fighter.charges"
+            />
+          }
+        </span>
+        <span class="sr-only">
+          points, {{ seat.fighter.charges }} sabotage
+          {{ seat.fighter.charges === 1 ? 'charge' : 'charges' }}
+        </span>
+      </span>
+    </span>
+  </span>
+</ng-template>

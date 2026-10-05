@@ -35,8 +35,9 @@
       <div class="flex flex-col gap-4">
         <app-battle-arena
           [banner]="true"
-          [leftFighters]="leftFighters()"
-          [rightFighter]="rival()"
+          [leftFighters]="sides().left"
+          [rightFighters]="sides().right"
+          [crowded]="crowded()"
           [showChest]="showChest()"
           [emptySide]="emptySide()"
         />
@@ -78,10 +79,11 @@
     >
       <div class="contents lg:flex lg:flex-col lg:gap-3">
         <app-battle-arena
-          [leftFighters]="leftFighters()"
-          [rightFighter]="rival()"
+          [leftFighters]="sides().left"
+          [rightFighters]="sides().right"
+          [crowded]="crowded()"
           [showChest]="showChest()"
-          [strikeKey]="strikeKey()"
+          [coinsFlying]="coinsFlying()"
         >
           @if (stage() === 'loading') {
             <div class="panel px-4 py-3">
@@ -90,6 +92,9 @@
           }
           @if (clock.countdownLabel(); as label) {
             <app-countdown-overlay [label]="label" />
+          }
+          @if (arenaNews(); as news) {
+            <app-arena-banner [text]="news.text" [tone]="news.tone" />
           }
         </app-battle-arena>
 
@@ -101,7 +106,16 @@
             [label]="mode() === 'TEAM' ? 'Team chest' : 'Treasure chest'"
           />
         }
-        @if (mode() !== 'SOLO' && meFirst().length > 1) {
+        @if (isParty()) {
+          <app-party-scoreboard
+            class="order-last lg:order-none"
+            [fighters]="meFirst()"
+            [winnerId]="phase() === 'reveal' ? winnerId() : null"
+            [targetType]="party.chosenType()"
+            [targetIds]="party.targetIds()"
+            (target)="party.hit($event)"
+          />
+        } @else if (mode() !== 'SOLO' && meFirst().length > 1) {
           <app-scoreboard
             class="order-last lg:order-none"
             [mode]="mode()"
@@ -117,26 +131,46 @@
             [remainingMs]="clock.remainingMs() ?? 0"
             [limitSeconds]="question()?.timeLimitSeconds ?? 0"
             [locked]="myAnswer() !== null"
+            [lockedOut]="party.lockedOut()"
           />
         }
+        @if (sittingOut()) {
+          <p class="panel px-3 py-2" role="status">
+            Welcome back! This question already counts as done for you. The next one is yours.
+          </p>
+        }
         @if (showQuestion() && question(); as question) {
-          <app-question-card
-            [number]="question.index + 1"
-            [total]="question.total"
-            [text]="question.text"
-            [hint]="phase() === 'question' ? hint() : null"
-            [canReadAloud]="canReadAloud"
-            [speaking]="speaking()"
-            (readAloud)="readQuestion()"
-          />
-          <app-answer-grid
-            [options]="question.options"
-            [myPick]="myPick()"
-            [correctIndex]="phase() === 'reveal' ? (round()?.correctIndex ?? null) : null"
-            [removed]="phase() === 'question' ? removedOptions() : []"
-            [otherPicks]="phase() === 'reveal' ? (roundView()?.otherPicks ?? []) : []"
-            (picked)="answer($event)"
-          />
+          <!-- The wrappers give the party sabotage effects a place to cover. -->
+          <div class="relative flex flex-col gap-3">
+            <app-question-card
+              [number]="question.index + 1"
+              [total]="question.total"
+              [text]="question.text"
+              [hint]="phase() === 'question' ? hint() : null"
+              [canReadAloud]="canReadAloud"
+              [speaking]="speaking()"
+              (readAloud)="readQuestion()"
+            />
+            <div class="relative">
+              <app-answer-grid
+                [class.animate-shake]="party.scrambling()"
+                [options]="question.options"
+                [myPick]="myPick()"
+                [correctIndex]="phase() === 'reveal' ? (round()?.correctIndex ?? null) : null"
+                [removed]="phase() === 'question' ? removedOptions() : []"
+                [otherPicks]="phase() === 'reveal' ? (roundView()?.otherPicks ?? []) : []"
+                [lockedOut]="party.lockedOut()"
+                [paused]="answersPaused()"
+                (picked)="answer($event)"
+              />
+              @if (isParty()) {
+                <app-frost-frame [secondsLeft]="party.frozenSecondsLeft()" />
+              }
+            </div>
+            @if (isParty()) {
+              <app-ink-splash [active]="party.inked()" />
+            }
+          </div>
         } @else if (match(); as match) {
           @if (phase() !== 'reveal') {
             <section class="panel-parchment p-5 text-center">
@@ -145,6 +179,12 @@
                 {{ match.quiz.questionCount }} questions, {{ match.quiz.timePerQuestion }} seconds
                 each.
               </p>
+              @if (isParty()) {
+                <p class="read-text mt-2">
+                  The first right answer wins the round. A wrong answer locks you out and costs
+                  {{ wrongPenalty }} points. Win rounds to earn sabotage charges!
+                </p>
+              }
               <p class="mt-3 text-muted">
                 Tip: press 1, 2, 3 or 4 to answer, and Enter for the next question.
               </p>
@@ -155,12 +195,22 @@
         @if (phase() === 'question') {
           @if (mode() === 'DUEL') {
             <p class="text-sm text-muted">Power-ups are off in duels. Fair fight!</p>
+          } @else if (isParty()) {
+            <app-sabotage-bar
+              [charges]="party.myCharges()"
+              [chosen]="party.chosenType()"
+              [canSabotage]="party.canSabotage()"
+              [usedThisRound]="party.usedThisRound()"
+              [hasTargets]="party.targetIds().length > 0"
+              (choose)="party.choose($event)"
+              (cancel)="party.cancel()"
+            />
           } @else {
             <app-boosts-bar
               [uses]="boostUses()"
               [freeHintsLeft]="freeHintsLeft()"
               [usedThisRound]="boostsUsed()"
-              [disabled]="myAnswer() !== null"
+              [disabled]="myAnswer() !== null || sittingOut()"
               (used)="useBoost($event)"
             />
           }
@@ -173,6 +223,7 @@
             [correctAnswer]="roundView.correctAnswer"
             [explanation]="round()?.explanation ?? ''"
             [others]="roundView.others"
+            [party]="isParty()"
             [pressed]="nextPressed()"
             [waitingFor]="waitingForNames()"
             [lastRound]="isLastRound()"

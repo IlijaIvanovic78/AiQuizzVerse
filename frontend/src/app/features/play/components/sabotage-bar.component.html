@@ -1,0 +1,43 @@
+<section class="panel px-3 pb-3 pt-2" aria-labelledby="sabotage-title">
+  <div class="mb-2 flex flex-wrap items-center justify-between gap-x-3 text-sm">
+    <h3 id="sabotage-title" class="font-semibold text-muted">Sabotage</h3>
+    <p class="flex items-center gap-1">
+      @for (slot of chargeSlots; track slot) {
+        <app-pixel-icon name="bolt" [scale]="1" [class.opacity-25]="slot >= charges()" />
+      }
+      <span class="ml-1">{{ charges() }} {{ charges() === 1 ? 'charge' : 'charges' }}</span>
+    </p>
+  </div>
+
+  @if (chosen(); as type) {
+    <div class="flex flex-wrap items-center gap-3" role="status">
+      <app-sabotage-icon [type]="type" />
+      <p class="min-w-0 flex-1">
+        <span class="font-semibold">{{ prompt() }}</span>
+        <span class="block text-sm text-muted">Tap a glowing player on the scoreboard.</span>
+      </p>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="cancel.emit()">Cancel</button>
+    </div>
+  } @else {
+    <ul class="grid grid-cols-3 gap-2">
+      @for (choice of choices; track choice.type) {
+        <li>
+          <button
+            type="button"
+            class="btn btn-secondary btn-sm h-full w-full flex-col justify-start gap-1 px-1 py-2"
+            [disabled]="!canSabotage()"
+            aria-describedby="sabotage-hint"
+            (click)="choose.emit(choice.type)"
+          >
+            <app-sabotage-icon [type]="choice.type" />
+            <span>{{ choice.label }}</span>
+            <span class="text-xs font-normal leading-tight text-fog-200">
+              {{ choice.description }}
+            </span>
+          </button>
+        </li>
+      }
+    </ul>
+    <p id="sabotage-hint" class="mt-2 text-sm text-muted">{{ hint() }}</p>
+  }
+</section>

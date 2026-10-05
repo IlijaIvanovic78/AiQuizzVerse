@@ -5,6 +5,7 @@ import { Store } from '@ngrx/store';
 import {
   Observable,
   distinctUntilChanged,
+  filter,
   from,
   map,
   merge,
@@ -36,7 +37,11 @@ export class MatchClockService {
   private readonly mode = this.store.selectSignal(matchFeature.selectMode);
   private readonly deadlineAt = this.store.selectSignal(matchFeature.selectDeadlineAt);
 
-  private readonly answered$ = this.actions$.pipe(ofType(MatchActions.answer));
+  // In a party the others keep racing after a wrong answer, so the clock keeps running there.
+  private readonly answered$ = this.actions$.pipe(
+    ofType(MatchActions.answer),
+    filter(() => this.mode() !== 'PARTY'),
+  );
   private readonly roundEnded$ = this.actions$.pipe(
     ofType(MatchSocketActions.roundFinished, MatchSocketActions.finished),
   );

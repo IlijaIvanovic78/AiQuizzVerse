@@ -9,7 +9,7 @@
         type="button"
         class="answer"
         [class]="'answer-' + answer.state"
-        [class.animate-shake]="answer.state === 'wrong'"
+        [class.animate-shake]="answer.state === 'wrong' || answer.state === 'locked-out'"
         [disabled]="answer.disabled"
         [attr.aria-keyshortcuts]="answer.key"
         (click)="picked.emit($index)"

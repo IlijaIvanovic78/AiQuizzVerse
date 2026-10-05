@@ -1,12 +1,22 @@
 <div class="mx-auto flex max-w-3xl flex-col gap-4">
   <section aria-labelledby="result-title">
-    <app-battle-arena
-      [banner]="true"
-      [leftFighters]="leftFighters()"
-      [rightFighter]="rival()"
-      [showChest]="result().mode !== 'DUEL'"
-      [strikeKey]="strikeKey()"
-    />
+    @if (result().mode === 'PARTY') {
+      <app-podium
+        class="panel"
+        label="Party podium"
+        unit="points"
+        [places]="podium()"
+        [myUserId]="meId()"
+      />
+    } @else {
+      <app-battle-arena
+        [banner]="true"
+        [leftFighters]="sides().left"
+        [rightFighters]="sides().right"
+        [showChest]="result().mode === 'SOLO' || result().mode === 'TEAM'"
+        [coinsFlying]="coinsFlying()"
+      />
+    }
     <div class="panel -mt-[3px] flex flex-col items-center gap-2 px-4 pb-5 pt-4 text-center">
       <p class="text-sm font-semibold text-muted">{{ result().quizTitle }}</p>
       <h1
@@ -20,8 +30,8 @@
       @if (result().mode === 'SOLO') {
         <app-star-rating [stars]="stars()" [scale]="3" [animated]="true" />
       }
-      @if (rivalLeft()) {
-        <p class="text-muted">Your rival left the match, so the win is yours.</p>
+      @if (rivalLeft() && leftNote()) {
+        <p class="text-muted">{{ leftNote() }}</p>
       }
     </div>
   </section>
@@ -55,7 +65,7 @@
     </section>
   }
 
-  @if (result().mode !== 'DUEL') {
+  @if (result().mode === 'SOLO' || result().mode === 'TEAM') {
     <app-treasure-chest
       [correct]="teamCorrect()"
       [total]="result().players.length * result().questionCount"
@@ -65,7 +75,15 @@
 
   <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
     <app-stat-tile label="Score" [value]="shownScore()" icon="trophy" />
-    <app-stat-tile label="Accuracy" [value]="shownAccuracy() + '%'" icon="star" />
+    @if (result().mode === 'PARTY') {
+      <app-stat-tile
+        label="Rounds won"
+        [value]="(me()?.correctCount ?? 0) + '/' + result().questionCount"
+        icon="star"
+      />
+    } @else {
+      <app-stat-tile label="Accuracy" [value]="shownAccuracy() + '%'" icon="star" />
+    }
     <app-stat-tile label="XP earned" [value]="'+' + shownXp()" icon="bolt" />
     <app-stat-tile label="Coins earned" [value]="'+' + shownCoins()" icon="coin" />
   </div>
@@ -79,14 +97,16 @@
 
   @if (result().mode !== 'SOLO') {
     <section class="panel p-4" aria-labelledby="players-title">
-      <h2 id="players-title" class="mb-3 text-xl">
-        {{ result().mode === 'DUEL' ? 'Duel scores' : 'Team scores' }}
-      </h2>
+      <h2 id="players-title" class="mb-3 text-xl">{{ scoresTitle() }}</h2>
       <ul class="flex flex-col gap-2">
-        @for (player of result().players; track player.user.id) {
+        @for (entry of ranking(); track entry.player.user.id) {
+          @let player = entry.player;
           <li
             class="flex items-center gap-3 rounded border-2 border-outline bg-night-700 px-3 py-2"
           >
+            @if (result().mode === 'PARTY') {
+              <app-rank-badge [rank]="entry.rank" />
+            }
             @if (player.isWinner) {
               <app-pixel-icon name="trophy" label="Winner" />
             }

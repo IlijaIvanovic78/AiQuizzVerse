@@ -15,7 +15,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject, take, timer } from 'rxjs';
 import { MatchMode, MatchResult } from '../../core/models/match.model';
-import { QuizKind, QuizLanguage } from '../../core/models/quiz.model';
+import { QuizKind } from '../../core/models/quiz.model';
 import { RoundResultEvent } from '../../core/models/realtime-events.model';
 import { MatchBoostType } from '../../core/models/shop.model';
 import { ToastService } from '../../core/notifications/toast.service';
@@ -30,37 +30,52 @@ import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
 import { MatchActions } from '../../store/match/match.actions';
 import { MatchPhase, matchFeature } from '../../store/match/match.reducer';
-import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
 import { ReviewActions } from '../../store/review/review.actions';
-import { ArenaFighter, toFighter } from './arena-fighter';
+import { ArenaFighter, arenaSides, toFighter } from './arena-fighter';
 import { AnswerGridComponent } from './components/answer-grid.component';
+import { ArenaBannerComponent, BannerTone } from './components/arena-banner.component';
 import { BattleArenaComponent } from './components/battle-arena.component';
 import { BoostsBarComponent } from './components/boosts-bar.component';
 import { CountdownOverlayComponent } from './components/countdown-overlay.component';
+import { FrostFrameComponent } from './components/frost-frame.component';
+import { InkSplashComponent } from './components/ink-splash.component';
 import { MatchHeaderComponent } from './components/match-header.component';
 import { MatchLobbyComponent } from './components/match-lobby.component';
 import { MatchResultsComponent } from './components/match-results.component';
+import { PartyScoreboardComponent } from './components/party-scoreboard.component';
 import { QuestionCardComponent } from './components/question-card.component';
 import { RevealPanelComponent } from './components/reveal-panel.component';
+import { SabotageBarComponent } from './components/sabotage-bar.component';
 import { ScoreboardComponent } from './components/scoreboard.component';
 import { TimerBarComponent } from './components/timer-bar.component';
 import { MatchClockService } from './match-clock.service';
 import { findPlayer } from './match-result';
+import { PartyRoundService } from './party-round.service';
 import {
   ANSWER_KEYS,
   COINS_LAND_MS,
   LEVEL_UP_SOUND_DELAY_MS,
   NEXT_KEYS,
-  SERBIAN_LETTERS,
+  PARTY_WRONG_PENALTY,
   TIMER_WARNING_SECONDS,
 } from './play.constants';
 import { toRoundView } from './round-view';
 
 type MatchStage = 'loading' | 'lobby' | 'battle' | 'finished' | 'interrupted';
 
+interface ArenaNews {
+  text: string;
+  tone: BannerTone;
+}
+
 const RUNNING_PHASES: MatchPhase[] = ['countdown', 'question', 'reveal'];
 
-const MODE_LABELS: Record<MatchMode, string> = { SOLO: 'Solo', DUEL: 'Duel', TEAM: 'Team up' };
+const MODE_LABELS: Record<MatchMode, string> = {
+  SOLO: 'Solo',
+  DUEL: 'Duel',
+  TEAM: 'Team up',
+  PARTY: 'Party',
+};
 const KIND_LABELS: Record<QuizKind, string | null> = {
   STANDARD: null,
   PATH_STEP: 'Path step',
@@ -71,6 +86,7 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
   SOLO: 'If you leave now, this quiz stops and you get no rewards for it.',
   DUEL: 'Leaving counts as giving up, so your rival wins the duel.',
   TEAM: 'Leaving ends the team match for both of you.',
+  PARTY: 'Leaving counts as giving up. The party goes on without you.',
 };
 
 @Component({
@@ -78,23 +94,28 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
   imports: [
     RouterLink,
     AnswerGridComponent,
+    ArenaBannerComponent,
     BattleArenaComponent,
     BoostsBarComponent,
     CountdownOverlayComponent,
     EmptyStateComponent,
+    FrostFrameComponent,
+    InkSplashComponent,
     MatchHeaderComponent,
     MatchLobbyComponent,
     MatchResultsComponent,
     ModalComponent,
+    PartyScoreboardComponent,
     QuestionCardComponent,
     RevealPanelComponent,
+    SabotageBarComponent,
     ScoreboardComponent,
     SpinnerComponent,
     TimerBarComponent,
     TreasureChestComponent,
   ],
   templateUrl: './match-page.component.html',
-  providers: [MatchClockService],
+  providers: [MatchClockService, PartyRoundService],
   host: { '(document:keydown)': 'handleKey($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -109,6 +130,7 @@ export class MatchPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly origin = inject(DOCUMENT).location.origin;
   protected readonly clock = inject(MatchClockService);
+  protected readonly party = inject(PartyRoundService);
 
   protected readonly phase = this.store.selectSignal(matchFeature.selectPhase);
   protected readonly match = this.store.selectSignal(matchFeature.selectMatch);
@@ -131,16 +153,18 @@ export class MatchPageComponent {
     matchFeature.selectWaitingForUserIds,
   );
   private readonly leftUserIds = this.store.selectSignal(matchFeature.selectLeftUserIds);
+  private readonly lockedOutUserIds = this.store.selectSignal(matchFeature.selectLockedOutUserIds);
+  private readonly charges = this.store.selectSignal(matchFeature.selectCharges);
+  protected readonly winnerId = this.store.selectSignal(matchFeature.selectRoundWinnerId);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly signedIn = this.store.selectSignal(authFeature.selectIsAuthenticated);
   protected readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
-  private readonly myQuizzes = this.store.selectSignal(quizzesFeature.selectQuizEntities);
-  private readonly featuredQuizzes = this.store.selectSignal(quizzesFeature.selectFeatured);
 
   protected readonly muted = this.sound.muted;
   protected readonly speaking = this.speech.speaking;
   protected readonly canReadAloud = this.speech.isSupported;
   protected readonly canShare = 'share' in navigator;
+  protected readonly wrongPenalty = PARTY_WRONG_PENALTY;
   protected readonly invitedIds = signal<string[]>([]);
   protected readonly leaveDialogOpen = signal(false);
   private readonly leaveDecision$ = new Subject<boolean>();
@@ -149,39 +173,49 @@ export class MatchPageComponent {
   protected readonly level = computed(() => this.user()?.level ?? 1);
   protected readonly mode = computed<MatchMode>(() => this.match()?.mode ?? 'SOLO');
   protected readonly stage = computed(() => stageFor(this.phase(), this.mode()));
+  protected readonly isParty = computed(() => this.mode() === 'PARTY');
   private readonly isRunning = computed(() => RUNNING_PHASES.includes(this.phase()));
   private readonly isHost = computed(() => this.match()?.hostId === this.meId());
 
   private readonly fighters = computed(() => this.buildFighters());
   private readonly me = computed(() => this.fighters().find((fighter) => fighter.isMe) ?? null);
   private readonly others = computed(() => this.fighters().filter((fighter) => !fighter.isMe));
-  // The player always stands on the left; a duel rival stands on the right.
   protected readonly meFirst = computed(() => {
     const me = this.me();
     return me ? [me, ...this.others()] : this.others();
   });
-  protected readonly leftFighters = computed(() =>
-    this.mode() === 'TEAM' ? this.meFirst() : this.meFirst().slice(0, 1),
+  protected readonly sides = computed(() => arenaSides(this.mode(), this.meFirst()));
+  // Three or four party heroes stand two on each platform.
+  protected readonly crowded = computed(() => this.isParty() && this.meFirst().length > 2);
+  protected readonly showChest = computed(
+    () => this.match() !== null && (this.mode() === 'SOLO' || this.mode() === 'TEAM'),
   );
-  protected readonly rival = computed(() =>
-    this.mode() === 'DUEL' ? (this.others().at(0) ?? null) : null,
-  );
-  protected readonly showChest = computed(() => this.match() !== null && this.mode() !== 'DUEL');
   protected readonly chestTotal = computed(() => {
     const match = this.match();
     return match ? match.players.length * match.quiz.questionCount : 0;
   });
-  // A new number every round where someone was right, which sends coins into the chest.
-  protected readonly strikeKey = computed(() => {
-    const round = this.round();
-    const someoneCorrect = round?.players.some((player) => player.correct) ?? false;
-    return this.phase() === 'reveal' && round && someoneCorrect ? round.index + 1 : 0;
+  // Coins fly into the chest after every round where someone was right. The next question
+  // turns this off again, so the following strike starts the animations anew.
+  protected readonly coinsFlying = computed(() => {
+    const someoneCorrect = this.round()?.players.some((player) => player.correct) ?? false;
+    return this.phase() === 'reveal' && someoneCorrect;
   });
   protected readonly emptySide = computed(() => {
     if (this.stage() !== 'lobby' || (this.match()?.players.length ?? 0) > 1) {
       return null;
     }
-    return this.mode() === 'DUEL' ? 'right' : 'left';
+    return this.mode() === 'TEAM' ? 'left' : 'right';
+  });
+  // A party shows who answered first after a round, and every sabotage while a question is open.
+  protected readonly arenaNews = computed<ArenaNews | null>(() => {
+    if (!this.isParty()) {
+      return null;
+    }
+    if (this.phase() === 'reveal') {
+      return { text: this.roundWinnerText(), tone: 'torch' };
+    }
+    const notice = this.party.notice();
+    return notice ? { text: notice, tone: 'night' } : null;
   });
 
   protected readonly roundView = computed(() => {
@@ -195,6 +229,17 @@ export class MatchPageComponent {
     }
     return this.phase() === 'question' || question.index === this.round()?.index;
   });
+  // Leaving in the middle of a question gives it up, so after coming back the server counts
+  // the player as answered and they wait for the next question.
+  protected readonly sittingOut = computed(
+    () =>
+      this.phase() === 'question' &&
+      this.myAnswer() === null &&
+      this.answeredUserIds().includes(this.meId()),
+  );
+  protected readonly answersPaused = computed(
+    () => this.sittingOut() || this.party.frozenSecondsLeft() > 0,
+  );
   protected readonly myPick = computed(() => {
     const roundView = this.roundView();
     return roundView ? roundView.myPick : this.myAnswer();
@@ -240,8 +285,12 @@ export class MatchPageComponent {
     () => `${this.origin}/join/${this.match()?.inviteCode ?? ''}`,
   );
   protected readonly leaveWarning = computed(() => LEAVE_WARNINGS[this.mode()]);
+  // A duel or party that ended because everyone else left.
   protected readonly rivalLeft = computed(
-    () => this.mode() === 'DUEL' && this.others().some((fighter) => fighter.away),
+    () =>
+      (this.mode() === 'DUEL' || this.isParty()) &&
+      this.others().length > 0 &&
+      this.others().every((fighter) => fighter.away),
   );
   protected readonly interruptedText = computed(
     () => this.error() ?? 'This match stopped before it was finished.',
@@ -308,6 +357,10 @@ export class MatchPageComponent {
     if (this.leaveDialogOpen() || hasModifier(event) || isTypingOrInDialog(event.target)) {
       return;
     }
+    if (event.key === 'Escape' && this.party.chosenType()) {
+      this.party.cancel();
+      return;
+    }
     const optionIndex = ANSWER_KEYS.indexOf(event.key);
     if (optionIndex >= 0) {
       this.answer(optionIndex);
@@ -327,7 +380,8 @@ export class MatchPageComponent {
       this.myAnswer() === null &&
       question !== null &&
       optionIndex < question.options.length &&
-      !this.removedOptions().includes(optionIndex);
+      !this.removedOptions().includes(optionIndex) &&
+      !this.answersPaused();
     if (canPick) {
       this.store.dispatch(MatchActions.answer({ optionIndex }));
     }
@@ -409,13 +463,27 @@ export class MatchPageComponent {
     }
     const moment = {
       meId: this.meId(),
-      inLobby: this.phase() === 'lobby',
       scores: this.scores(),
       round: this.phase() === 'reveal' ? this.round() : null,
       answeredUserIds: this.phase() === 'question' ? this.answeredUserIds() : [],
       leftUserIds: this.leftUserIds(),
+      charges: this.charges(),
+      lockedOutUserIds: this.lockedOutUserIds(),
+      frozenUserIds: this.party.frozenUserIds(),
+      inkedUserIds: this.party.inkedUserIds(),
     };
     return match.players.map((player) => toFighter(player, moment));
+  }
+
+  private roundWinnerText(): string {
+    const winnerId = this.winnerId();
+    if (!winnerId) {
+      return 'Nobody got it this time!';
+    }
+    if (winnerId === this.meId()) {
+      return 'You got it first!';
+    }
+    return `${this.playerNames()[winnerId] ?? 'Someone'} got it first!`;
   }
 
   private toggleSpeech(text: string): void {
@@ -423,19 +491,7 @@ export class MatchPageComponent {
       this.speech.stop();
       return;
     }
-    this.speech.speak(text, this.speechLanguage(text));
-  }
-
-  // The match does not carry the quiz language, so it comes from the loaded quiz lists when
-  // possible, and otherwise from the letters in the text.
-  private speechLanguage(text: string): QuizLanguage {
-    const quizId = this.match()?.quiz.id ?? '';
-    const quiz =
-      this.myQuizzes()[quizId] ?? this.featuredQuizzes().find((featured) => featured.id === quizId);
-    if (quiz) {
-      return quiz.language;
-    }
-    return SERBIAN_LETTERS.test(text) ? 'SR' : 'EN';
+    this.speech.speak(text, this.match()?.quiz.language ?? 'EN');
   }
 
   private copyText(text: string, doneMessage: string): void {

@@ -11,10 +11,11 @@ import {
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
 
-export type RoundOutcome = 'correct' | 'wrong' | 'missed';
+export type RoundOutcome = 'correct' | 'wrong' | 'missed' | 'beaten';
 
 export interface TeammateResult {
   name: string;
+  answered: boolean;
   correct: boolean;
   points: number;
 }
@@ -45,6 +46,12 @@ const OUTCOME_LOOKS: Record<RoundOutcome, OutcomeLook> = {
     tileClass: 'bg-torch-400',
     textClass: 'text-torch-300',
   },
+  beaten: {
+    title: 'Too slow!',
+    icon: 'cross',
+    tileClass: 'bg-torch-400',
+    textClass: 'text-torch-300',
+  },
 };
 
 @Component({
@@ -61,6 +68,8 @@ export class RevealPanelComponent {
   readonly correctAnswer = input<string | null>(null);
   readonly explanation = input.required<string>();
   readonly others = input<TeammateResult[]>([]);
+  // Party rounds are a race: a wrong answer locks the player out and costs points.
+  readonly party = input(false);
   readonly pressed = input(false);
   readonly waitingFor = input<string[]>([]);
   readonly lastRound = input(false);
@@ -76,9 +85,16 @@ export class RevealPanelComponent {
     if (this.outcome() === 'correct') {
       return `+${this.points()} points`;
     }
+    const penalty = this.points() < 0 ? `${this.points()} points. ` : '';
     const answer = this.correctAnswer();
-    return answer ? `The right answer is: ${answer}` : 'Read why below, then try the next one.';
+    const reason = answer
+      ? `The right answer is: ${answer}`
+      : 'Read why below, then try the next one.';
+    return penalty + reason;
   });
+  protected readonly otherLines = computed(() =>
+    this.others().map((other) => ({ ...other, text: this.describe(other) })),
+  );
   protected readonly waitingText = computed(() => {
     const names = this.waitingFor();
     return names.length > 0
@@ -89,5 +105,18 @@ export class RevealPanelComponent {
   constructor() {
     // Enter and Space press the focused Next button, and on phones it scrolls into view.
     afterNextRender(() => this.nextButton().nativeElement.focus());
+  }
+
+  private describe(other: TeammateResult): string {
+    if (other.correct) {
+      return `${this.party() ? 'got it first' : 'got it right'} (+${other.points})`;
+    }
+    if (!this.party()) {
+      return 'missed this one';
+    }
+    if (!other.answered) {
+      return 'was too slow';
+    }
+    return other.points < 0 ? `was locked out (${other.points})` : 'was locked out';
   }
 }

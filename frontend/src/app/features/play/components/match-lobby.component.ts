@@ -1,12 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Friend } from '../../../core/models/friend.model';
-import { MatchView } from '../../../core/models/match.model';
+import { MatchMode, MatchView } from '../../../core/models/match.model';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
+import { MAX_PLAYERS, PLAYERS_TO_START } from '../play.constants';
 
-const PLAYERS_NEEDED = 2;
+interface LobbyStatus {
+  title: string;
+  text: string;
+}
+
+const START_LABELS: Record<MatchMode, string> = {
+  SOLO: 'Start',
+  DUEL: 'Start the duel',
+  TEAM: 'Start team match',
+  PARTY: 'Start the party',
+};
 
 @Component({
   selector: 'app-match-lobby',
@@ -28,31 +39,40 @@ export class MatchLobbyComponent {
   readonly invite = output<string>();
   readonly start = output<void>();
 
-  protected readonly playersNeeded = PLAYERS_NEEDED;
   protected readonly letters = computed(() => (this.match().inviteCode ?? '').split(''));
   protected readonly spokenCode = computed(() => this.letters().join(' '));
   protected readonly isHost = computed(() => this.match().hostId === this.meId());
-  private readonly host = computed(() =>
-    this.match().players.find((player) => player.user.id === this.match().hostId),
+  protected readonly maxPlayers = computed(() => MAX_PLAYERS[this.match().mode]);
+  // Every seat of the mode: the players who joined, then empty seats.
+  protected readonly seats = computed(() =>
+    Array.from({ length: this.maxPlayers() }, (_, seat) => this.match().players[seat] ?? null),
   );
-  private readonly guest = computed(() =>
-    this.match().players.find((player) => player.user.id !== this.match().hostId),
+  protected readonly isFull = computed(() => this.match().players.length >= this.maxPlayers());
+  // Players who have the match page open; the host can start once there are enough of them.
+  private readonly hereCount = computed(
+    () => this.match().players.filter((player) => player.isConnected).length,
   );
-  // Both players have the match page open, so the host can start.
   protected readonly ready = computed(
-    () =>
-      this.match().players.length === PLAYERS_NEEDED &&
-      this.match().players.every((player) => player.isConnected),
+    () => this.hereCount() >= PLAYERS_TO_START[this.match().mode],
   );
-  protected readonly startLabel = computed(() =>
-    this.match().mode === 'DUEL' ? 'Start the duel' : 'Start team match',
-  );
-  protected readonly status = computed(() => {
-    const hostName = this.host()?.user.username ?? 'The host';
-    const guestName = this.guest()?.user.username;
+  protected readonly startLabel = computed(() => START_LABELS[this.match().mode]);
+  // Friends who already joined need no invite.
+  protected readonly invitableFriends = computed(() => {
+    const playerIds = this.match().players.map((player) => player.user.id);
+    return this.friends().filter((friend) => !playerIds.includes(friend.user.id));
+  });
+  protected readonly status = computed<LobbyStatus>(() => {
     if (!this.isHost()) {
+      const host = this.match().players.find((player) => player.user.id === this.match().hostId);
+      const hostName = host?.user.username ?? 'The host';
       return { title: "You're in!", text: `${hostName} will start the match soon.` };
     }
+    return this.match().mode === 'PARTY' ? this.partyStatus() : this.pairStatus();
+  });
+
+  private pairStatus(): LobbyStatus {
+    const guestName = this.match().players.find((player) => player.user.id !== this.meId())?.user
+      .username;
     if (!guestName) {
       return {
         title: 'Waiting for a friend',
@@ -63,5 +83,24 @@ export class MatchLobbyComponent {
       return { title: `${guestName} joined`, text: 'Waiting for them to open the match...' };
     }
     return { title: `${guestName} is here!`, text: 'Press start when you are both ready.' };
-  });
+  }
+
+  private partyStatus(): LobbyStatus {
+    if (this.match().players.length === 1) {
+      return {
+        title: 'Waiting for friends',
+        text: `Share the code, or invite friends who are online. ${PLAYERS_TO_START.PARTY} to ${this.maxPlayers()} players can play.`,
+      };
+    }
+    if (!this.ready()) {
+      return { title: 'Friends are joining', text: 'Waiting for them to open the match...' };
+    }
+    if (this.isFull()) {
+      return { title: 'The party is full!', text: 'Press start when everyone is ready.' };
+    }
+    return {
+      title: `${this.hereCount()} players are here!`,
+      text: `Start now, or wait for more friends (up to ${this.maxPlayers()}).`,
+    };
+  }
 }

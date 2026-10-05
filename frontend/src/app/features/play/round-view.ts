@@ -22,12 +22,13 @@ export function toRoundView(
   const others = round.players.filter((player) => player.userId !== meId);
   const sameQuestion = question?.index === round.index;
   return {
-    outcome: outcomeOf(mine?.optionIndex ?? null, mine?.correct ?? false),
+    outcome: outcomeOf(mine?.optionIndex ?? null, mine?.correct ?? false, round.winnerUserId),
     points: mine?.points ?? 0,
     myPick: mine?.optionIndex ?? null,
     correctAnswer: sameQuestion ? (question.options[round.correctIndex] ?? null) : null,
     others: others.map((player) => ({
       name: names[player.userId] ?? 'Your friend',
+      answered: player.optionIndex !== null,
       correct: player.correct,
       points: player.points,
     })),
@@ -38,9 +39,14 @@ export function toRoundView(
   };
 }
 
-function outcomeOf(optionIndex: number | null, correct: boolean): RoundOutcome {
+// In a party the round ends when someone else is right first, which is not running out of time.
+function outcomeOf(
+  optionIndex: number | null,
+  correct: boolean,
+  winnerUserId: string | null,
+): RoundOutcome {
   if (optionIndex === null) {
-    return 'missed';
+    return winnerUserId ? 'beaten' : 'missed';
   }
   return correct ? 'correct' : 'wrong';
 }

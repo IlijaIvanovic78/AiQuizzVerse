@@ -2,20 +2,23 @@ import { ChangeDetectionStrategy, Component, Signal, computed, input, output } f
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
-import { MatchResult, MatchResultPlayer } from '../../../core/models/match.model';
+import { MatchMode, MatchResult, MatchResultPlayer } from '../../../core/models/match.model';
 import { BOOST_LABELS } from '../../../shared/components/boost-icon.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
+import { PodiumComponent, PodiumPlace } from '../../../shared/components/podium.component';
+import { RankBadgeComponent } from '../../../shared/components/rank-badge.component';
 import { StarRatingComponent } from '../../../shared/components/star-rating.component';
 import { StatTileComponent } from '../../../shared/components/stat-tile.component';
 import { TreasureChestComponent } from '../../../shared/components/treasure-chest.component';
 import { starsForAccuracy } from '../../../shared/stars';
-import { ArenaFighter } from '../arena-fighter';
+import { ArenaFighter, arenaSides } from '../arena-fighter';
 import { countUp } from '../count-up';
 import {
   accuracyPercent,
   correctAnswers,
   findPlayer,
   missedQuestions,
+  rankPlayers,
   resultHeadline,
 } from '../match-result';
 import { LEVEL_UP_SOUND_DELAY_MS } from '../play.constants';
@@ -28,6 +31,22 @@ const HEADLINE_COLORS = {
   draw: 'text-parchment-100',
 };
 
+const PODIUM_SIZE = 3;
+
+const SCORES_TITLES: Record<MatchMode, string> = {
+  SOLO: 'Score',
+  DUEL: 'Duel scores',
+  TEAM: 'Team scores',
+  PARTY: 'Final ranking',
+};
+
+const LEFT_NOTES: Record<MatchMode, string> = {
+  SOLO: '',
+  DUEL: 'Your rival left the match, so the win is yours.',
+  TEAM: '',
+  PARTY: 'Everyone else left the party, so the win is yours.',
+};
+
 @Component({
   selector: 'app-match-results',
   imports: [
@@ -35,6 +54,8 @@ const HEADLINE_COLORS = {
     BattleArenaComponent,
     MistakeListComponent,
     PixelIconComponent,
+    PodiumComponent,
+    RankBadgeComponent,
     StarRatingComponent,
     StatTileComponent,
     TreasureChestComponent,
@@ -78,18 +99,23 @@ export class MatchResultsComponent {
     return `+${reward.coins} coins${boost}`;
   });
 
-  protected readonly leftFighters = computed(() => {
-    const team = this.result().mode === 'TEAM' ? this.others() : [];
-    return [this.me(), ...team]
-      .filter((player) => player !== null)
-      .map((player) => this.toFighter(player));
+  protected readonly sides = computed(() => {
+    const meFirst = [this.me(), ...this.others()].filter((player) => player !== null);
+    return arenaSides(
+      this.result().mode,
+      meFirst.map((player) => this.toFighter(player)),
+    );
   });
-  protected readonly rival = computed(() => {
-    const rival = this.others().at(0);
-    return this.result().mode === 'DUEL' && rival ? this.toFighter(rival) : null;
-  });
+  protected readonly ranking = computed(() => rankPlayers(this.result().players));
+  protected readonly podium = computed(() =>
+    this.ranking()
+      .slice(0, PODIUM_SIZE)
+      .map(({ rank, player }): PodiumPlace => ({ rank, user: player.user, value: player.score })),
+  );
+  protected readonly scoresTitle = computed(() => SCORES_TITLES[this.result().mode]);
+  protected readonly leftNote = computed(() => LEFT_NOTES[this.result().mode]);
   // Coins fly into the chest once when the player earned some treasure.
-  protected readonly strikeKey = computed(() => (this.teamCorrect() > 0 ? 1 : 0));
+  protected readonly coinsFlying = computed(() => this.teamCorrect() > 0);
 
   protected readonly shownScore = this.countTo(() => this.me()?.score ?? 0);
   protected readonly shownAccuracy = this.countTo(() => this.accuracy());
@@ -113,6 +139,10 @@ export class MatchResultsComponent {
       points: null,
       answered: false,
       away: false,
+      charges: 0,
+      lockedOut: false,
+      frozen: false,
+      inked: false,
     };
   }
 

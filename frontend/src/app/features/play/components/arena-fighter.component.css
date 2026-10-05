@@ -33,6 +33,19 @@
   background-color: var(--jade-400);
 }
 
+.bubble-out {
+  background-color: var(--ruby-400);
+}
+
+.bubble-frozen {
+  background-color: var(--mana-600);
+  color: var(--parchment-100);
+}
+
+.bubble-inked {
+  background-color: #c9b8ff;
+}
+
 .points-anchor {
   position: absolute;
   top: calc(var(--pixel) * 9);

@@ -16,9 +16,10 @@ const round: RoundResultEvent = {
   index: 2,
   correctIndex: 1,
   explanation: 'Jupiter is the largest planet.',
+  winnerUserId: null,
   players: [
-    { userId: 'hero', optionIndex: null, correct: false, points: 0, score: 200 },
-    { userId: 'friend', optionIndex: 1, correct: true, points: 140, score: 340 },
+    { userId: 'hero', optionIndex: null, correct: false, points: 0, score: 200, charges: 0 },
+    { userId: 'friend', optionIndex: 1, correct: true, points: 140, score: 340, charges: 0 },
   ],
   teamCorrect: 3,
 };
@@ -37,8 +38,16 @@ describe('toRoundView', () => {
   it('lists what the other player picked', () => {
     const view = toRoundView(round, question, 'hero', names);
 
-    expect(view.others).toEqual([{ name: 'demo_friend', correct: true, points: 140 }]);
+    expect(view.others).toEqual([
+      { name: 'demo_friend', answered: true, correct: true, points: 140 },
+    ]);
     expect(view.otherPicks).toEqual([{ name: 'demo_friend', optionIndex: 1 }]);
+  });
+
+  it('calls a party round that someone else won first beaten, not missed', () => {
+    const view = toRoundView({ ...round, winnerUserId: 'friend' }, question, 'hero', names);
+
+    expect(view.outcome).toBe('beaten');
   });
 
   it('works without the question after a page refresh', () => {
