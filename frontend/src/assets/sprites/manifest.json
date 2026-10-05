@@ -1,0 +1,342 @@
+[
+  {
+    "key": "mini-sword-man",
+    "type": "hero",
+    "name": "Swordsman",
+    "sheet": "heroes/mini-sword-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-archer-man",
+    "type": "hero",
+    "name": "Archer",
+    "sheet": "heroes/mini-archer-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-mage",
+    "type": "hero",
+    "name": "Mage",
+    "sheet": "heroes/mini-mage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-shield-man",
+    "type": "hero",
+    "name": "Shield Bearer",
+    "sheet": "heroes/mini-shield-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-spear-man",
+    "type": "hero",
+    "name": "Spearman",
+    "sheet": "heroes/mini-spear-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-cross-bow-man",
+    "type": "hero",
+    "name": "Crossbowman",
+    "sheet": "heroes/mini-cross-bow-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-halberd-man",
+    "type": "hero",
+    "name": "Halberdier",
+    "sheet": "heroes/mini-halberd-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-prince-man",
+    "type": "hero",
+    "name": "Prince",
+    "sheet": "heroes/mini-prince-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-king-man",
+    "type": "hero",
+    "name": "King",
+    "sheet": "heroes/mini-king-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-cavalier-man",
+    "type": "hero",
+    "name": "Cavalier",
+    "sheet": "heroes/mini-cavalier-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 8,
+    "fps": 8
+  },
+  {
+    "key": "mini-horse-man",
+    "type": "hero",
+    "name": "Horseman",
+    "sheet": "heroes/mini-horse-man.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 8,
+    "fps": 8
+  },
+  {
+    "key": "mini-arch-mage",
+    "type": "hero",
+    "name": "Archmage",
+    "sheet": "heroes/mini-arch-mage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-earth-warrior",
+    "type": "hero",
+    "name": "Earth Warrior",
+    "sheet": "heroes/mini-earth-warrior.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-ice-swordswoman",
+    "type": "hero",
+    "name": "Ice Swordswoman",
+    "sheet": "heroes/mini-ice-swordswoman.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-lightning-warrior",
+    "type": "hero",
+    "name": "Lightning Warrior",
+    "sheet": "heroes/mini-lightning-warrior.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-water-spearwoman",
+    "type": "hero",
+    "name": "Water Spearwoman",
+    "sheet": "heroes/mini-water-spearwoman.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "mini-wind-warrior",
+    "type": "hero",
+    "name": "Wind Warrior",
+    "sheet": "heroes/mini-wind-warrior.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-bear",
+    "type": "pet",
+    "name": "Bear",
+    "sheet": "pets/pet-bear.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-bird",
+    "type": "pet",
+    "name": "Sparrow",
+    "sheet": "pets/pet-bird.png",
+    "frameWidth": 16,
+    "frameHeight": 16,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-boar",
+    "type": "pet",
+    "name": "Boar",
+    "sheet": "pets/pet-boar.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-bunny",
+    "type": "pet",
+    "name": "Snow Bunny",
+    "sheet": "pets/pet-bunny.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-deer",
+    "type": "pet",
+    "name": "Fawn",
+    "sheet": "pets/pet-deer.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-deer2",
+    "type": "pet",
+    "name": "Stag",
+    "sheet": "pets/pet-deer2.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-fox",
+    "type": "pet",
+    "name": "Fox",
+    "sheet": "pets/pet-fox.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-hermie",
+    "type": "pet",
+    "name": "Hermie",
+    "sheet": "pets/pet-hermie.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-jumpy-lumpy",
+    "type": "pet",
+    "name": "Jumpy Lumpy",
+    "sheet": "pets/pet-jumpy-lumpy.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-martian-red",
+    "type": "pet",
+    "name": "Little Martian",
+    "sheet": "pets/pet-martian-red.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-mr-circuit",
+    "type": "pet",
+    "name": "Mr. Circuit",
+    "sheet": "pets/pet-mr-circuit.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-orchid-owl",
+    "type": "pet",
+    "name": "Orchid Owl",
+    "sheet": "pets/pet-orchid-owl.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-roach",
+    "type": "pet",
+    "name": "Roach",
+    "sheet": "pets/pet-roach.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-robot-walky",
+    "type": "pet",
+    "name": "Walky Bot",
+    "sheet": "pets/pet-robot-walky.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 2,
+    "fps": 4
+  },
+  {
+    "key": "pet-wolf",
+    "type": "pet",
+    "name": "Wolf",
+    "sheet": "pets/pet-wolf.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "enemy-slime",
+    "type": "enemy",
+    "name": "Quiz Slime",
+    "sheet": "enemies/enemy-slime.png",
+    "frameWidth": 18,
+    "frameHeight": 18,
+    "frames": 6,
+    "fps": 8
+  },
+  {
+    "key": "enemy-knight",
+    "type": "enemy",
+    "name": "Castle Guard",
+    "sheet": "enemies/enemy-knight.png",
+    "frameWidth": 22,
+    "frameHeight": 22,
+    "frames": 6,
+    "fps": 8
+  }
+]
