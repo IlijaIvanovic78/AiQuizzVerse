@@ -1,0 +1,68 @@
+.podium {
+  display: grid;
+  max-width: 40rem;
+  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.podium-spot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* The list is in rank order for screen readers; on screen the winner stands in the middle. */
+.podium-spot-1 {
+  order: 2;
+}
+
+.podium-spot-2 {
+  order: 1;
+}
+
+.podium-spot-3 {
+  order: 3;
+}
+
+/* Sprite frames have one empty row under the feet, so the hero is pulled onto the pedestal. */
+.podium-hero {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -6px;
+}
+
+.pedestal {
+  --medal: var(--night-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border: 3px solid var(--outline);
+  border-radius: 4px 4px 0 0;
+  background: var(--night-600) url('/assets/images/textures/stone.png');
+  color: var(--medal);
+  font-size: 1.5rem;
+  box-shadow:
+    inset 0 10px 0 var(--medal),
+    inset 0 13px 0 rgba(0, 0, 0, 0.35),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.35);
+}
+
+.pedestal-1 {
+  --medal: var(--gold);
+  height: 8rem;
+  font-size: 2rem;
+}
+
+.pedestal-2 {
+  --medal: var(--fog-200);
+  height: 5.75rem;
+}
+
+.pedestal-3 {
+  --medal: var(--torch-500);
+  height: 4.25rem;
+}

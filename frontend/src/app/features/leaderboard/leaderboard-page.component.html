@@ -1,0 +1,69 @@
+<div class="mx-auto max-w-3xl">
+  <app-page-header
+    title="Leaderboard"
+    subtitle="XP earned this week. A new week starts every Monday."
+  >
+    <div class="flex gap-2" role="group" aria-label="Compare with">
+      @for (choice of scopes; track choice.scope) {
+        <button
+          type="button"
+          class="chip"
+          [attr.aria-pressed]="scope() === choice.scope"
+          (click)="show(choice.scope)"
+        >
+          {{ choice.label }}
+        </button>
+      }
+    </div>
+  </app-page-header>
+
+  @if (user(); as user) {
+    @if (entries().length > 0) {
+      <section class="podium-stage panel" aria-label="Podium">
+        <app-podium [entries]="podium()" [myUserId]="user.id" />
+      </section>
+      @if (others().length > 0) {
+        <app-leaderboard-list class="mt-4" [entries]="others()" [myUserId]="user.id" />
+      }
+    } @else if (loaded()) {
+      <app-empty-state
+        title="The board is still empty"
+        text="Nobody has earned XP this week yet. Finish a quiz and be the first one up there!"
+        image="treasure"
+      >
+        <a class="btn btn-primary" routerLink="/library">Play a quiz</a>
+        @if (scope() === 'friends') {
+          <a class="btn btn-secondary" routerLink="/friends">Find friends</a>
+        }
+      </app-empty-state>
+    } @else if (error()) {
+      <app-empty-state
+        role="alert"
+        title="The leaderboard didn't load"
+        text="Check your connection and try again."
+        image="potion"
+      >
+        <button type="button" class="btn btn-secondary" (click)="show(scope())">Try again</button>
+      </app-empty-state>
+    } @else {
+      <div class="panel p-5">
+        <app-spinner label="Counting everyone's XP..." [showLabel]="true" />
+      </div>
+    }
+
+    @if (me(); as me) {
+      <div class="my-rank" aria-live="polite">
+        <app-user-avatar [heroKey]="user.avatarKey" />
+        @if (me.rank !== null) {
+          <p class="flex-1 leading-tight">
+            <span class="block text-sm text-muted">Your rank</span>
+            <span class="font-display text-lg text-torch-300">#{{ me.rank }}</span>
+          </p>
+          <span class="font-semibold text-mana-400">{{ me.weeklyXp | number }} XP</span>
+        } @else {
+          <p class="flex-1">You're not on the board yet. Finish a quiz to earn XP!</p>
+        }
+      </div>
+    }
+  }
+</div>

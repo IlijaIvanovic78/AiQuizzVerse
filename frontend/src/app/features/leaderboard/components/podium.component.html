@@ -1,0 +1,34 @@
+<ol class="podium" aria-label="Top three this week">
+  @for (spot of places(); track spot.place) {
+    <li class="podium-spot" [class]="'podium-spot-' + spot.place">
+      @if (spot.entry; as entry) {
+        <div class="flex min-w-0 max-w-full flex-col items-center px-1 text-center">
+          @if (spot.place === 1) {
+            <app-pixel-icon name="trophy" [scale]="2" />
+          }
+          <a
+            class="max-w-full truncate font-semibold hover:text-torch-300 hover:underline"
+            [class.text-torch-300]="entry.user.id === myUserId()"
+            [routerLink]="['/profile', entry.user.username]"
+          >
+            {{ entry.user.username }}
+          </a>
+          <span class="text-sm font-semibold text-mana-400">{{ entry.weeklyXp | number }} XP</span>
+        </div>
+        <app-hero-sprite
+          class="podium-hero animate-banner-in"
+          [heroKey]="entry.user.avatarKey"
+          [scale]="spot.heroScale"
+          [style.margin-top.px]="spot.heroOffset"
+          [style.animation-delay.ms]="spot.enterDelayMs"
+        />
+      } @else {
+        <span class="pb-2 text-sm text-muted">Free spot</span>
+      }
+      <div class="pedestal" [class]="'pedestal-' + spot.place">
+        <span class="sr-only">Place</span>
+        <span class="font-display">{{ spot.entry?.rank ?? spot.place }}</span>
+      </div>
+    </li>
+  }
+</ol>

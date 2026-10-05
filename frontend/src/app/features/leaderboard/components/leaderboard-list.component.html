@@ -1,0 +1,25 @@
+<ol class="flex flex-col gap-2" aria-label="Everyone else on the board">
+  @for (entry of entries(); track entry.user.id) {
+    <li
+      class="panel flex items-center gap-3 px-3 py-2 sm:gap-4 sm:px-4"
+      [class.border-torch-400]="entry.user.id === myUserId()"
+      [class.bg-night-700]="entry.user.id === myUserId()"
+    >
+      <app-rank-badge [rank]="entry.rank" />
+      <app-user-avatar [heroKey]="entry.user.avatarKey" />
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2">
+        <a
+          class="truncate font-semibold hover:text-torch-300 hover:underline"
+          [routerLink]="['/profile', entry.user.username]"
+        >
+          {{ entry.user.username }}
+        </a>
+        @if (entry.user.id === myUserId()) {
+          <span class="badge badge-torch">You</span>
+        }
+        <app-level-badge class="hidden sm:inline-flex" [level]="entry.user.level" />
+      </div>
+      <span class="shrink-0 font-semibold text-mana-400">{{ entry.weeklyXp | number }} XP</span>
+    </li>
+  }
+</ol>
