@@ -12,9 +12,6 @@ build/
 tmp/
 out-tsc/
 
-# Reference project (do not track)
-gamehosting-master/
-
 # OS files
 .DS_Store
 Thumbs.db
