@@ -10,6 +10,7 @@ export class PracticeDto {
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
+  // Accepts every miss of a match, but ReviewService practices at most MAX_PRACTICE_QUESTIONS.
   @ArrayMaxSize(MAX_QUESTIONS)
   @IsUUID('all', { each: true })
   questionIds?: string[];

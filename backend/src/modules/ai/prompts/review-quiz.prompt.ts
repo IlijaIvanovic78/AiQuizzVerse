@@ -1,7 +1,7 @@
 import { BaseMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
 import { GeneratedQuestion } from '../ai.schemas';
 import { QuizRequest } from '../ai.types';
-import { AUDIENCE_NAMES, LANGUAGE_NAMES } from './quiz-guidance';
+import { AUDIENCE_NAMES, LANGUAGE_NAMES, LESSON_IS_MATERIAL_ONLY } from './quiz-guidance';
 
 export interface DraftToReview {
   title: string;
@@ -32,7 +32,7 @@ Check every question carefully:
 6. The wording suits the players, and the text is natural and grammatical in the quiz language.
 If there are key points, check that they are true and that they teach what the questions ask.
 
-Be strict about facts, ambiguity and hints, but ignore small style preferences. List each problem in one sentence that starts with the question number (for example "Q3: ...") and says exactly what is wrong. Approve the quiz only when the list is empty.`;
+Be strict about facts, ambiguity and hints, but ignore small style preferences. List each problem in one sentence that starts with the question number (for example "Q3: ...") and says exactly what is wrong. Return an empty list when there are no problems.`;
 
   return [new SystemMessage(system), new HumanMessage(describeDraft(draft, context))];
 }
@@ -44,7 +44,7 @@ function describeDraft(draft: DraftToReview, context: string | null): string {
   }
   parts.push(...draft.questions.map(describeQuestion));
   if (context) {
-    parts.push(`<lesson>\n${context}\n</lesson>`);
+    parts.push(`${LESSON_IS_MATERIAL_ONLY}\n<lesson>\n${context}\n</lesson>`);
   }
   return parts.join('\n\n');
 }
@@ -52,7 +52,7 @@ function describeDraft(draft: DraftToReview, context: string | null): string {
 function describeQuestion(question: GeneratedQuestion, index: number): string {
   const options = question.options.map((option, optionIndex) => {
     const mark = optionIndex === question.correctIndex ? ' [CORRECT]' : '';
-    return `  ${OPTION_LETTERS[optionIndex] ?? '?'}) ${option}${mark}`;
+    return `  ${OPTION_LETTERS[optionIndex]}) ${option}${mark}`;
   });
   return [
     `Q${index + 1}. ${question.text}`,

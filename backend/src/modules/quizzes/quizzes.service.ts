@@ -15,6 +15,7 @@ import {
   quizDetailInclude,
   quizSummaryInclude,
   toGeneratedQuizData,
+  toManualQuizData,
   toQuestionView,
   toQuizCopy,
   toQuizDetail,
@@ -68,18 +69,9 @@ export class QuizzesService {
   }
 
   async create(userId: string, dto: CreateQuizDto): Promise<QuizDetail> {
-    const { questions, ...details } = dto;
     const quiz = await this.prisma.quiz.create({
-      data: {
-        ...details,
-        ownerId: userId,
-        questions: {
-          create: questions.map((question, index) => ({
-            position: index + 1,
-            ...questionFields(question),
-          })),
-        },
-      },
+      data: toManualQuizData(userId, dto),
+      select: { id: true },
     });
     return this.loadDetail(userId, quiz.id);
   }
@@ -151,18 +143,6 @@ export class QuizzesService {
     return quiz.id;
   }
 
-  /** Counts AI-written quizzes (a learning path writes five), deleted ones included. */
-  countGeneratedSince(userId: string, since: Date): Promise<number> {
-    return this.prisma.quiz.count({
-      where: {
-        ownerId: userId,
-        createdAt: { gte: since },
-        source: { not: 'MANUAL' },
-        kind: { not: 'REVIEW' },
-      },
-    });
-  }
-
   private async loadDetail(userId: string, quizId: string): Promise<QuizDetail> {
     const quiz = await this.prisma.quiz.findUniqueOrThrow({
       where: { id: quizId },
@@ -195,7 +175,8 @@ export class QuizzesService {
     return quiz;
   }
 
-  // Removing questions mid-match would break saving that match's answers.
+  // A running match still saves answers to this quiz's questions, so neither the quiz nor
+  // one of its questions can be removed until the match ends.
   private async assertNotBeingPlayed(quizId: string): Promise<void> {
     const runningMatches = await this.prisma.match.count({
       where: { quizId, status: 'IN_PROGRESS' },

@@ -14,7 +14,7 @@ export const PATH_DETAIL_INCLUDE = {
   },
 } satisfies Prisma.LearningPathInclude;
 
-export type PathSummaryRow = Prisma.LearningPathGetPayload<{
+type PathSummaryRow = Prisma.LearningPathGetPayload<{
   include: typeof PATH_SUMMARY_INCLUDE;
 }>;
 export type PathDetailRow = Prisma.LearningPathGetPayload<{ include: typeof PATH_DETAIL_INCLUDE }>;

@@ -4,3 +4,8 @@ export interface DocumentSummary {
   characterCount: number;
   createdAt: Date;
 }
+
+export interface Lesson {
+  name: string;
+  context: string;
+}

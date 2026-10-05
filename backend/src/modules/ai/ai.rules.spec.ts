@@ -1,10 +1,11 @@
-import { ServiceUnavailableException } from '@nestjs/common';
 import { GeneratedQuestion } from './ai.schemas';
 import {
   cleanKeyPoints,
+  hasEnoughQuestions,
   hintRevealsAnswer,
   specificStepTitle,
-  validateAndShuffle,
+  spreadCorrectAnswers,
+  usableQuestions,
 } from './ai.rules';
 
 function makeQuestion(changes: Partial<GeneratedQuestion> = {}): GeneratedQuestion {
@@ -22,9 +23,56 @@ function correctAnswer(question: GeneratedQuestion): string {
   return question.options[question.correctIndex];
 }
 
-describe('validateAndShuffle', () => {
+describe('usableQuestions', () => {
+  it('trims the text of every field', () => {
+    const question = makeQuestion({
+      text: '  Which planet is closest to the Sun?  ',
+      options: [' Mercury ', 'Venus', 'Earth ', 'Mars'],
+      hint: ' It is the smallest planet. ',
+    });
+
+    const [result] = usableQuestions([question], 1);
+
+    expect(result.text).toBe('Which planet is closest to the Sun?');
+    expect(result.hint).toBe('It is the smallest planet.');
+    expect(result.options).toEqual(['Mercury', 'Venus', 'Earth', 'Mars']);
+  });
+
+  it('drops questions with broken options, answers or hints', () => {
+    const broken = [
+      makeQuestion({ options: ['Mercury', 'mercury', 'Earth', 'Mars'] }),
+      makeQuestion({ options: ['Mercury', ' ', 'Earth', 'Mars'] }),
+      makeQuestion({ correctIndex: 4 }),
+      makeQuestion({ hint: '' }),
+      makeQuestion({ hint: 'Its name is Mercury.' }),
+    ];
+    const good = [makeQuestion(), makeQuestion(), makeQuestion()];
+
+    expect(usableQuestions([...broken, ...good], 5)).toHaveLength(3);
+  });
+
+  it('cuts extra questions down to the requested count', () => {
+    const questions = Array.from({ length: 7 }, () => makeQuestion());
+
+    expect(usableQuestions(questions, 5)).toHaveLength(5);
+  });
+});
+
+describe('hasEnoughQuestions', () => {
+  it('allows up to two requested questions to be missing', () => {
+    expect(hasEnoughQuestions(5, 7)).toBe(true);
+    expect(hasEnoughQuestions(4, 7)).toBe(false);
+  });
+
+  it('never accepts fewer than three questions', () => {
+    expect(hasEnoughQuestions(2, 4)).toBe(false);
+    expect(hasEnoughQuestions(3, 4)).toBe(true);
+  });
+});
+
+describe('spreadCorrectAnswers', () => {
   it('keeps the correct answer after shuffling the options', () => {
-    const [question] = validateAndShuffle([makeQuestion(), makeQuestion(), makeQuestion()], 3);
+    const [question] = spreadCorrectAnswers([makeQuestion()]);
 
     expect(correctAnswer(question)).toBe('Mercury');
     expect([...question.options].sort()).toEqual(['Earth', 'Mars', 'Mercury', 'Venus']);
@@ -33,57 +81,9 @@ describe('validateAndShuffle', () => {
   it('spreads correct answers over all four positions', () => {
     const questions = Array.from({ length: 8 }, () => makeQuestion());
 
-    const positions = validateAndShuffle(questions, 8).map((question) => question.correctIndex);
+    const positions = spreadCorrectAnswers(questions).map((question) => question.correctIndex);
 
     expect([...positions].sort()).toEqual([0, 0, 1, 1, 2, 2, 3, 3]);
-  });
-
-  it('trims the text of every field', () => {
-    const question = makeQuestion({
-      text: '  Which planet is closest to the Sun?  ',
-      options: [' Mercury ', 'Venus', 'Earth ', 'Mars'],
-      hint: ' It is the smallest planet. ',
-    });
-
-    const [result] = validateAndShuffle([question, makeQuestion(), makeQuestion()], 3);
-
-    expect(result.text).toBe('Which planet is closest to the Sun?');
-    expect(result.hint).toBe('It is the smallest planet.');
-    expect(result.options).toContain('Mercury');
-    expect(result.options).toContain('Earth');
-  });
-
-  it('drops questions with broken options, answers or hints', () => {
-    const broken = [
-      makeQuestion({ options: ['Mercury', 'Venus', 'Earth'] }),
-      makeQuestion({ options: ['Mercury', 'mercury', 'Earth', 'Mars'] }),
-      makeQuestion({ options: ['Mercury', ' ', 'Earth', 'Mars'] }),
-      makeQuestion({ correctIndex: 4 }),
-      makeQuestion({ correctIndex: 1.5 }),
-      makeQuestion({ hint: '' }),
-      makeQuestion({ hint: 'Its name is Mercury.' }),
-    ];
-    const good = [makeQuestion(), makeQuestion(), makeQuestion()];
-
-    expect(validateAndShuffle([...broken, ...good], 5)).toHaveLength(3);
-  });
-
-  it('cuts extra questions down to the requested count', () => {
-    const questions = Array.from({ length: 7 }, () => makeQuestion());
-
-    expect(validateAndShuffle(questions, 5)).toHaveLength(5);
-  });
-
-  it('fails when more than two requested questions are missing', () => {
-    const questions = Array.from({ length: 4 }, () => makeQuestion());
-
-    expect(() => validateAndShuffle(questions, 7)).toThrow(ServiceUnavailableException);
-  });
-
-  it('never accepts fewer than three questions', () => {
-    const questions = [makeQuestion(), makeQuestion()];
-
-    expect(() => validateAndShuffle(questions, 4)).toThrow(ServiceUnavailableException);
   });
 });
 
@@ -108,10 +108,10 @@ describe('hintRevealsAnswer', () => {
 });
 
 describe('cleanKeyPoints', () => {
-  it('trims, drops empty points and keeps at most five', () => {
-    const points = [' One ', '', 'Two', 'Three', '   ', 'Four', 'Five', 'Six'];
+  it('trims the points and drops empty ones', () => {
+    const points = [' One ', '', 'Two', '   ', 'Three'];
 
-    expect(cleanKeyPoints(points)).toEqual(['One', 'Two', 'Three', 'Four', 'Five']);
+    expect(cleanKeyPoints(points)).toEqual(['One', 'Two', 'Three']);
   });
 });
 

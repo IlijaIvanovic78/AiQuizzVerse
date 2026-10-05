@@ -1,5 +1,6 @@
 import { Prisma, Question, Quiz } from '@prisma/client';
 import { accuracyPercent } from '../progression/progression.rules';
+import { CreateQuizDto } from './dto/create-quiz.dto';
 import { FULL_ACCURACY } from './quizzes.constants';
 import {
   GeneratedQuizToSave,
@@ -9,7 +10,7 @@ import {
   QuizSummary,
 } from './quizzes.types';
 
-export type QuizWithQuestions = Quiz & { questions: Question[] };
+type QuizWithQuestions = Quiz & { questions: Question[] };
 
 /** Question count plus the viewer's own finished matches, for bestAccuracy. */
 export function quizSummaryInclude(userId: string) {
@@ -67,6 +68,25 @@ export function questionFields(question: QuestionContent): QuestionContent {
   };
 }
 
+export function toManualQuizData(
+  ownerId: string,
+  dto: CreateQuizDto,
+): Prisma.QuizUncheckedCreateInput {
+  return {
+    title: dto.title,
+    topic: dto.topic,
+    theme: dto.theme,
+    difficulty: dto.difficulty,
+    audience: dto.audience,
+    language: dto.language,
+    kind: 'STANDARD',
+    source: 'MANUAL',
+    timePerQuestion: dto.timePerQuestion,
+    ownerId,
+    questions: { create: numberedQuestions(dto.questions) },
+  };
+}
+
 export function toGeneratedQuizData(input: GeneratedQuizToSave): Prisma.QuizUncheckedCreateInput {
   return {
     title: input.quiz.title,
@@ -80,12 +100,7 @@ export function toGeneratedQuizData(input: GeneratedQuizToSave): Prisma.QuizUnch
     timePerQuestion: input.timePerQuestion,
     ownerId: input.ownerId,
     documentId: input.documentId,
-    questions: {
-      create: input.quiz.questions.map((question, index) => ({
-        position: index + 1,
-        ...questionFields(question),
-      })),
-    },
+    questions: { create: numberedQuestions(input.quiz.questions) },
   };
 }
 
@@ -113,6 +128,10 @@ export function toQuizCopy(
   };
 }
 
+function numberedQuestions(questions: QuestionContent[]): Prisma.QuestionCreateWithoutQuizInput[] {
+  return questions.map((question, index) => ({ position: index + 1, ...questionFields(question) }));
+}
+
 function bestAccuracy(quiz: QuizSummaryRow): number | null {
   const correctCounts = quiz.matches.flatMap((match) =>
     match.players.map((player) => player.correctCount),
@@ -121,5 +140,7 @@ function bestAccuracy(quiz: QuizSummaryRow): number | null {
     return null;
   }
   const accuracy = accuracyPercent(Math.max(...correctCounts), quiz._count.questions);
+  // The best run is compared with today's question count, and questions removed after
+  // that run could push it above 100%.
   return Math.min(accuracy, FULL_ACCURACY);
 }

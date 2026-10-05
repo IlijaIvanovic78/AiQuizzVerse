@@ -25,7 +25,6 @@ export const FULL_ACCURACY = 100;
 
 export const DAILY_AI_LIMIT = 15;
 export const QUIZ_GENERATION_COST = 1;
-export const PATH_GENERATION_COST = 5;
 
 export const QUIZ_NOT_FOUND_MESSAGE = 'We could not find that quiz.';
 export const TOPIC_OR_DOCUMENT_MESSAGE = 'Type a topic or choose a PDF lesson.';

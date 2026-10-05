@@ -1,23 +1,8 @@
 import { AIMessage, BaseMessage, HumanMessage, SystemMessage } from '@langchain/core/messages';
+import { MAX_KEY_POINTS, MIN_KEY_POINTS } from '../ai.constants';
 import { GeneratedPathStep } from '../ai.schemas';
 import { PathStepRequest } from '../ai.types';
 import { lessonBlock, quizMasterBrief, revisionRequest } from './quiz-guidance';
-
-const PATH_STEP_FIELDS = `You are writing one step of a 5-step learning path. In every step the player first reads a study card (the title and key points), then plays a short quiz about it.
-
-The 5 steps are written at the same time, so each one must stay in its own lane:
-1. What it is, in the simplest words, with everyday examples.
-2. The most important names, parts, kinds and facts.
-3. How it works and why it happens.
-4. How it connects to other things: causes, effects, comparisons and real-life uses.
-5. A master challenge: finer details and using everything in new situations.
-Teach and ask only what belongs to your step, so the steps never repeat each other.
-
-Step fields:
-- title: a short name of 2-5 words, in the quiz language, that says what this step teaches about this topic. It names the topic or something from it, for example "Meet the dinosaurs", "How leaves make food" or "Dino expert challenge". The step goal only tells you what to teach: never use it, or a general name such as "First steps", "Key facts" or "Master challenge", as the title.
-- theme: the category that fits the topic best (GENERAL if none fits).
-- keyPoints: 3 to 5 key points for the study card. Each one is a single short, complete sentence with one clear fact. Together they teach everything the questions ask about.
-- questions: the quiz for this step, following the rules above. A player who read the key points carefully can answer every question.`;
 
 export function writePathStepMessages(
   request: PathStepRequest,
@@ -33,7 +18,7 @@ export function writePathStepMessages(
   ].join('\n');
 
   return [
-    new SystemMessage(`${quizMasterBrief(request)}\n\n${PATH_STEP_FIELDS}`),
+    new SystemMessage(`${quizMasterBrief(request)}\n\n${pathStepFields(request.stepFocuses)}`),
     new HumanMessage(task + lessonBlock(context, request.language)),
   ];
 }
@@ -50,6 +35,21 @@ export function revisePathStepMessages(
     new AIMessage(JSON.stringify(draft)),
     new HumanMessage(revisionRequest(problems)),
   ];
+}
+
+function pathStepFields(stepFocuses: string[]): string {
+  const lanes = stepFocuses.map((focus, index) => `${index + 1}. ${focus}`).join('\n');
+  return `You are writing one step of a ${stepFocuses.length}-step learning path. In every step the player first reads a study card (the title and key points), then plays a short quiz about it.
+
+The ${stepFocuses.length} steps are written at the same time, so each one must stay in its own lane:
+${lanes}
+Teach and ask only what belongs to your step, so the steps never repeat each other.
+
+Step fields:
+- title: a short name of 2-5 words, in the quiz language, that says what this step teaches about this topic. It names the topic or something from it, for example "Meet the dinosaurs", "How leaves make food" or "Dino expert challenge". The step goal only tells you what to teach: never use it, or a general name such as "First steps", "Key facts" or "Master challenge", as the title.
+- theme: the category that fits the topic best (GENERAL if none fits).
+- keyPoints: ${MIN_KEY_POINTS} to ${MAX_KEY_POINTS} key points for the study card. Each one is a single short, complete sentence with one clear fact. Together they teach everything the questions ask about.
+- questions: the quiz for this step, following the rules above. A player who read the key points carefully can answer every question.`;
 }
 
 function earlierStepsLine(earlierGoals: string[]): string {

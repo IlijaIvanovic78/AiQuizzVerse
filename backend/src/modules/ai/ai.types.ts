@@ -14,6 +14,8 @@ export interface PathStepRequest extends QuizRequest {
   position: number;
   /** What this step is for, e.g. "How and why". */
   goal: string;
+  /** What each step of the path covers, in step order, so every step stays in its own lane. */
+  stepFocuses: string[];
 }
 
 export type WriterStep = 'writing' | 'reviewing';

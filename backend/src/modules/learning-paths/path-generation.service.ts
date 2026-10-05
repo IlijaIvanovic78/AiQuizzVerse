@@ -5,12 +5,16 @@ import { specificStepTitle } from '../ai/ai.rules';
 import { GeneratedPathStep } from '../ai/ai.schemas';
 import { QuizWriterService } from '../ai/quiz-writer.service';
 import { DocumentsService } from '../documents/documents.service';
-import { QuizGenerationService } from '../quizzes/quiz-generation.service';
-import { PATH_GENERATION_COST, TOPIC_OR_DOCUMENT_MESSAGE } from '../quizzes/quizzes.constants';
+import { GenerationLimitsService } from '../quizzes/generation-limits.service';
+import { TOPIC_OR_DOCUMENT_MESSAGE } from '../quizzes/quizzes.constants';
 import { QuizzesService } from '../quizzes/quizzes.service';
 import { NotificationsService } from '../realtime/notifications.service';
 import { CreatePathDto } from './dto/create-path.dto';
-import { PATH_PLAN, STEP_TIME_PER_QUESTION } from './learning-paths.constants';
+import {
+  PATH_GENERATION_COST,
+  PATH_PLAN,
+  STEP_TIME_PER_QUESTION,
+} from './learning-paths.constants';
 import { buildStepRequests, earlierStepGoals } from './learning-paths.rules';
 import { LearningPathsService } from './learning-paths.service';
 import { PathDetail, PlannedStep } from './learning-paths.types';
@@ -22,46 +26,43 @@ export class PathGenerationService {
     private readonly quizWriter: QuizWriterService,
     private readonly documents: DocumentsService,
     private readonly quizzes: QuizzesService,
-    private readonly generation: QuizGenerationService,
+    private readonly limits: GenerationLimitsService,
     private readonly notifications: NotificationsService,
     private readonly paths: LearningPathsService,
   ) {}
 
-  createPath(userId: string, dto: CreatePathDto): Promise<PathDetail> {
-    if (!dto.topic && !dto.documentId) {
+  async createPath(userId: string, dto: CreatePathDto): Promise<PathDetail> {
+    const lesson = dto.documentId ? await this.documents.getLesson(userId, dto.documentId) : null;
+    // A path is named after the typed topic or, for a PDF, after the lesson file.
+    const subject = dto.topic ?? lesson?.name;
+    if (!subject) {
       throw new BadRequestException(TOPIC_OR_DOCUMENT_MESSAGE);
     }
-    return this.generation.runWithLimits(userId, PATH_GENERATION_COST, () =>
-      this.writeAndSave(userId, dto),
+    const context = lesson?.context ?? null;
+    return this.limits.runWithLimits(userId, PATH_GENERATION_COST, () =>
+      this.writeAndSave(userId, dto, subject, context),
     );
   }
 
-  private async writeAndSave(userId: string, dto: CreatePathDto): Promise<PathDetail> {
-    const context = dto.documentId ? await this.documents.getContext(userId, dto.documentId) : null;
-    const subject = await this.pathSubject(userId, dto);
-    const steps = await this.writeSteps(userId, dto, context, subject);
-    const pathId = await this.savePath(userId, dto, steps);
+  private async writeAndSave(
+    userId: string,
+    dto: CreatePathDto,
+    subject: string,
+    context: string | null,
+  ): Promise<PathDetail> {
+    const steps = await this.writeSteps(userId, dto, subject, context);
+    const pathId = await this.savePath(userId, dto, subject, steps);
     return this.paths.findDetail(userId, pathId);
   }
 
-  /** The typed topic, or the lesson's file name for a path made from a PDF. */
-  private async pathSubject(userId: string, dto: CreatePathDto): Promise<string> {
-    if (dto.topic) {
-      return dto.topic;
-    }
-    if (dto.documentId) {
-      return this.documents.getLessonName(userId, dto.documentId);
-    }
-    throw new BadRequestException(TOPIC_OR_DOCUMENT_MESSAGE);
-  }
-
-  // All five steps are written in parallel; if one fails, Promise.all fails and
-  // nothing is saved.
+  // All steps are written in parallel. If one fails, Promise.all rejects at once and nothing
+  // is saved. The other OpenAI calls still run to the end in the background, even though
+  // the user's generation lock is already released.
   private writeSteps(
     userId: string,
     dto: CreatePathDto,
-    context: string | null,
     subject: string,
+    context: string | null,
   ): Promise<GeneratedPathStep[]> {
     const requests = buildStepRequests({
       topic: dto.topic ?? null,
@@ -85,13 +86,14 @@ export class PathGenerationService {
   private savePath(
     userId: string,
     dto: CreatePathDto,
+    subject: string,
     steps: GeneratedPathStep[],
   ): Promise<string> {
     return this.prisma.$transaction(async (tx) => {
       const path = await tx.learningPath.create({
         data: {
           ownerId: userId,
-          topic: dto.topic ?? steps[0].title,
+          topic: subject,
           documentId: dto.documentId ?? null,
           audience: dto.audience,
           language: dto.language,

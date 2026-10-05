@@ -10,7 +10,7 @@ import {
   NO_TEXT_MESSAGE,
   PDF_EXTENSION,
 } from './documents.constants';
-import { DocumentSummary } from './documents.types';
+import { DocumentSummary, Lesson } from './documents.types';
 
 const DOCUMENT_SUMMARY_SELECT = {
   id: true,
@@ -62,26 +62,22 @@ export class DocumentsService {
   }
 
   async getContext(ownerId: string, documentId: string): Promise<string> {
-    const document = await this.prisma.document.findFirst({
-      where: { id: documentId, ownerId },
-      select: { content: true },
-    });
-    if (!document) {
-      throw new NotFoundException(DOCUMENT_NOT_FOUND_MESSAGE);
-    }
-    return document.content.slice(0, MAX_CONTEXT_CHARS);
+    const lesson = await this.getLesson(ownerId, documentId);
+    return lesson.context;
   }
 
-  /** The file name without ".pdf", for places that need a short name of the lesson. */
-  async getLessonName(ownerId: string, documentId: string): Promise<string> {
+  async getLesson(ownerId: string, documentId: string): Promise<Lesson> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, ownerId },
-      select: { fileName: true },
+      select: { fileName: true, content: true },
     });
     if (!document) {
       throw new NotFoundException(DOCUMENT_NOT_FOUND_MESSAGE);
     }
-    return document.fileName.replace(PDF_EXTENSION, '');
+    return {
+      name: document.fileName.replace(PDF_EXTENSION, ''),
+      context: document.content.slice(0, MAX_CONTEXT_CHARS),
+    };
   }
 
   private async readPdfText(data: Buffer): Promise<string> {

@@ -2,17 +2,25 @@ import { BaseMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { errorStack } from '../../common/utils/errors';
 import {
   AI_MAX_RETRIES,
   AI_RESTING_MESSAGE,
   AI_TIMEOUT_MS,
+  AI_WEAK_QUIZ_MESSAGE,
   QUIZ_MODEL,
   REVIEWER_TEMPERATURE,
   WRITER_TEMPERATURE,
 } from './ai.constants';
-import { cleanKeyPoints, validateAndShuffle } from './ai.rules';
+import {
+  cleanKeyPoints,
+  hasEnoughQuestions,
+  spreadCorrectAnswers,
+  usableQuestions,
+} from './ai.rules';
 import {
   GeneratedPathStep,
+  GeneratedQuestion,
   GeneratedQuiz,
   pathStepSchema,
   QuizReview,
@@ -39,10 +47,10 @@ export class QuizWriterService {
     let quiz = await this.draftQuiz(writeQuizMessages(request, context));
     onStep?.('reviewing');
     const review = await this.reviewDraft(request, quiz, context);
-    if (!review.approved) {
+    if (review.problems.length > 0) {
       quiz = await this.draftQuiz(reviseQuizMessages(request, context, quiz, review.problems));
     }
-    return { ...quiz, questions: validateAndShuffle(quiz.questions, request.questionCount) };
+    return { ...quiz, questions: this.playableQuestions(quiz.questions, request.questionCount) };
   }
 
   async writePathStep(
@@ -52,7 +60,7 @@ export class QuizWriterService {
   ): Promise<GeneratedPathStep> {
     let step = await this.draftPathStep(writePathStepMessages(request, context, earlierGoals));
     const review = await this.reviewDraft(request, step, context);
-    if (!review.approved) {
+    if (review.problems.length > 0) {
       step = await this.draftPathStep(
         revisePathStepMessages(request, context, earlierGoals, step, review.problems),
       );
@@ -60,8 +68,19 @@ export class QuizWriterService {
     return {
       ...step,
       keyPoints: cleanKeyPoints(step.keyPoints),
-      questions: validateAndShuffle(step.questions, request.questionCount),
+      questions: this.playableQuestions(step.questions, request.questionCount),
     };
+  }
+
+  private playableQuestions(
+    questions: GeneratedQuestion[],
+    requestedCount: number,
+  ): GeneratedQuestion[] {
+    const usable = usableQuestions(questions, requestedCount);
+    if (!hasEnoughQuestions(usable.length, requestedCount)) {
+      throw new ServiceUnavailableException(AI_WEAK_QUIZ_MESSAGE);
+    }
+    return spreadCorrectAnswers(usable);
   }
 
   private draftQuiz(messages: BaseMessage[]): Promise<GeneratedQuiz> {
@@ -112,7 +131,7 @@ export class QuizWriterService {
     try {
       return await call();
     } catch (error) {
-      this.logger.error(`OpenAI ${task} failed`, error instanceof Error ? error.stack : error);
+      this.logger.error(`OpenAI ${task} failed`, errorStack(error));
       throw new ServiceUnavailableException(AI_RESTING_MESSAGE);
     }
   }

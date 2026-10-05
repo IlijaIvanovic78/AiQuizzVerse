@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor, MulterModuleOptions } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { CurrentUserId } from '../auth/decorators/current-user.decorator';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MAX_PDF_BYTES, PDF_MIME_TYPE } from './documents.constants';
 import { DocumentsService } from './documents.service';

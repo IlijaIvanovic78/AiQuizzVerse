@@ -83,7 +83,7 @@ export class ReviewService {
     });
   }
 
-  /** Only questions from the player's own notebook are copied, due or not. */
+  // Only questions from the player's own notebook are copied, due or not.
   private async findChosenCards(userId: string, questionIds: string[]): Promise<ReviewCardRow[]> {
     const originalIds = await this.findOriginalQuestionIds(questionIds);
     return this.prisma.reviewCard.findMany({

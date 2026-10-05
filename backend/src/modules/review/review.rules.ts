@@ -18,5 +18,5 @@ export function isDue(dueOn: Date, today: Date): boolean {
 export function practiceTheme(themes: QuizTheme[]): QuizTheme {
   const first = themes[0];
   const allSame = themes.length > 0 && themes.every((theme) => theme === first);
-  return allSame ? first : QuizTheme.GENERAL;
+  return allSame ? first : 'GENERAL';
 }

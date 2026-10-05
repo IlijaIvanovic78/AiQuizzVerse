@@ -4,7 +4,6 @@ export const REVIEWER_TEMPERATURE = 0;
 export const AI_TIMEOUT_MS = 60_000;
 export const AI_MAX_RETRIES = 2;
 
-export const OPTIONS_PER_QUESTION = 4;
 export const MIN_GENERATED_QUESTIONS = 3;
 export const MAX_DROPPED_QUESTIONS = 2;
 export const MIN_KEY_POINTS = 3;

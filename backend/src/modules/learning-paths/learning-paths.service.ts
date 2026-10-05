@@ -50,8 +50,11 @@ export class LearningPathsService {
     ]);
   }
 
-  findStepByQuiz(quizId: string): Promise<StepWithOwner | null> {
-    return this.prisma.pathStep.findUnique({
+  findStepByQuiz(
+    quizId: string,
+    db: Prisma.TransactionClient = this.prisma,
+  ): Promise<StepWithOwner | null> {
+    return db.pathStep.findUnique({
       where: { quizId },
       include: { path: { select: { ownerId: true } } },
     });
@@ -81,24 +84,37 @@ export class LearningPathsService {
     const accuracy = accuracyPercent(correct, total);
     const stars = starsForAccuracy(accuracy);
     await this.keepBestResult(db, step.id, stars, accuracy);
-    const firstClear = stars > 0 && (await this.markCleared(db, step.id));
+    let firstClear = false;
+    if (stars > 0) {
+      firstClear = await this.markCleared(db, step.id);
+    }
     const reward = firstClear ? await this.grantStepReward(db, userId, step.position) : null;
 
     const saved = await db.pathStep.findUniqueOrThrow({ where: { id: step.id } });
-    const cleared = saved.completedAt !== null;
+    return this.describeStepResult(saved, stars, reward, db);
+  }
+
+  /** The path part of a match result, for a finished run and for a saved result. */
+  async describeStepResult(
+    step: PathStep,
+    stars: number,
+    reward: StepReward | null,
+    db: Prisma.TransactionClient = this.prisma,
+  ): Promise<PathResult> {
+    const cleared = step.completedAt !== null;
     return {
-      pathId: saved.pathId,
-      stepId: saved.id,
+      pathId: step.pathId,
+      stepId: step.id,
       stars,
       cleared,
-      nextStepId: cleared ? await this.findNextStepId(saved, db) : null,
+      nextStepId: cleared ? await this.findNextStepId(db, step) : null,
       reward,
     };
   }
 
-  async findNextStepId(
+  private async findNextStepId(
+    db: Prisma.TransactionClient,
     step: PathStep,
-    db: Prisma.TransactionClient = this.prisma,
   ): Promise<string | null> {
     const next = await db.pathStep.findUnique({
       where: { pathId_position: { pathId: step.pathId, position: step.position + 1 } },

@@ -22,6 +22,8 @@ export type StepWithOwner = PathStep & { path: { ownerId: string } };
 export interface PlannedStep {
   position: number;
   goal: string;
+  /** The lane of the step, so steps written at the same time do not repeat each other. */
+  focus: string;
   difficulty: Difficulty;
   questionCount: number;
 }
