@@ -1,5 +1,5 @@
 import { IsInt, Max, Min } from 'class-validator';
-import { OPTIONS_PER_QUESTION } from '../../ai/ai.constants';
+import { OPTIONS_PER_QUESTION } from '../../../common/quiz-shape.constants';
 import { MatchIdDto } from './match-id.dto';
 
 export class AnswerDto extends MatchIdDto {

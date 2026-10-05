@@ -20,9 +20,9 @@ export function chargesAfterRoundWin(charges: number): number {
   return Math.min(PARTY_MAX_CHARGES, charges + 1);
 }
 
-/** A wrong party answer costs 25 points, but the score never drops below 0. */
-export function wrongAnswerPenalty(score: number): number {
-  return Math.max(0, score - PARTY_WRONG_PENALTY) - score;
+/** A wrong party answer costs points, but the score never drops below 0. */
+export function scoreAfterWrongAnswer(score: number): number {
+  return Math.max(0, score - PARTY_WRONG_PENALTY);
 }
 
 /** Why a sabotage is not allowed right now, or null when it is. */

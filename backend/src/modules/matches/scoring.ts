@@ -24,11 +24,13 @@ export function answerPoints(correct: boolean, remainingMs: number, timeLimitMs:
 
 /** More correct answers wins, then the higher score. A full tie is a draw with no winner. */
 export function duelWinnerIds([first, second]: PlayerScore[]): string[] {
-  const difference = first.correctCount - second.correctCount || first.score - second.score;
-  if (difference === 0) {
-    return [];
+  if (first.correctCount !== second.correctCount) {
+    return [first.correctCount > second.correctCount ? first.userId : second.userId];
   }
-  return [difference > 0 ? first.userId : second.userId];
+  if (first.score !== second.score) {
+    return [first.score > second.score ? first.userId : second.userId];
+  }
+  return [];
 }
 
 export function teamWon(players: PlayerScore[], questionCount: number): boolean {

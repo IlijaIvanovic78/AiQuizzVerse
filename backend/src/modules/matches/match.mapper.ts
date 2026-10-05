@@ -1,6 +1,5 @@
 import { MatchMode, Prisma, Question } from '@prisma/client';
 import { PathResult } from '../learning-paths/learning-paths.types';
-import { ReviewAnswer } from '../review/review.types';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
 import {
   LivePlayerStats,
@@ -54,16 +53,14 @@ export const SESSION_SETUP_INCLUDE = {
 } satisfies Prisma.MatchInclude;
 
 export type MatchWithPlayers = Prisma.MatchGetPayload<{ include: typeof MATCH_VIEW_INCLUDE }>;
-export type HistoryRow = Prisma.MatchPlayerGetPayload<{ include: typeof HISTORY_INCLUDE }>;
+type HistoryRow = Prisma.MatchPlayerGetPayload<{ include: typeof HISTORY_INCLUDE }>;
 export type ResultMatch = Prisma.MatchGetPayload<{ include: typeof MATCH_RESULT_INCLUDE }>;
 export type ResultMatchPlayer = ResultMatch['players'][number];
 type PlayerWithUser = MatchWithPlayers['players'][number];
 type SessionSetupRow = Prisma.MatchGetPayload<{ include: typeof SESSION_SETUP_INCLUDE }>;
 
-export interface ResultExtras {
-  path: PathResult | null;
-  coinCapReached: boolean;
-}
+/** REST responses and other views built outside the live room report nobody as connected. */
+export const NOBODY_CONNECTED: string[] = [];
 
 /** While a match runs, its scores and sabotage charges come from the live session. */
 export function toMatchView(
@@ -113,7 +110,7 @@ export function toHistoryEntry(row: HistoryRow): MatchHistoryEntry {
 export function toMatchResult(
   match: ResultMatch,
   viewer: ResultMatchPlayer,
-  extras: ResultExtras,
+  path: PathResult | null,
 ): MatchResult {
   return {
     matchId: match.id,
@@ -125,9 +122,9 @@ export function toMatchResult(
     questionCount: match.quiz.questions.length,
     players: byScore(match.players).map(toResultPlayer),
     questions: toResultQuestions(match.quiz.questions, readAnswers(viewer.answers)),
-    path: extras.path,
+    path,
     leveledUp: viewer.leveledUp,
-    coinCapReached: extras.coinCapReached,
+    coinCapReached: viewer.coinCapReached,
   };
 }
 
@@ -174,25 +171,6 @@ export function toSessionSetup(match: SessionSetupRow): SessionSetup {
     },
     questions: match.quiz.questions,
   };
-}
-
-// Review quizzes hold copies, so mistakes are recorded on the original question's card.
-// In a party the first correct answer closes the round, so a question the player never
-// got to answer is not a mistake.
-export function toReviewAnswers(
-  mode: MatchMode,
-  answers: PlayerAnswerRecord[],
-  questions: Question[],
-): ReviewAnswer[] {
-  const reviewed =
-    mode === 'PARTY' ? answers.filter((answer) => answer.optionIndex !== null) : answers;
-  return reviewed.map((answer) => {
-    const question = questions.find((candidate) => candidate.id === answer.questionId);
-    return {
-      questionId: question?.sourceQuestionId ?? answer.questionId,
-      correct: answer.correct,
-    };
-  });
 }
 
 function toMatchPlayerView(

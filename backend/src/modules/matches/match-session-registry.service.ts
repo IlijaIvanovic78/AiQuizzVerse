@@ -19,12 +19,16 @@ export class MatchSessionRegistry implements OnModuleDestroy {
     return this.sessions.get(matchId);
   }
 
-  // The database claim decides who starts the match; has() and set() run
-  // without an await between them.
+  // The database claim decides who starts the match. It comes before loading the
+  // players, because join and removeGuest only change a WAITING match, so the list
+  // cannot change after the claim. has() and set() run without an await between them.
   async start(matchId: string, server: GameServer, connectedUserIds: string[]): Promise<void> {
-    const { match, questions } = await this.play.loadSessionSetup(matchId);
     const claimed = await this.play.claimStart(matchId);
-    if (!claimed || this.sessions.has(matchId)) {
+    if (!claimed) {
+      return;
+    }
+    const { match, questions } = await this.play.loadSessionSetup(matchId);
+    if (this.sessions.has(matchId)) {
       return;
     }
     const session = new MatchSession(this.sessionDeps(server), match, questions);

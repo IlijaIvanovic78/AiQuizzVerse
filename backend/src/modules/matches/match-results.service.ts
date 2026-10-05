@@ -4,31 +4,37 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { MatchMode, Prisma, Question } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LearningPathsService } from '../learning-paths/learning-paths.service';
 import { PathResult, StepReward } from '../learning-paths/learning-paths.types';
-import { accuracyPercent, matchReward, starsForAccuracy } from '../progression/progression.rules';
+import { accuracyPercent, starsForAccuracy } from '../progression/progression.rules';
 import { ProgressionService } from '../progression/progression.service';
 import { PlayerReward } from '../progression/progression.types';
 import { ReviewService } from '../review/review.service';
+import { ReviewAnswer } from '../review/review.types';
 import {
   MATCH_RESULT_INCLUDE,
   ResultMatch,
   ResultMatchPlayer,
   toMatchResult,
-  toReviewAnswers,
 } from './match.mapper';
 import {
   FINISH_TRANSACTION_TIMEOUT_MS,
   MATCH_NOT_FOUND_MESSAGE,
   NOT_IN_MATCH_MESSAGE,
 } from './matches.constants';
-import { FinishedPlayer, MatchResult, MatchSummary, PlayerSummary } from './matches.types';
+import {
+  FinishedPlayer,
+  MatchResult,
+  MatchSummary,
+  PlayerAnswerRecord,
+  PlayerSummary,
+} from './matches.types';
 import { playerOutcome } from './scoring';
 
 interface SavedMatch {
-  rewards: Map<string, PlayerReward>;
+  rewardedUserIds: string[];
   path: PathResult | null;
 }
 
@@ -65,10 +71,7 @@ export class MatchResultsService {
     if (match.status !== 'FINISHED') {
       throw new ConflictException('This match has no results yet.');
     }
-    return toMatchResult(match, viewer, {
-      path: await this.findPathResult(match, viewer),
-      coinCapReached: this.coinCapWasReached(match, viewer),
-    });
+    return toMatchResult(match, viewer, await this.findPathResult(match, viewer));
   }
 
   private async saveInTransaction(
@@ -83,24 +86,25 @@ export class MatchResultsService {
       return null;
     }
 
-    const rewards = new Map<string, PlayerReward>();
+    const rewardedUserIds: string[] = [];
     for (const player of summary.players) {
       const reward = player.rewarded ? await this.rewardPlayer(tx, summary, player) : null;
       await this.savePlayer(tx, summary.match.id, player, reward);
       if (reward) {
-        rewards.set(player.userId, reward);
+        rewardedUserIds.push(player.userId);
+        await this.updateMistakesNotebook(tx, summary, player);
       }
     }
-    return { rewards, path: await this.recordPathStep(tx, summary) };
+    return { rewardedUserIds, path: await this.recordPathStep(tx, summary) };
   }
 
-  private async rewardPlayer(
+  private rewardPlayer(
     tx: Prisma.TransactionClient,
     summary: MatchSummary,
     player: PlayerSummary,
   ): Promise<PlayerReward> {
     const { mode } = summary.match;
-    const reward = await this.progression.rewardMatchPlayer(
+    return this.progression.rewardMatchPlayer(
       player.userId,
       {
         mode,
@@ -111,12 +115,15 @@ export class MatchResultsService {
       },
       tx,
     );
-    await this.review.recordAnswers(
-      player.userId,
-      toReviewAnswers(mode, player.answers, summary.questions),
-      tx,
-    );
-    return reward;
+  }
+
+  private async updateMistakesNotebook(
+    tx: Prisma.TransactionClient,
+    summary: MatchSummary,
+    player: PlayerSummary,
+  ): Promise<void> {
+    const answers = toReviewAnswers(summary.match.mode, player.answers, summary.questions);
+    await this.review.recordAnswers(player.userId, answers, tx);
   }
 
   private async savePlayer(
@@ -134,6 +141,7 @@ export class MatchResultsService {
         answers: player.answers,
         xpEarned: reward?.xpEarned ?? 0,
         coinsEarned: reward?.coinsEarned ?? 0,
+        coinCapReached: reward?.coinCapReached ?? false,
         leveledUp: reward?.leveledUp ?? false,
       },
     });
@@ -146,7 +154,7 @@ export class MatchResultsService {
     if (summary.status !== 'FINISHED' || summary.match.quiz.kind !== 'PATH_STEP') {
       return null;
     }
-    const step = await this.learningPaths.findStepByQuiz(summary.match.quiz.id);
+    const step = await this.learningPaths.findStepByQuiz(summary.match.quiz.id, tx);
     const host = summary.players.find((player) => player.userId === summary.match.hostId);
     if (!step || !host) {
       return null;
@@ -177,18 +185,17 @@ export class MatchResultsService {
       include: MATCH_RESULT_INCLUDE,
     });
     const users = await this.prisma.user.findMany({
-      where: { id: { in: [...saved.rewards.keys()] } },
+      where: { id: { in: saved.rewardedUserIds } },
       select: { id: true, coins: true },
     });
 
     return users.flatMap((user) => {
       const player = match.players.find((candidate) => candidate.userId === user.id);
-      const reward = saved.rewards.get(user.id);
-      if (!player || !reward) {
+      if (!player) {
         return [];
       }
-      const extras = { path: saved.path, coinCapReached: reward.coinCapReached };
-      return [{ userId: user.id, coins: user.coins, result: toMatchResult(match, player, extras) }];
+      const result = toMatchResult(match, player, saved.path);
+      return [{ userId: user.id, coins: user.coins, result }];
     });
   }
 
@@ -202,27 +209,32 @@ export class MatchResultsService {
     if (!step) {
       return null;
     }
-    const cleared = step.completedAt !== null;
-    return {
-      pathId: step.pathId,
-      stepId: step.id,
-      stars: starsForAccuracy(accuracyPercent(viewer.correctCount, match.quiz.questions.length)),
-      cleared,
-      nextStepId: cleared ? await this.learningPaths.findNextStepId(step) : null,
-      reward: match.stepReward as StepReward | null,
-    };
+    const stars = starsForAccuracy(
+      accuracyPercent(viewer.correctCount, match.quiz.questions.length),
+    );
+    return this.learningPaths.describeStepResult(
+      step,
+      stars,
+      match.stepReward as StepReward | null,
+    );
   }
+}
 
-  // The daily cap is the only thing that lowers match coins, so earning less
-  // than the match was worth means the cap was hit.
-  private coinCapWasReached(match: ResultMatch, viewer: ResultMatchPlayer): boolean {
-    const fullReward = matchReward({
-      mode: match.mode,
-      difficulty: match.quiz.difficulty,
-      correctCount: viewer.correctCount,
-      outcome: playerOutcome(match.mode, viewer, match.players),
-      abandoned: false,
-    });
-    return viewer.coinsEarned < fullReward.coins;
-  }
+// Review quizzes hold copies, so mistakes are recorded on the original question's card.
+// In a party the first correct answer closes the round, so a question the player never
+// got to answer is not a mistake.
+function toReviewAnswers(
+  mode: MatchMode,
+  answers: PlayerAnswerRecord[],
+  questions: Question[],
+): ReviewAnswer[] {
+  const reviewed =
+    mode === 'PARTY' ? answers.filter((answer) => answer.optionIndex !== null) : answers;
+  return reviewed.map((answer) => {
+    const question = questions.find((candidate) => candidate.id === answer.questionId);
+    return {
+      questionId: question?.sourceQuestionId ?? answer.questionId,
+      correct: answer.correct,
+    };
+  });
 }

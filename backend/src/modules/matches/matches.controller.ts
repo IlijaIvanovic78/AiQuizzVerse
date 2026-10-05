@@ -10,7 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { CurrentUserId } from '../auth/decorators/current-user.decorator';
+import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { InviteFriendDto } from './dto/invite-friend.dto';

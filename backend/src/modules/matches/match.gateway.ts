@@ -10,6 +10,7 @@ import {
   WebSocketServer,
   WsException,
 } from '@nestjs/websockets';
+import { errorStack } from '../../common/utils/errors';
 import { DEFAULT_FRONTEND_URL, userRoom } from '../realtime/realtime.constants';
 import { WsAuthService } from '../realtime/ws-auth.service';
 import { AnswerDto } from './dto/answer.dto';
@@ -17,7 +18,7 @@ import { MatchIdDto } from './dto/match-id.dto';
 import { NextQuestionDto } from './dto/next-question.dto';
 import { SabotageDto } from './dto/sabotage.dto';
 import { UseBoostDto } from './dto/use-boost.dto';
-import { MatchWithPlayers, toMatchView } from './match.mapper';
+import { MatchWithPlayers, NOBODY_CONNECTED, toMatchView } from './match.mapper';
 import { MatchPlayService } from './match-play.service';
 import { MatchResultsService } from './match-results.service';
 import { MatchSession } from './match-session';
@@ -36,7 +37,7 @@ import { WsExceptionFilter } from './ws-exception.filter';
 @UseFilters(WsExceptionFilter)
 @WebSocketGateway({
   namespace: GAME_NAMESPACE,
-  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL, credentials: true },
+  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL },
 })
 export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -53,12 +54,7 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   ) {}
 
   afterInit(server: GameServer): void {
-    server.use((socket, next) => {
-      this.wsAuth.authenticate(socket).then(
-        () => next(),
-        () => next(new Error('unauthorized')),
-      );
-    });
+    server.use(this.wsAuth.middleware);
   }
 
   async handleConnection(socket: GameSocket): Promise<void> {
@@ -73,10 +69,7 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     try {
       await this.handlePlayerGone(matchId, userId);
     } catch (error) {
-      this.logger.error(
-        `Could not handle a disconnect from match ${matchId}`,
-        (error as Error).stack,
-      );
+      this.logger.error(`Could not handle a disconnect from match ${matchId}`, errorStack(error));
     }
   }
 
@@ -93,7 +86,7 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     }
     // The view tells a client that reconnects after a restart that the match is over.
     if (match.status === 'ABANDONED') {
-      socket.emit('match:lobby', toMatchView(match, []));
+      socket.emit('match:lobby', toMatchView(match, NOBODY_CONNECTED));
       throw new WsException('This match has ended.');
     }
 

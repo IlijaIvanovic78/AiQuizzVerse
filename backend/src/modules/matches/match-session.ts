@@ -16,6 +16,7 @@ import {
   timer,
   toArray,
 } from 'rxjs';
+import { errorStack } from '../../common/utils/errors';
 import { userRoom } from '../realtime/realtime.constants';
 import { NotificationsService } from '../realtime/notifications.service';
 import { MatchPlayService } from './match-play.service';
@@ -63,8 +64,8 @@ import {
   chargesAfterRoundWin,
   SabotageAttempt,
   sabotageError,
+  scoreAfterWrongAnswer,
   startingCharges,
-  wrongAnswerPenalty,
 } from './party-rules';
 import { answerPoints, findWinnerIds } from './scoring';
 
@@ -355,7 +356,7 @@ export class MatchSession {
     const winner = answers.find((answer) => this.winsPartyRound(answer));
     const players = [...this.players.values()].map((player) => {
       const answer = answers.find((candidate) => candidate.userId === player.userId);
-      return this.scoreAnswer(player, answer);
+      return this.scoreAnswer(player, answer, index);
     });
     this.lastRound = {
       index,
@@ -367,13 +368,17 @@ export class MatchSession {
     this.waitForNextPresses(index);
   }
 
-  private scoreAnswer(player: SessionPlayer, answer: PlayerAnswer | undefined): ScoredAnswer {
-    const question = this.questions[this.index];
+  private scoreAnswer(
+    player: SessionPlayer,
+    answer: PlayerAnswer | undefined,
+    index: number,
+  ): ScoredAnswer {
+    const question = this.questions[index];
     const storedIndex = this.storedOption(answer);
     const correct = storedIndex === question.correctIndex;
     const lockedOut = this.match.mode === 'PARTY' && storedIndex !== null && !correct;
     const points = lockedOut
-      ? wrongAnswerPenalty(player.score)
+      ? scoreAfterWrongAnswer(player.score) - player.score
       : answerPoints(correct, answer?.remainingMs ?? 0, this.timeLimitMs());
 
     player.answers.push({ questionId: question.id, optionIndex: storedIndex, correct, points });
@@ -572,18 +577,17 @@ export class MatchSession {
       return;
     }
     this.phase = 'finished';
-    this.destroy$.next();
+    this.stop();
     try {
       const finishedPlayers = await this.deps.results.save(this.summarize(ending));
       finishedPlayers.forEach((player) => this.announceResult(player));
     } catch (error) {
-      this.logger.error(`Could not save match ${this.match.id}`, (error as Error).stack);
+      this.logger.error(`Could not save match ${this.match.id}`, errorStack(error));
       this.emitToRoom('match:error', {
         matchId: this.match.id,
         message: 'We could not save this match. Sorry!',
       });
     } finally {
-      this.stop();
       this.deps.onClosed(this.match.id);
     }
   }
@@ -686,7 +690,7 @@ export class MatchSession {
     try {
       await task();
     } catch (error) {
-      this.logger.error(`Match ${this.match.id} failed`, (error as Error).stack);
+      this.logger.error(`Match ${this.match.id} failed`, errorStack(error));
     }
   }
 

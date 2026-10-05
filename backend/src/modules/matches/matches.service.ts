@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { MatchMode, Prisma, Quiz } from '@prisma/client';
 import { customAlphabet } from 'nanoid';
+import { UNIQUE_VIOLATION } from '../../prisma/prisma.constants';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LearningPathsService } from '../learning-paths/learning-paths.service';
 import { FEATURED_QUIZ_IDS, QUIZ_NOT_FOUND_MESSAGE } from '../quizzes/quizzes.constants';
@@ -19,6 +20,7 @@ import {
   HISTORY_INCLUDE,
   MATCH_VIEW_INCLUDE,
   MatchWithPlayers,
+  NOBODY_CONNECTED,
   toHistoryEntry,
   toMatchView,
 } from './match.mapper';
@@ -35,9 +37,6 @@ import { MatchHistoryEntry, MatchView } from './matches.types';
 
 const newInviteCode = customAlphabet(INVITE_CODE_ALPHABET, INVITE_CODE_LENGTH);
 
-/** REST responses report nobody as connected; the live lobby comes from the match:lobby event. */
-const NOBODY_CONNECTED: string[] = [];
-
 @Injectable()
 export class MatchesService implements OnModuleInit {
   private readonly logger = new Logger(MatchesService.name);
@@ -50,10 +49,9 @@ export class MatchesService implements OnModuleInit {
 
   /** Sessions live in memory, so a match that was open before a restart cannot go on. */
   async onModuleInit(): Promise<void> {
-    const bootedAt = new Date();
     const { count } = await this.prisma.match.updateMany({
-      where: { status: { in: ['WAITING', 'IN_PROGRESS'] }, createdAt: { lt: bootedAt } },
-      data: { status: 'ABANDONED', endedAt: bootedAt },
+      where: { status: { in: ['WAITING', 'IN_PROGRESS'] } },
+      data: { status: 'ABANDONED', endedAt: new Date() },
     });
     if (count > 0) {
       this.logger.log(`Marked ${count} interrupted matches as abandoned`);
@@ -253,5 +251,5 @@ export class MatchesService implements OnModuleInit {
 }
 
 function isUniqueViolation(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_VIOLATION;
 }

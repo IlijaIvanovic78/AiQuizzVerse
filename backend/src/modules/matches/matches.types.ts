@@ -22,7 +22,10 @@ export type MatchBoostType = Exclude<BoostType, 'STREAK_FREEZE'>;
 
 export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE';
 
-/** Stored in MatchPlayer.answers; optionIndex is in the stored order, not the shuffled one. */
+/**
+ * Stored in MatchPlayer.answers; optionIndex is in the stored order, not the shuffled one.
+ * A type, not an interface, so Prisma accepts it as a Json value.
+ */
 export type PlayerAnswerRecord = {
   questionId: string;
   optionIndex: number | null;

@@ -1,5 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { errorStack } from '../../common/utils/errors';
 import { GameSocket } from './matches.types';
 
 const UNEXPECTED_ERROR_MESSAGE = 'Something went wrong. Please try again.';
@@ -27,7 +28,7 @@ export class WsExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       return httpExceptionMessage(exception);
     }
-    this.logger.error('Unexpected game socket error', (exception as Error).stack);
+    this.logger.error('Unexpected game socket error', errorStack(exception));
     return UNEXPECTED_ERROR_MESSAGE;
   }
 }

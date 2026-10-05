@@ -6,7 +6,8 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Purchase } from '@prisma/client';
+import { Prisma, Purchase } from '@prisma/client';
+import { errorStack } from '../../common/utils/errors';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../realtime/notifications.service';
 import { COIN_PACKAGES, findCoinPackage, totalCoins } from './coin-packages';
@@ -53,18 +54,7 @@ export class PaymentsService {
       throw new NotFoundException('We could not find that coin pack.');
     }
     await this.closeOpenCheckouts(userId);
-    await this.assertWithinMonthlyLimit(userId, pack.priceCents);
-
-    const purchase = await this.prisma.purchase.create({
-      data: {
-        userId,
-        packageId,
-        coins: totalCoins(pack),
-        amountCents: pack.priceCents,
-        currency: pack.currency,
-        provider: this.provider.name,
-      },
-    });
+    const purchase = await this.createPurchaseWithinLimit(userId, pack);
     const link = await this.openCheckout(purchase, pack);
     if (link.providerRef) {
       await this.prisma.purchase.update({
@@ -101,7 +91,7 @@ export class PaymentsService {
 
   /**
    * Only one checkout stays open: older ones are cancelled (or paid out if they were paid),
-   * so several unpaid checkouts cannot be paid together to get past the monthly limit.
+   * so an abandoned checkout does not keep counting against the monthly limit.
    */
   private async closeOpenCheckouts(userId: string): Promise<void> {
     const openPurchases = await this.prisma.purchase.findMany({
@@ -147,10 +137,41 @@ export class PaymentsService {
     }
   }
 
-  private async assertWithinMonthlyLimit(userId: string, priceCents: number): Promise<void> {
-    const { _sum } = await this.prisma.purchase.aggregate({
+  // Locks the user row, so two quick checkouts (a double click, two tabs) cannot both
+  // pass the limit check before either purchase is saved.
+  private createPurchaseWithinLimit(userId: string, pack: CoinPackage): Promise<Purchase> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+      await this.assertWithinMonthlyLimit(tx, userId, pack.priceCents);
+      return tx.purchase.create({
+        data: {
+          userId,
+          packageId: pack.id,
+          coins: totalCoins(pack),
+          amountCents: pack.priceCents,
+          currency: pack.currency,
+          provider: this.provider.name,
+        },
+      });
+    });
+  }
+
+  /** Open checkouts count too, because each of them can still be paid. */
+  private async assertWithinMonthlyLimit(
+    tx: Prisma.TransactionClient,
+    userId: string,
+    priceCents: number,
+  ): Promise<void> {
+    const windowStart = spendingWindowStart(new Date());
+    const { _sum } = await tx.purchase.aggregate({
       _sum: { amountCents: true },
-      where: { userId, status: 'PAID', paidAt: { gte: spendingWindowStart(new Date()) } },
+      where: {
+        userId,
+        OR: [
+          { status: 'PAID', paidAt: { gte: windowStart } },
+          { status: 'PENDING', createdAt: { gte: windowStart } },
+        ],
+      },
     });
     if (exceedsMonthlyLimit(_sum.amountCents ?? 0, priceCents)) {
       throw new BadRequestException(MONTHLY_LIMIT_MESSAGE);
@@ -173,7 +194,7 @@ export class PaymentsService {
     try {
       return await request();
     } catch (error) {
-      this.logger.error(`The ${this.provider.name} payment request failed`, (error as Error).stack);
+      this.logger.error(`The ${this.provider.name} payment request failed`, errorStack(error));
       throw new ServiceUnavailableException(PAYMENTS_UNAVAILABLE_MESSAGE);
     }
   }
