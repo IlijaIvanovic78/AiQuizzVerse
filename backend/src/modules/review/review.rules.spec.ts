@@ -1,4 +1,4 @@
-import { isDue, isMastered, nextReviewDate } from './review.rules';
+import { isDue, isMastered, nextReviewDate, practiceTheme } from './review.rules';
 
 describe('review rules', () => {
   const today = new Date('2026-10-05T00:00:00Z');
@@ -21,5 +21,11 @@ describe('review rules', () => {
     expect(isDue(new Date('2026-10-04T00:00:00Z'), today)).toBe(true);
     expect(isDue(today, today)).toBe(true);
     expect(isDue(new Date('2026-10-06T00:00:00Z'), today)).toBe(false);
+  });
+
+  it('keeps the theme of a practice quiz only when all questions share it', () => {
+    expect(practiceTheme(['SPACE', 'SPACE'])).toBe('SPACE');
+    expect(practiceTheme(['SPACE', 'NATURE'])).toBe('GENERAL');
+    expect(practiceTheme([])).toBe('GENERAL');
   });
 });
