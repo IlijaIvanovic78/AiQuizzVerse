@@ -43,7 +43,7 @@ export const authFeature = createFeature({
     ),
     on(
       AuthActions.twoFactorCancelled,
-      (state): AuthState => ({ ...state, twoFactorToken: null, error: null }),
+      (state): AuthState => ({ ...state, twoFactorToken: null, pending: false, error: null }),
     ),
     on(
       AuthActions.signedIn,
@@ -62,14 +62,18 @@ export const authFeature = createFeature({
       (): AuthState => signedOutState,
     ),
     on(
-      AuthActions.tokensRefreshed,
-      AuthActions.userRefreshed,
       AuthActions.usernameChanged,
       AuthActions.twoFactorChanged,
+      (state, { user }): AuthState => ({ ...state, user, pending: false }),
+    ),
+    // A token refresh can happen in the middle of a settings save, so these only replace the user.
+    on(
+      AuthActions.tokensRefreshed,
+      AuthActions.userRefreshed,
       ShopActions.itemEquipped,
       ShopActions.petUnequipped,
       ShopActions.starterClaimed,
-      (state, { user }): AuthState => ({ ...state, user, pending: false }),
+      (state, { user }): AuthState => ({ ...state, user }),
     ),
     on(
       AuthActions.coinsUpdated,

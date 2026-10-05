@@ -1,3 +1,5 @@
+import { itemIconUrl } from '../shared/icons';
+
 interface NavLink {
   path: string;
   label: string;
@@ -14,24 +16,20 @@ export const MAIN_LINKS: NavLink[] = [
   { path: '/leaderboard', label: 'Leaderboard' },
 ];
 
-// Phones show Home, Library, Paths, Review and Profile in the bottom tab bar,
-// so the account menu offers the remaining pages there.
-export const PHONE_MENU_LINKS: NavLink[] = [
-  { path: '/create', label: 'Create' },
-  { path: '/friends', label: 'Friends' },
-  { path: '/shop', label: 'Shop' },
-  { path: '/leaderboard', label: 'Leaderboard' },
-];
-
 interface PhoneTab extends NavLink {
   // Tabs without an icon show the player's own hero.
   icon: string | null;
 }
 
 export const PHONE_TABS: PhoneTab[] = [
-  { path: '/home', label: 'Home', icon: '/assets/images/icons/shield.webp' },
-  { path: '/library', label: 'Library', icon: '/assets/images/icons/chest.webp' },
-  { path: '/paths', label: 'Paths', icon: '/assets/images/icons/sword.webp' },
-  { path: '/review', label: 'Review', icon: '/assets/images/icons/potion.webp' },
+  { path: '/home', label: 'Home', icon: itemIconUrl('shield') },
+  { path: '/library', label: 'Library', icon: itemIconUrl('chest') },
+  { path: '/paths', label: 'Paths', icon: itemIconUrl('sword') },
+  { path: '/review', label: 'Review', icon: itemIconUrl('potion') },
   { path: '/profile', label: 'Profile', icon: null },
 ];
+
+// On phones the account menu offers the pages that have no tab in the bottom bar.
+export const PHONE_MENU_LINKS: NavLink[] = MAIN_LINKS.filter(
+  (link) => !PHONE_TABS.some((tab) => tab.path === link.path),
+);

@@ -3,6 +3,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 const FALLBACK_MESSAGE = 'Something went wrong. Please try again.';
 const OFFLINE_MESSAGE = "Can't reach the server. Check your connection.";
 
+// The HTTP status lets the create page explain a 409, 429 or 503 in its own words.
+export interface CreationError {
+  message: string;
+  status: number;
+}
+
 export function readErrorMessage(error: unknown): string {
   if (!(error instanceof HttpErrorResponse)) {
     return FALLBACK_MESSAGE;

@@ -1,4 +1,4 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 import { MatchResult, MatchView } from '../../core/models/match.model';
 import {
   BoostUsedEvent,
@@ -11,7 +11,7 @@ export const MatchSocketActions = createActionGroup({
   source: 'Match Socket',
   events: {
     'Lobby Updated': props<{ match: MatchView }>(),
-    'Countdown Started': props<{ countdownSeconds: number }>(),
+    'Countdown Started': emptyProps(),
     'Question Received': props<{ question: MatchQuestionEvent; deadlineAt: number }>(),
     'Player Answered': props<{ userId: string }>(),
     'Deadline Changed': props<{ deadlineAt: number }>(),

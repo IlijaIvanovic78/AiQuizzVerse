@@ -1,16 +1,11 @@
 import { EntityState, createEntityAdapter } from '@ngrx/entity';
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
+import { CreationError } from '../../core/api/api-error';
 import { QuestionView, QuizDetail, QuizSummary } from '../../core/models/quiz.model';
 import { QuizProgress } from '../../core/models/realtime-events.model';
 import { PathsActions } from '../paths/paths.actions';
 import { toQuizSummary } from './quiz.mapper';
 import { QuizzesActions } from './quizzes.actions';
-
-// The HTTP status lets the create page explain a 409, 429 or 503 in its own words.
-export interface CreationError {
-  message: string;
-  status: number;
-}
 
 export interface QuizzesState extends EntityState<QuizSummary> {
   loaded: boolean;
@@ -28,7 +23,7 @@ export interface QuizzesState extends EntityState<QuizSummary> {
 const quizzesAdapter = createEntityAdapter<QuizSummary>({
   sortComparer: (a, b) => b.createdAt.localeCompare(a.createdAt),
 });
-const { selectAll, selectEntities } = quizzesAdapter.getSelectors();
+const { selectAll } = quizzesAdapter.getSelectors();
 
 export const initialQuizzesState: QuizzesState = quizzesAdapter.getInitialState({
   loaded: false,
@@ -152,18 +147,11 @@ export const quizzesFeature = createFeature({
     ),
     on(
       QuizzesActions.failed,
-      (state, { error }): QuizzesState => ({
-        ...state,
-        loading: false,
-        saving: false,
-        creating: false,
-        error,
-      }),
+      (state, { error }): QuizzesState => ({ ...state, loading: false, saving: false, error }),
     ),
   ),
   extraSelectors: ({ selectQuizzesState }) => ({
     selectAllQuizzes: createSelector(selectQuizzesState, selectAll),
-    selectQuizEntities: createSelector(selectQuizzesState, selectEntities),
   }),
 });
 

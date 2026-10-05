@@ -14,12 +14,4 @@ export class DocumentsApiService {
     formData.append('file', file);
     return this.http.post<DocumentSummary>(this.baseUrl, formData);
   }
-
-  list(): Observable<DocumentSummary[]> {
-    return this.http.get<DocumentSummary[]>(this.baseUrl);
-  }
-
-  delete(documentId: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${documentId}`);
-  }
 }

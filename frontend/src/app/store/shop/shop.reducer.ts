@@ -20,7 +20,7 @@ interface ShopState extends EntityState<ShopItem> {
 const shopItemsAdapter = createEntityAdapter<ShopItem>({
   sortComparer: (a, b) => a.price - b.price,
 });
-const { selectAll, selectEntities } = shopItemsAdapter.getSelectors();
+const { selectAll } = shopItemsAdapter.getSelectors();
 
 const initialState: ShopState = shopItemsAdapter.getInitialState({
   itemsLoaded: false,
@@ -112,7 +112,6 @@ export const shopFeature = createFeature({
     const selectAllShopItems = createSelector(selectShopState, selectAll);
     return {
       selectAllShopItems,
-      selectShopItemEntities: createSelector(selectShopState, selectEntities),
       selectHeroItems: createSelector(selectAllShopItems, (items) =>
         items.filter((item) => item.type === 'AVATAR'),
       ),

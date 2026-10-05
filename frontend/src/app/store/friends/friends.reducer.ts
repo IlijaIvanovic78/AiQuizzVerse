@@ -24,7 +24,7 @@ const friendsAdapter = createEntityAdapter<Friend>({
   selectId: (friend) => friend.friendshipId,
   sortComparer: (a, b) => a.user.username.localeCompare(b.user.username),
 });
-const { selectAll, selectEntities } = friendsAdapter.getSelectors();
+const { selectAll } = friendsAdapter.getSelectors();
 
 const initialFriendsState: FriendsState = friendsAdapter.getInitialState({
   loaded: false,
@@ -114,15 +114,13 @@ export const friendsFeature = createFeature({
       }),
     ),
   ),
-  extraSelectors: ({ selectFriendsState, selectIncoming }) => {
+  extraSelectors: ({ selectFriendsState }) => {
     const selectAllFriends = createSelector(selectFriendsState, selectAll);
     return {
       selectAllFriends,
-      selectFriendEntities: createSelector(selectFriendsState, selectEntities),
       selectOnlineFriends: createSelector(selectAllFriends, (friends) =>
         friends.filter((friend) => friend.isOnline),
       ),
-      selectIncomingCount: createSelector(selectIncoming, (incoming) => incoming.length),
     };
   },
 });

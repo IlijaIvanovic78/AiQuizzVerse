@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Action } from '@ngrx/store';
 import { catchError, exhaustMap, map, of, switchMap, tap } from 'rxjs';
 import { readErrorMessage } from '../../core/api/api-error';
 import { ShopApiService } from '../../core/api/shop-api.service';
@@ -140,7 +141,7 @@ export class ShopEffects {
     { dispatch: false },
   );
 
-  private failed(error: unknown) {
+  private failed(error: unknown): Action {
     return ShopActions.failed({ error: readErrorMessage(error) });
   }
 }

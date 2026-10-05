@@ -17,7 +17,6 @@ export const AuthActions = createActionGroup({
     'Session Expired': emptyProps(),
     'Tokens Refreshed': props<{ user: CurrentUser }>(),
     Logout: emptyProps(),
-    'Refresh User': emptyProps(),
     'User Refreshed': props<{ user: CurrentUser }>(),
     'Coins Updated': props<{ coins: number }>(),
     'Change Username': props<{ username: string }>(),

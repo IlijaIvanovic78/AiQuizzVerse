@@ -117,9 +117,9 @@ export class AuthEffects {
   );
 
   // Rewards change XP, coins and streak on the server, so the hero is reloaded after a match.
-  readonly refreshUser$ = createEffect(() =>
+  readonly reloadUserAfterMatch$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AuthActions.refreshUser, MatchSocketActions.finished),
+      ofType(MatchSocketActions.finished),
       switchMap(() =>
         this.authApi.me().pipe(
           map((user) => AuthActions.userRefreshed({ user })),
@@ -223,11 +223,11 @@ export class AuthEffects {
     this.matchSocket.disconnect();
   }
 
-  private signInFailed(error: unknown) {
+  private signInFailed(error: unknown): Action {
     return AuthActions.signInFailed({ error: readErrorMessage(error) });
   }
 
-  private settingsFailed(error: unknown) {
+  private settingsFailed(error: unknown): Action {
     return AuthActions.settingsFailed({ error: readErrorMessage(error) });
   }
 }

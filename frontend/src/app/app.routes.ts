@@ -1,8 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { guestGuard } from './core/auth/guest.guard';
-import { heroGuard } from './core/auth/hero.guard';
-import { noHeroGuard } from './core/auth/no-hero.guard';
+import { heroGuard, noHeroGuard } from './core/auth/hero.guard';
 import { leaveMatchGuard } from './features/play/leave-match.guard';
 
 export const routes: Routes = [

@@ -1,6 +1,5 @@
-import { MatchView } from '../../core/models/match.model';
+import { MatchResult, MatchView } from '../../core/models/match.model';
 import {
-  DuelInvite,
   MatchQuestionEvent,
   RoundResultEvent,
   SabotagedEvent,
@@ -24,6 +23,39 @@ const firstQuestion: MatchQuestionEvent = {
   options: ['Mars', 'Jupiter', 'Venus', 'Earth'],
   timeLimitSeconds: 45,
   remainingMs: 45_000,
+};
+
+const soloMatch: MatchView = {
+  id: MATCH_ID,
+  mode: 'SOLO',
+  status: 'IN_PROGRESS',
+  inviteCode: null,
+  hostId: 'hero',
+  quiz: {
+    id: 'quiz-1',
+    title: 'The Solar System',
+    theme: 'SPACE',
+    language: 'EN',
+    questionCount: 5,
+    timePerQuestion: 45,
+    kind: 'STANDARD',
+  },
+  players: [],
+};
+
+const soloResult: MatchResult = {
+  matchId: MATCH_ID,
+  mode: 'SOLO',
+  quizId: 'quiz-1',
+  quizTitle: 'The Solar System',
+  theme: 'SPACE',
+  kind: 'STANDARD',
+  questionCount: 5,
+  players: [],
+  questions: [],
+  path: null,
+  leveledUp: false,
+  coinCapReached: false,
 };
 
 function questionOpen(): MatchState {
@@ -108,20 +140,45 @@ describe('match reducer', () => {
     expect(state.boostsUsedThisRound).toEqual(['HINT']);
   });
 
-  it('keeps a pending duel invite when the player leaves the match page', () => {
-    const invite: DuelInvite = {
-      matchId: 'match-2',
-      inviteCode: 'ABC234',
-      mode: 'DUEL',
-      quizTitle: 'Animals of the World',
-      from: { id: 'friend', username: 'demo_friend', avatarKey: null, petKey: null, level: 4 },
-    };
-    const withInvite = reducer(questionOpen(), MatchActions.inviteReceived({ invite }));
+  it('keeps the error that stopped the match from loading as the interrupted reason', () => {
+    const entered = reducer(initialMatchState, MatchActions.entered({ matchId: MATCH_ID }));
 
-    const state = reducer(withInvite, MatchActions.left());
+    const state = reducer(entered, MatchActions.failed({ error: 'Match not found.' }));
 
-    expect(state.phase).toBe('idle');
-    expect(state.invite).toEqual(invite);
+    expect(state.phase).toBe('interrupted');
+    expect(state.error).toBe('Match not found.');
+  });
+
+  it('does not show an old toast error as the reason for a later interruption', () => {
+    const frozen = reducer(
+      questionOpen(),
+      MatchSocketActions.errorReceived({ error: 'You are frozen!' }),
+    );
+
+    const state = reducer(
+      frozen,
+      MatchSocketActions.lobbyUpdated({ match: { ...soloMatch, status: 'ABANDONED' } }),
+    );
+
+    expect(state.phase).toBe('interrupted');
+    expect(state.error).toBeNull();
+  });
+
+  it('ignores a result that belongs to another match', () => {
+    const state = reducer(
+      questionOpen(),
+      MatchActions.resultLoaded({ result: { ...soloResult, matchId: 'match-old' } }),
+    );
+
+    expect(state.phase).toBe('question');
+    expect(state.result).toBeNull();
+  });
+
+  it('shows the result of the open match', () => {
+    const state = reducer(questionOpen(), MatchSocketActions.finished({ result: soloResult }));
+
+    expect(state.phase).toBe('finished');
+    expect(state.result).toBe(soloResult);
   });
 });
 
@@ -134,20 +191,9 @@ describe('match reducer in a party', () => {
   }
 
   const party: MatchView = {
-    id: MATCH_ID,
+    ...soloMatch,
     mode: 'PARTY',
-    status: 'IN_PROGRESS',
     inviteCode: 'ABC234',
-    hostId: 'hero',
-    quiz: {
-      id: 'quiz-1',
-      title: 'The Solar System',
-      theme: 'SPACE',
-      language: 'EN',
-      questionCount: 5,
-      timePerQuestion: 45,
-      kind: 'STANDARD',
-    },
     players: [partyPlayer('hero'), partyPlayer('fox'), partyPlayer('owl', false)],
   };
 

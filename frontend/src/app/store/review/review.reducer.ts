@@ -7,7 +7,6 @@ interface ReviewState {
   total: number;
   cards: ReviewCardView[];
   loaded: boolean;
-  loading: boolean;
   practicing: boolean;
   error: string | null;
 }
@@ -17,7 +16,6 @@ const initialState: ReviewState = {
   total: 0,
   cards: [],
   loaded: false,
-  loading: false,
   practicing: false,
   error: null,
 };
@@ -26,7 +24,7 @@ export const reviewFeature = createFeature({
   name: 'review',
   reducer: createReducer(
     initialState,
-    on(ReviewActions.load, (state): ReviewState => ({ ...state, loading: true, error: null })),
+    on(ReviewActions.load, (state): ReviewState => ({ ...state, error: null })),
     on(
       ReviewActions.loaded,
       (state, { deck }): ReviewState => ({
@@ -35,14 +33,13 @@ export const reviewFeature = createFeature({
         total: deck.total,
         cards: deck.cards,
         loaded: true,
-        loading: false,
       }),
     ),
     on(ReviewActions.practice, (state): ReviewState => ({ ...state, practicing: true })),
     on(ReviewActions.practiceReady, (state): ReviewState => ({ ...state, practicing: false })),
     on(
       ReviewActions.failed,
-      (state, { error }): ReviewState => ({ ...state, loading: false, practicing: false, error }),
+      (state, { error }): ReviewState => ({ ...state, practicing: false, error }),
     ),
   ),
 });

@@ -11,7 +11,6 @@ interface LeaderboardState {
   entries: LeaderboardEntry[];
   me: LeaderboardMe | null;
   loaded: boolean;
-  loading: boolean;
   error: string | null;
 }
 
@@ -20,7 +19,6 @@ const initialState: LeaderboardState = {
   entries: [],
   me: null,
   loaded: false,
-  loading: false,
   error: null,
 };
 
@@ -36,20 +34,16 @@ export const leaderboardFeature = createFeature({
         entries: leaderboard.entries,
         me: leaderboard.me,
         loaded: true,
-        loading: false,
       }),
     ),
-    on(
-      LeaderboardActions.failed,
-      (state, { error }): LeaderboardState => ({ ...state, loading: false, error }),
-    ),
+    on(LeaderboardActions.failed, (state, { error }): LeaderboardState => ({ ...state, error })),
   ),
 });
 
 // Switching between friends and global must not show the other board's rows while loading.
 function startLoading(state: LeaderboardState, scope: LeaderboardScope): LeaderboardState {
   if (scope !== state.scope) {
-    return { ...initialState, scope, loading: true };
+    return { ...initialState, scope };
   }
-  return { ...state, loading: true, error: null };
+  return { ...state, error: null };
 }

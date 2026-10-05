@@ -1,6 +1,6 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
+import { CreationError } from '../../core/api/api-error';
 import { PathDetail, PathSummary } from '../../core/models/path.model';
-import { CreationError } from '../quizzes/quizzes.reducer';
 import { PathsActions } from './paths.actions';
 
 interface PathsState {
@@ -77,7 +77,7 @@ export const pathsFeature = createFeature({
     ),
     on(
       PathsActions.failed,
-      (state, { error }): PathsState => ({ ...state, loading: false, creating: false, error }),
+      (state, { error }): PathsState => ({ ...state, loading: false, error }),
     ),
   ),
 });

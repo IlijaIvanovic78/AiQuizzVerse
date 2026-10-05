@@ -19,7 +19,7 @@ function preloadImage(src: string): Promise<void> {
 // HttpClient auth interceptor.
 @Injectable({ providedIn: 'root' })
 export class SpriteManifestService {
-  readonly sprites$ = from(this.load()).pipe(shareReplay(1));
+  private readonly sprites$ = from(this.load()).pipe(shareReplay(1));
   readonly sprites = toSignal(this.sprites$, { initialValue: [] });
 
   getSprite(key: string | null): SpriteEntry | null {

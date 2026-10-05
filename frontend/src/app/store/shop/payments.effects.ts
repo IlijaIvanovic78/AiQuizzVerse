@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Action } from '@ngrx/store';
 import { catchError, exhaustMap, map, of, switchMap, tap } from 'rxjs';
 import { readErrorMessage } from '../../core/api/api-error';
 import { PaymentsApiService } from '../../core/api/payments-api.service';
@@ -114,7 +115,7 @@ export class PaymentsEffects {
     void this.router.navigateByUrl(session.checkoutUrl);
   }
 
-  private failed(error: unknown) {
+  private failed(error: unknown): Action {
     return PaymentsActions.failed({ error: readErrorMessage(error) });
   }
 }

@@ -16,6 +16,7 @@ import { AuthBootstrapService } from './core/auth/auth-bootstrap.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authFeature } from './store/auth/auth.reducer';
+import { duelInviteFeature } from './store/duel-invite/duel-invite.reducer';
 import { FriendsEffects } from './store/friends/friends.effects';
 import { friendsFeature } from './store/friends/friends.reducer';
 import { LeaderboardEffects } from './store/leaderboard/leaderboard.effects';
@@ -45,6 +46,7 @@ export const appConfig: ApplicationConfig = {
     provideState(authFeature),
     provideState(quizzesFeature),
     provideState(matchFeature),
+    provideState(duelInviteFeature),
     provideState(pathsFeature),
     provideState(reviewFeature),
     provideState(shopFeature),

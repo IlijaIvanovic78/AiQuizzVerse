@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Action, Store } from '@ngrx/store';
 import {
+  MonoTypeOperatorFunction,
   Observable,
   catchError,
   concatMap,
@@ -19,6 +20,7 @@ import {
 import { readErrorMessage } from '../../core/api/api-error';
 import { MatchesApiService } from '../../core/api/matches-api.service';
 import { MatchMode, MatchView } from '../../core/models/match.model';
+import { BoostUsedEvent } from '../../core/models/realtime-events.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { MatchSocketService } from '../../core/realtime/match-socket.service';
 import { authFeature } from '../auth/auth.reducer';
@@ -268,18 +270,42 @@ export class MatchEffects {
   );
 
   private matchEvents(matchId: string): Observable<Action> {
-    const socket = this.matchSocket;
+    return merge(
+      this.lifecycleEvents(matchId),
+      this.roundEvents(matchId),
+      this.boostAndPartyEvents(matchId),
+    );
+  }
 
+  private lifecycleEvents(matchId: string): Observable<Action> {
+    const socket = this.matchSocket;
     const lobby$ = socket.lobby$.pipe(
       filter((match) => match.id === matchId),
       map((match) => MatchSocketActions.lobbyUpdated({ match })),
     );
     const starting$ = socket.starting$.pipe(
-      filter((event) => event.matchId === matchId),
-      map(({ countdownSeconds }) => MatchSocketActions.countdownStarted({ countdownSeconds })),
+      forMatch(matchId),
+      map(() => MatchSocketActions.countdownStarted()),
     );
+    const finished$ = socket.finished$.pipe(
+      forMatch(matchId),
+      map((result) => MatchSocketActions.finished({ result })),
+    );
+    const playerLeft$ = socket.playerLeft$.pipe(
+      forMatch(matchId),
+      map(({ userId }) => MatchSocketActions.playerLeft({ userId })),
+    );
+    const error$ = socket.error$.pipe(
+      forMatch(matchId),
+      map(({ message }) => MatchSocketActions.errorReceived({ error: message })),
+    );
+    return merge(lobby$, starting$, finished$, playerLeft$, error$);
+  }
+
+  private roundEvents(matchId: string): Observable<Action> {
+    const socket = this.matchSocket;
     const question$ = socket.question$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map((question) =>
         MatchSocketActions.questionReceived({
           question,
@@ -288,75 +314,48 @@ export class MatchEffects {
       ),
     );
     const answered$ = socket.answered$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map(({ userId }) => MatchSocketActions.playerAnswered({ userId })),
     );
     const deadline$ = socket.deadline$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map(({ remainingMs }) =>
         MatchSocketActions.deadlineChanged({ deadlineAt: deadlineFrom(remainingMs) }),
       ),
     );
     const roundResult$ = socket.roundResult$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map((round) => MatchSocketActions.roundFinished({ round })),
     );
     const waitingNext$ = socket.waitingNext$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map(({ userIds }) => MatchSocketActions.waitingForNext({ userIds })),
     );
+    return merge(question$, answered$, deadline$, roundResult$, waitingNext$);
+  }
+
+  private boostAndPartyEvents(matchId: string): Observable<Action> {
+    const socket = this.matchSocket;
     const boostUsed$ = socket.boostUsed$.pipe(
-      filter((event) => event.matchId === matchId),
-      map((boost) =>
-        MatchSocketActions.boostUsed({
-          boost,
-          deadlineAt: boost.remainingMs === undefined ? null : deadlineFrom(boost.remainingMs),
-        }),
-      ),
+      forMatch(matchId),
+      map((boost) => MatchSocketActions.boostUsed({ boost, deadlineAt: boostDeadline(boost) })),
     );
     const lockedOut$ = socket.lockedOut$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map(({ index, userId }) => MatchSocketActions.playerLockedOut({ index, userId })),
     );
     const options$ = socket.options$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map(({ index, options }) => MatchSocketActions.optionsScrambled({ index, options })),
     );
     const sabotaged$ = socket.sabotaged$.pipe(
-      filter((event) => event.matchId === matchId),
+      forMatch(matchId),
       map((sabotage) => MatchSocketActions.playerSabotaged({ sabotage, landedAt: Date.now() })),
     );
-    const finished$ = socket.finished$.pipe(
-      filter((event) => event.matchId === matchId),
-      map((result) => MatchSocketActions.finished({ result })),
-    );
-    const playerLeft$ = socket.playerLeft$.pipe(
-      filter((event) => event.matchId === matchId),
-      map(({ userId }) => MatchSocketActions.playerLeft({ userId })),
-    );
-    const error$ = socket.error$.pipe(
-      map(({ message }) => MatchSocketActions.errorReceived({ error: message })),
-    );
-
-    return merge(
-      lobby$,
-      starting$,
-      question$,
-      answered$,
-      deadline$,
-      roundResult$,
-      waitingNext$,
-      boostUsed$,
-      lockedOut$,
-      options$,
-      sabotaged$,
-      finished$,
-      playerLeft$,
-      error$,
-    );
+    return merge(boostUsed$, lockedOut$, options$, sabotaged$);
   }
 
-  private failed(error: unknown) {
+  private failed(error: unknown): Action {
     return MatchActions.failed({ error: readErrorMessage(error) });
   }
 }
@@ -375,7 +374,17 @@ function isStillPlaying(match: MatchView): boolean {
   return match.status === 'WAITING' || match.status === 'IN_PROGRESS';
 }
 
+// The socket stays open between matches, so a late event of an earlier match is dropped.
+function forMatch<T extends { matchId: string }>(matchId: string): MonoTypeOperatorFunction<T> {
+  return filter((event) => event.matchId === matchId);
+}
+
 // The server sends time left, not a clock time, so the deadline is fixed on this device's clock.
 function deadlineFrom(remainingMs: number): number {
   return Date.now() + remainingMs;
+}
+
+// Only extra time moves the deadline; the other power-ups leave it as it is.
+function boostDeadline(boost: BoostUsedEvent): number | null {
+  return boost.remainingMs === undefined ? null : deadlineFrom(boost.remainingMs);
 }

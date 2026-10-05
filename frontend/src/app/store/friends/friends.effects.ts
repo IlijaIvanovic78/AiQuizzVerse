@@ -129,7 +129,7 @@ export class FriendsEffects {
     );
   }
 
-  private failed(error: unknown) {
+  private failed(error: unknown): Action {
     return FriendsActions.failed({ error: readErrorMessage(error) });
   }
 }

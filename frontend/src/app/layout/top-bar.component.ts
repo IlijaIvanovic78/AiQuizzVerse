@@ -64,7 +64,7 @@ export class TopBarComponent {
     }
   }
 
-  protected logOut(): void {
+  protected requestLogout(): void {
     this.closeMenu();
     this.logout.emit();
   }

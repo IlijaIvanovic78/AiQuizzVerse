@@ -15,9 +15,12 @@ export class TokenRefreshService {
 
   // Every caller that hits a 401 at the same time shares one refresh request,
   // because the server rotates the refresh token and a second call would fail.
+  // finalize sits before shareReplay, so the slot is freed once, when the request itself ends.
   refresh(): Observable<string> {
     this.refresh$ ??= this.requestNewAccessToken().pipe(
-      finalize(() => (this.refresh$ = null)),
+      finalize(() => {
+        this.refresh$ = null;
+      }),
       shareReplay(1),
     );
     return this.refresh$;

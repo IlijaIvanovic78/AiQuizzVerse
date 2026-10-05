@@ -2,7 +2,6 @@ import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { MatchResult, MatchStatus, MatchView } from '../../core/models/match.model';
 import {
   BoostUsedEvent,
-  DuelInvite,
   MatchQuestionEvent,
   RoundResultEvent,
   SabotagedEvent,
@@ -32,7 +31,6 @@ export interface MatchState {
   matchId: string | null;
   match: MatchView | null;
   phase: MatchPhase;
-  countdownSeconds: number;
   question: MatchQuestionEvent | null;
   deadlineAt: number | null;
   myAnswer: number | null;
@@ -54,14 +52,12 @@ export interface MatchState {
   result: MatchResult | null;
   busy: boolean;
   error: string | null;
-  invite: DuelInvite | null;
 }
 
 export const initialMatchState: MatchState = {
   matchId: null,
   match: null,
   phase: 'idle',
-  countdownSeconds: 0,
   question: null,
   deadlineAt: null,
   myAnswer: null,
@@ -83,7 +79,6 @@ export const initialMatchState: MatchState = {
   result: null,
   busy: false,
   error: null,
-  invite: null,
 };
 
 export const matchFeature = createFeature({
@@ -94,40 +89,21 @@ export const matchFeature = createFeature({
       MatchActions.create,
       MatchActions.join,
       MatchActions.rematch,
-      (state): MatchState => ({ ...state, busy: true, error: null }),
+      (state): MatchState => ({ ...state, busy: true }),
     ),
     on(MatchActions.opened, (state): MatchState => ({ ...state, busy: false })),
-    on(
-      MatchActions.failed,
-      MatchSocketActions.errorReceived,
-      (state, { error }): MatchState => ({
-        ...state,
-        busy: false,
-        error,
-        phase: state.phase === 'loading' ? 'interrupted' : state.phase,
-      }),
+    on(MatchActions.failed, MatchSocketActions.errorReceived, (state, { error }) =>
+      withError(state, error),
     ),
     on(
       MatchActions.entered,
-      (state, { matchId }): MatchState => ({
-        ...initialMatchState,
-        invite: state.invite,
-        matchId,
-        phase: 'loading',
-      }),
+      (_state, { matchId }): MatchState => ({ ...initialMatchState, matchId, phase: 'loading' }),
     ),
-    on(MatchActions.left, (state): MatchState => ({ ...initialMatchState, invite: state.invite })),
+    on(MatchActions.left, (): MatchState => initialMatchState),
     on(MatchActions.loaded, (state, { match }) => withMatchView(state, match)),
     on(MatchSocketActions.lobbyUpdated, (state, { match }) => withLiveView(state, match)),
-    on(
-      MatchActions.resultLoaded,
-      MatchSocketActions.finished,
-      (state, { result }): MatchState => ({
-        ...state,
-        result,
-        phase: 'finished',
-        deadlineAt: null,
-      }),
+    on(MatchActions.resultLoaded, MatchSocketActions.finished, (state, { result }) =>
+      withResult(state, result),
     ),
     on(MatchActions.answer, (state, { optionIndex }) => withMyAnswer(state, optionIndex)),
     on(
@@ -138,11 +114,7 @@ export const matchFeature = createFeature({
     on(MatchActions.next, (state): MatchState => ({ ...state, nextPressed: true })),
     on(
       MatchSocketActions.countdownStarted,
-      (state, { countdownSeconds }): MatchState => ({
-        ...state,
-        phase: 'countdown',
-        countdownSeconds,
-      }),
+      (state): MatchState => ({ ...state, phase: 'countdown' }),
     ),
     on(MatchSocketActions.questionReceived, (state, { question, deadlineAt }) =>
       withNewQuestion(state, question, deadlineAt),
@@ -193,18 +165,29 @@ export const matchFeature = createFeature({
         leftUserIds: addOnce(state.leftUserIds, userId),
       }),
     ),
-    on(MatchActions.inviteReceived, (state, { invite }): MatchState => ({ ...state, invite })),
-    on(
-      MatchActions.inviteAccepted,
-      MatchActions.inviteDismissed,
-      (state): MatchState => ({ ...state, invite: null }),
-    ),
   ),
   extraSelectors: ({ selectMatch, selectRound }) => ({
     selectMode: createSelector(selectMatch, (match) => match?.mode ?? null),
     selectRoundWinnerId: createSelector(selectRound, (round) => round?.winnerUserId ?? null),
   }),
 });
+
+// Errors during play are only shown as toasts. An error while the match is still loading means
+// it cannot be played, so it is kept as the reason shown on the interrupted screen.
+function withError(state: MatchState, error: string): MatchState {
+  if (state.phase !== 'loading') {
+    return { ...state, busy: false };
+  }
+  return { ...state, busy: false, phase: 'interrupted', error };
+}
+
+// A slow result request can answer after the player has already moved on to another match.
+function withResult(state: MatchState, result: MatchResult): MatchState {
+  if (result.matchId !== state.matchId) {
+    return state;
+  }
+  return { ...state, result, phase: 'finished', deadlineAt: null };
+}
 
 function phaseForStatus(status: MatchStatus, currentPhase: MatchPhase): MatchPhase {
   if (status === 'WAITING') {
@@ -328,7 +311,8 @@ function withBoost(
   };
 }
 
-// The server counts the free hints as hint uses, so the same is done before the first use.
+// HINT shows the owned hints plus the free hints left, which is the same count the server
+// sends back as remaining in boost-used.
 function usesFromOwned(
   offers: BoostOffer[],
   freeHintsLeft: number,

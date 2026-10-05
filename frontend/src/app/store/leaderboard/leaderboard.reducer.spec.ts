@@ -33,7 +33,6 @@ describe('leaderboard reducer', () => {
 
     expect(state.entries).toEqual(friendsBoard.entries);
     expect(state.loaded).toBe(true);
-    expect(state.loading).toBe(true);
   });
 
   it('clears the rows when switching to the other board', () => {
@@ -45,11 +44,10 @@ describe('leaderboard reducer', () => {
     expect(state.loaded).toBe(false);
   });
 
-  it('remembers the error and stops loading when the request fails', () => {
+  it('remembers the error when the request fails', () => {
     const loading = reducer(undefined, LeaderboardActions.load({ scope: 'global' }));
     const state = reducer(loading, LeaderboardActions.failed({ error: 'Offline' }));
 
-    expect(state.loading).toBe(false);
     expect(state.error).toBe('Offline');
   });
 });

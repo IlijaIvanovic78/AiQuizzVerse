@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { Action } from '@ngrx/store';
 import { catchError, exhaustMap, filter, map, of, switchMap, tap } from 'rxjs';
 import { readErrorMessage, readErrorStatus } from '../../core/api/api-error';
 import { PathsApiService } from '../../core/api/paths-api.service';
@@ -104,11 +105,11 @@ export class PathsEffects {
     { dispatch: false },
   );
 
-  private failed(error: unknown) {
+  private failed(error: unknown): Action {
     return PathsActions.failed({ error: readErrorMessage(error) });
   }
 
-  private creationFailed(error: unknown) {
+  private creationFailed(error: unknown): Action {
     return PathsActions.creationFailed({
       error: readErrorMessage(error),
       status: readErrorStatus(error),

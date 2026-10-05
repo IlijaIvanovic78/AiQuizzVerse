@@ -4,8 +4,8 @@ import { MatchMode } from '../core/models/match.model';
 import { DuelInvite } from '../core/models/realtime-events.model';
 import { HeroSpriteComponent } from '../shared/components/hero-sprite.component';
 import { ModalComponent } from '../shared/components/modal.component';
+import { duelInviteFeature } from '../store/duel-invite/duel-invite.reducer';
 import { MatchActions } from '../store/match/match.actions';
-import { matchFeature } from '../store/match/match.reducer';
 
 interface InviteWording {
   title: string;
@@ -33,7 +33,7 @@ const INVITE_WORDING: Record<MatchMode, InviteWording> = {
 export class DuelInviteDialogComponent {
   private readonly store = inject(Store);
 
-  protected readonly invite = this.store.selectSignal(matchFeature.selectInvite);
+  protected readonly invite = this.store.selectSignal(duelInviteFeature.selectInvite);
   protected readonly wording = computed(() => INVITE_WORDING[this.invite()?.mode ?? 'DUEL']);
 
   protected accept(invite: DuelInvite): void {
