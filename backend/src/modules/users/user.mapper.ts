@@ -1,5 +1,6 @@
 import { Prisma, User } from '@prisma/client';
-import { levelForXp, levelProgress } from '../progression/progression.rules';
+import { utcToday } from '../../common/utils/dates';
+import { displayedStreak, levelForXp, levelProgress } from '../progression/progression.rules';
 import { CurrentUser, PublicUser } from './users.types';
 
 export const PUBLIC_USER_SELECT = {
@@ -24,12 +25,13 @@ export function toPublicUser(user: PublicUserRow): PublicUser {
 
 export function toCurrentUser(user: User, streakFreezes: number): CurrentUser {
   const { xpIntoLevel, xpForNextLevel } = levelProgress(user.xp);
+  const streakState = { streak: user.streak, lastPlayedOn: user.lastPlayedOn, streakFreezes };
   return {
     ...toPublicUser(user),
     email: user.email,
     xp: user.xp,
     coins: user.coins,
-    streak: user.streak,
+    streak: displayedStreak(streakState, utcToday()),
     longestStreak: user.longestStreak,
     streakFreezes,
     twoFaEnabled: user.twoFaEnabled,

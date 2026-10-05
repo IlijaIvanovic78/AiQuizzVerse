@@ -14,7 +14,8 @@ export const TEAM_WIN_BONUS: Reward = { xp: 20, coins: 10 };
 
 export const STREAK_BONUS_COINS_PER_DAY = 5;
 export const MAX_STREAK_BONUS_COINS = 30;
-export const STREAK_FREEZE_MIN_GAP_DAYS = 2;
+/** A streak freeze covers one missed day: the last game was the day before yesterday. */
+export const STREAK_FREEZE_GAP_DAYS = 2;
 
 export const DAILY_MATCH_COIN_CAP = 150;
 

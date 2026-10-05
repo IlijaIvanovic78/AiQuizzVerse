@@ -28,3 +28,9 @@ export interface PlayerReward {
   leveledUp: boolean;
   coinCapReached: boolean;
 }
+
+export interface StreakState {
+  streak: number;
+  lastPlayedOn: Date | null;
+  streakFreezes: number;
+}

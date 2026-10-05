@@ -1,6 +1,8 @@
+import { addUtcDays } from '../../common/utils/dates';
 import {
   accuracyPercent,
   capMatchCoins,
+  displayedStreak,
   levelForXp,
   levelProgress,
   matchReward,
@@ -70,13 +72,44 @@ describe('daily streak', () => {
   });
 
   it('keeps growing after a missed day when a freeze was used', () => {
-    expect(nextStreak(4, 3, true)).toBe(5);
+    expect(nextStreak(4, 2, true)).toBe(5);
   });
 
-  it('only asks for a freeze when at least one day was missed', () => {
+  it('uses a freeze only for exactly one missed day', () => {
     expect(needsStreakFreeze(null)).toBe(false);
     expect(needsStreakFreeze(1)).toBe(false);
     expect(needsStreakFreeze(2)).toBe(true);
+    expect(needsStreakFreeze(3)).toBe(false);
+  });
+
+  describe('displayed streak', () => {
+    const today = new Date('2026-10-05T00:00:00Z');
+    const shown = (daysSinceLastPlay: number, streakFreezes: number): number =>
+      displayedStreak(
+        { streak: 4, lastPlayedOn: addUtcDays(today, -daysSinceLastPlay), streakFreezes },
+        today,
+      );
+
+    it('shows the stored streak after playing today or yesterday', () => {
+      expect(shown(0, 0)).toBe(4);
+      expect(shown(1, 0)).toBe(4);
+    });
+
+    it('shows 0 once a day was missed without a freeze', () => {
+      expect(shown(2, 0)).toBe(0);
+    });
+
+    it('keeps the streak when a freeze can cover the one missed day', () => {
+      expect(shown(2, 1)).toBe(4);
+    });
+
+    it('shows 0 after two missed days, even with freezes', () => {
+      expect(shown(3, 2)).toBe(0);
+    });
+
+    it('shows 0 for a player who never played', () => {
+      expect(displayedStreak({ streak: 0, lastPlayedOn: null, streakFreezes: 1 }, today)).toBe(0);
+    });
   });
 
   it('pays 5 coins per streak day, up to 30', () => {

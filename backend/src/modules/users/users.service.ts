@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { toCurrentUser } from './user.mapper';
-import { STARTER_BOOSTS } from './users.constants';
+import { ACCOUNT_NOT_FOUND_MESSAGE, STARTER_BOOSTS } from './users.constants';
 import { CurrentUser, NewUser } from './users.types';
 
 @Injectable()
@@ -16,7 +16,7 @@ export class UsersService {
   async findByIdOrThrow(id: string): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
-      throw new NotFoundException('We could not find your account.');
+      throw new NotFoundException(ACCOUNT_NOT_FOUND_MESSAGE);
     }
     return user;
   }
@@ -38,7 +38,7 @@ export class UsersService {
       include: { boosts: { where: { type: 'STREAK_FREEZE' } } },
     });
     if (!user) {
-      throw new NotFoundException('We could not find your account.');
+      throw new NotFoundException(ACCOUNT_NOT_FOUND_MESSAGE);
     }
     return toCurrentUser(user, user.boosts[0]?.quantity ?? 0);
   }

@@ -10,6 +10,8 @@ import {
   SESSION_EXPIRED_MESSAGE,
   TWO_FACTOR_TOKEN_EXPIRATION,
   USERNAME_PATTERN,
+  USERNAME_TAKEN_MESSAGE,
+  WRONG_CODE_MESSAGE,
   WRONG_CREDENTIALS_MESSAGE,
 } from './auth.constants';
 import {
@@ -65,7 +67,7 @@ export class AuthService {
   async loginWithTwoFactor(twoFactorToken: string, code: string): Promise<AuthResponse> {
     const userId = await this.verifyTwoFactorToken(twoFactorToken);
     if (!(await this.twoFactor.isValidLoginCode(userId, code))) {
-      throw new UnauthorizedException('That code did not work. Try the newest code from your app.');
+      throw new UnauthorizedException(WRONG_CODE_MESSAGE);
     }
     return this.createSession(userId);
   }
@@ -97,7 +99,7 @@ export class AuthService {
       throw new ConflictException('An account with this email already exists.');
     }
     if (await this.users.isUsernameTaken(username)) {
-      throw new ConflictException('That nickname is taken. Please pick another one.');
+      throw new ConflictException(USERNAME_TAKEN_MESSAGE);
     }
   }
 

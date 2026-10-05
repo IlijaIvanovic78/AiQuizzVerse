@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
 import { AuthService } from './auth.service';
@@ -34,13 +35,15 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @UseGuards(ThrottlerGuard)
   register(@Body() dto: RegisterDto): Promise<AuthResponse> {
     return this.auth.register(dto);
   }
 
+  // The throttler runs first, so wrong passwords count towards the limit too.
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(ThrottlerGuard, LocalAuthGuard)
   @ApiBody({ type: LoginDto })
   login(@CurrentUserId() userId: string): Promise<LoginResult> {
     return this.auth.login(userId);
@@ -48,6 +51,7 @@ export class AuthController {
 
   @Post('login/2fa')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
   loginWithTwoFactor(@Body() dto: TwoFactorLoginDto): Promise<AuthResponse> {
     return this.auth.loginWithTwoFactor(dto.twoFactorToken, dto.code);
   }

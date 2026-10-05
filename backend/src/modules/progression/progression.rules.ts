@@ -1,4 +1,5 @@
 import { Difficulty, MatchMode } from '@prisma/client';
+import { daysBetween } from '../../common/utils/dates';
 import {
   COINS_PER_CORRECT,
   DAILY_MATCH_COIN_CAP,
@@ -10,14 +11,20 @@ import {
   NO_REWARD,
   ONE_STAR_ACCURACY,
   STREAK_BONUS_COINS_PER_DAY,
-  STREAK_FREEZE_MIN_GAP_DAYS,
+  STREAK_FREEZE_GAP_DAYS,
   TEAM_WIN_BONUS,
   THREE_STARS_ACCURACY,
   TWO_STARS_ACCURACY,
   XP_CURVE_FACTOR,
   XP_PER_CORRECT,
 } from './progression.constants';
-import { LevelProgress, MatchOutcome, MatchRewardInput, Reward } from './progression.types';
+import {
+  LevelProgress,
+  MatchOutcome,
+  MatchRewardInput,
+  Reward,
+  StreakState,
+} from './progression.types';
 
 export function xpForLevel(level: number): number {
   return XP_CURVE_FACTOR * (level - 1) ** 2;
@@ -54,7 +61,20 @@ export function starsForAccuracy(accuracy: number): number {
 }
 
 export function needsStreakFreeze(daysSinceLastPlay: number | null): boolean {
-  return daysSinceLastPlay !== null && daysSinceLastPlay >= STREAK_FREEZE_MIN_GAP_DAYS;
+  return daysSinceLastPlay === STREAK_FREEZE_GAP_DAYS;
+}
+
+/** The streak players see: it drops to 0 as soon as the next game could no longer continue it. */
+export function displayedStreak(state: StreakState, today: Date): number {
+  if (!state.lastPlayedOn) {
+    return state.streak;
+  }
+  const daysSinceLastPlay = daysBetween(state.lastPlayedOn, today);
+  if (daysSinceLastPlay <= 1) {
+    return state.streak;
+  }
+  const freezeCanSaveIt = needsStreakFreeze(daysSinceLastPlay) && state.streakFreezes > 0;
+  return freezeCanSaveIt ? state.streak : 0;
 }
 
 export function nextStreak(

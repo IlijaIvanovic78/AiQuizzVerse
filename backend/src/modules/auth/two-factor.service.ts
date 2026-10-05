@@ -3,7 +3,12 @@ import { toDataURL } from 'qrcode';
 import * as speakeasy from 'speakeasy';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
-import { TOTP_ISSUER, TOTP_WINDOW } from './auth.constants';
+import {
+  TOTP_ISSUER,
+  TOTP_WINDOW,
+  TWO_FACTOR_ALREADY_ON_MESSAGE,
+  WRONG_CODE_MESSAGE,
+} from './auth.constants';
 import { TwoFactorSetup } from './auth.types';
 
 @Injectable()
@@ -13,7 +18,7 @@ export class TwoFactorService {
   async setup(userId: string): Promise<TwoFactorSetup> {
     const user = await this.users.findByIdOrThrow(userId);
     if (user.twoFaEnabled) {
-      throw new BadRequestException('Two-step login is already on.');
+      throw new BadRequestException(TWO_FACTOR_ALREADY_ON_MESSAGE);
     }
 
     const secret = speakeasy.generateSecret().base32;
@@ -30,7 +35,7 @@ export class TwoFactorService {
   async enable(userId: string, code: string): Promise<CurrentUser> {
     const user = await this.users.findByIdOrThrow(userId);
     if (user.twoFaEnabled) {
-      throw new BadRequestException('Two-step login is already on.');
+      throw new BadRequestException(TWO_FACTOR_ALREADY_ON_MESSAGE);
     }
     if (!user.twoFaSecret) {
       throw new BadRequestException('Scan the QR code first.');
@@ -62,7 +67,7 @@ export class TwoFactorService {
 
   private assertValidCode(secret: string, code: string): void {
     if (!this.isValidCode(secret, code)) {
-      throw new BadRequestException('That code did not work. Try the newest code from your app.');
+      throw new BadRequestException(WRONG_CODE_MESSAGE);
     }
   }
 

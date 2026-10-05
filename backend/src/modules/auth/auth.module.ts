@@ -2,8 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtModuleOptions, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { QuizzesModule } from '../quizzes/quizzes.module';
 import { UsersModule } from '../users/users.module';
+import {
+  AUTH_THROTTLE_LIMIT,
+  AUTH_THROTTLE_TTL_MS,
+  TOO_MANY_TRIES_MESSAGE,
+} from './auth.constants';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
@@ -16,6 +22,10 @@ import { TwoFactorService } from './two-factor.service';
     UsersModule,
     QuizzesModule,
     PassportModule,
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: AUTH_THROTTLE_TTL_MS, limit: AUTH_THROTTLE_LIMIT }],
+      errorMessage: TOO_MANY_TRIES_MESSAGE,
+    }),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

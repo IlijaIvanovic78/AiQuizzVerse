@@ -6,6 +6,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_PATTERN,
+  USERNAME_RULE_MESSAGE,
 } from '../auth.constants';
 
 function toNormalizedEmail({ value }: TransformFnParams): unknown {
@@ -21,9 +22,7 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'pixel_hero', description: '3-20 letters, numbers or underscores' })
   @IsString()
-  @Matches(USERNAME_PATTERN, {
-    message: 'Your nickname needs 3-20 letters, numbers or underscores.',
-  })
+  @Matches(USERNAME_PATTERN, { message: USERNAME_RULE_MESSAGE })
   username: string;
 
   @ApiProperty({ example: 'secret123', minLength: PASSWORD_MIN_LENGTH })
