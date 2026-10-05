@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, exhaustMap, map, of, switchMap, tap } from 'rxjs';
-import { readErrorMessage } from '../../core/api/api-error';
+import { catchError, exhaustMap, filter, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage, readErrorStatus } from '../../core/api/api-error';
 import { PathsApiService } from '../../core/api/paths-api.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { isOnCreatePage } from '../create-page';
 import { PathsActions } from './paths.actions';
 
 @Injectable()
@@ -44,7 +45,7 @@ export class PathsEffects {
       exhaustMap(({ request }) =>
         this.pathsApi.create(request).pipe(
           map((path) => PathsActions.created({ path })),
-          catchError((error: unknown) => of(this.failed(error))),
+          catchError((error: unknown) => of(this.creationFailed(error))),
         ),
       ),
     ),
@@ -66,6 +67,7 @@ export class PathsEffects {
     () =>
       this.actions$.pipe(
         ofType(PathsActions.created),
+        filter(() => !isOnCreatePage(this.router)),
         tap(({ path }) => this.toast.success(`Your path about "${path.topic}" is ready!`)),
       ),
     { dispatch: false },
@@ -83,6 +85,16 @@ export class PathsEffects {
     { dispatch: false },
   );
 
+  readonly announceCreationFailed$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PathsActions.creationFailed),
+        filter(() => !isOnCreatePage(this.router)),
+        tap(({ error }) => this.toast.error(error)),
+      ),
+    { dispatch: false },
+  );
+
   readonly showError$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -94,5 +106,12 @@ export class PathsEffects {
 
   private failed(error: unknown) {
     return PathsActions.failed({ error: readErrorMessage(error) });
+  }
+
+  private creationFailed(error: unknown) {
+    return PathsActions.creationFailed({
+      error: readErrorMessage(error),
+      status: readErrorStatus(error),
+    });
   }
 }

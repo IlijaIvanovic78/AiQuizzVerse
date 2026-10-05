@@ -22,6 +22,7 @@ export const QuizzesActions = createActionGroup({
     Create: props<{ request: CreateQuizRequest }>(),
     Generate: props<{ request: GenerateQuizRequest }>(),
     Created: props<{ quiz: QuizDetail }>(),
+    'Creation Failed': props<{ error: string; status: number }>(),
     'Creation Reset': emptyProps(),
     'Progress Received': props<{ progress: QuizProgress }>(),
     Update: props<{ quizId: string; changes: UpdateQuizRequest }>(),

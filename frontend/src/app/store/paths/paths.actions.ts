@@ -10,6 +10,7 @@ export const PathsActions = createActionGroup({
     'Detail Loaded': props<{ path: PathDetail }>(),
     Create: props<{ request: CreatePathRequest }>(),
     Created: props<{ path: PathDetail }>(),
+    'Creation Failed': props<{ error: string; status: number }>(),
     'Creation Reset': emptyProps(),
     Delete: props<{ pathId: string }>(),
     Deleted: props<{ pathId: string }>(),

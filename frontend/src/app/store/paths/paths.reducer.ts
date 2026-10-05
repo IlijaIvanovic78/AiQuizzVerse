@@ -1,5 +1,6 @@
 import { createFeature, createReducer, on } from '@ngrx/store';
 import { PathDetail, PathSummary } from '../../core/models/path.model';
+import { CreationError } from '../quizzes/quizzes.reducer';
 import { PathsActions } from './paths.actions';
 
 interface PathsState {
@@ -9,6 +10,7 @@ interface PathsState {
   detail: PathDetail | null;
   creating: boolean;
   created: PathDetail | null;
+  creationError: CreationError | null;
   error: string | null;
 }
 
@@ -19,6 +21,7 @@ const initialState: PathsState = {
   detail: null,
   creating: false,
   created: null,
+  creationError: null,
   error: null,
 };
 
@@ -46,13 +49,24 @@ export const pathsFeature = createFeature({
     ),
     on(
       PathsActions.create,
-      (state): PathsState => ({ ...state, creating: true, created: null, error: null }),
+      (state): PathsState => ({ ...state, creating: true, created: null, creationError: null }),
     ),
     on(
       PathsActions.created,
       (state, { path }): PathsState => ({ ...state, creating: false, created: path }),
     ),
-    on(PathsActions.creationReset, (state): PathsState => ({ ...state, created: null })),
+    on(
+      PathsActions.creationFailed,
+      (state, { error, status }): PathsState => ({
+        ...state,
+        creating: false,
+        creationError: { message: error, status },
+      }),
+    ),
+    on(
+      PathsActions.creationReset,
+      (state): PathsState => ({ ...state, created: null, creationError: null }),
+    ),
     on(
       PathsActions.deleted,
       (state, { pathId }): PathsState => ({

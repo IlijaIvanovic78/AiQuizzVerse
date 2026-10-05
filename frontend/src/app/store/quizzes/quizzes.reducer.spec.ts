@@ -63,6 +63,32 @@ describe('quizzes reducer', () => {
     expect(state.creating).toBe(false);
   });
 
+  it('remembers why a generation failed until the next try', () => {
+    const generating = reducer(
+      initialQuizzesState,
+      QuizzesActions.generate({
+        request: {
+          topic: 'Dinosaurs',
+          difficulty: 'EASY',
+          audience: 'KIDS',
+          language: 'EN',
+          questionCount: 5,
+          timePerQuestion: 45,
+        },
+      }),
+    );
+
+    const failed = reducer(
+      generating,
+      QuizzesActions.creationFailed({ error: 'The quiz master needs a rest.', status: 429 }),
+    );
+    const reset = reducer(failed, QuizzesActions.creationReset());
+
+    expect(failed.creating).toBe(false);
+    expect(failed.creationError).toEqual({ message: 'The quiz master needs a rest.', status: 429 });
+    expect(reset.creationError).toBeNull();
+  });
+
   it('updates the detail and the question count when a question is deleted', () => {
     const quiz = quizDetail('quiz', '2026-03-01T10:00:00.000Z', [
       question('q1', 1),

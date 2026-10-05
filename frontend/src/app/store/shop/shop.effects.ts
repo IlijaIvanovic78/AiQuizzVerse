@@ -4,6 +4,7 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { catchError, exhaustMap, map, of, switchMap, tap } from 'rxjs';
 import { readErrorMessage } from '../../core/api/api-error';
 import { ShopApiService } from '../../core/api/shop-api.service';
+import { readReturnUrl } from '../../core/auth/return-url';
 import { ToastService } from '../../core/notifications/toast.service';
 import { ShopActions } from './shop.actions';
 
@@ -102,7 +103,12 @@ export class ShopEffects {
     () =>
       this.actions$.pipe(
         ofType(ShopActions.itemBought),
-        tap(({ item }) => this.toast.success(`${item.name} joined your team!`)),
+        tap(({ item }) =>
+          this.toast.success(`${item.name} joined your team!`, {
+            label: 'Equip',
+            action: ShopActions.equipItem({ itemId: item.id }),
+          }),
+        ),
       ),
     { dispatch: false },
   );
@@ -120,7 +126,7 @@ export class ShopEffects {
     () =>
       this.actions$.pipe(
         ofType(ShopActions.starterClaimed),
-        tap(() => void this.router.navigateByUrl('/home')),
+        tap(() => void this.router.navigateByUrl(readReturnUrl(this.router) ?? '/home')),
       ),
     { dispatch: false },
   );

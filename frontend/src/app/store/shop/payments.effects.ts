@@ -96,28 +96,6 @@ export class PaymentsEffects {
     ),
   );
 
-  readonly announcePaid$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(PaymentsActions.purchaseConfirmed),
-        tap(({ purchase }) => {
-          if (purchase.status === 'PAID') {
-            this.toast.success(`${purchase.coins} coins added to your bag!`);
-          }
-        }),
-      ),
-    { dispatch: false },
-  );
-
-  readonly announceCancelled$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(PaymentsActions.purchaseCancelled),
-        tap(() => this.toast.info('Purchase cancelled. No money was charged.')),
-      ),
-    { dispatch: false },
-  );
-
   readonly showError$ = createEffect(
     () =>
       this.actions$.pipe(

@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, concatMap, exhaustMap, map, of, switchMap, tap } from 'rxjs';
-import { readErrorMessage } from '../../core/api/api-error';
+import { catchError, concatMap, exhaustMap, filter, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage, readErrorStatus } from '../../core/api/api-error';
 import { QuizzesApiService } from '../../core/api/quizzes-api.service';
 import { ToastService } from '../../core/notifications/toast.service';
+import { isOnCreatePage } from '../create-page';
 import { MatchActions } from '../match/match.actions';
 import { QuizzesActions } from './quizzes.actions';
 
@@ -57,7 +58,7 @@ export class QuizzesEffects {
       exhaustMap(({ request }) =>
         this.quizzesApi.create(request).pipe(
           map((quiz) => QuizzesActions.created({ quiz })),
-          catchError((error: unknown) => of(this.failed(error))),
+          catchError((error: unknown) => of(this.creationFailed(error))),
         ),
       ),
     ),
@@ -69,7 +70,7 @@ export class QuizzesEffects {
       exhaustMap(({ request }) =>
         this.quizzesApi.generate(request).pipe(
           map((quiz) => QuizzesActions.created({ quiz })),
-          catchError((error: unknown) => of(this.failed(error))),
+          catchError((error: unknown) => of(this.creationFailed(error))),
         ),
       ),
     ),
@@ -139,6 +140,7 @@ export class QuizzesEffects {
     () =>
       this.actions$.pipe(
         ofType(QuizzesActions.created),
+        filter(() => !isOnCreatePage(this.router)),
         tap(({ quiz }) =>
           this.toast.success(`"${quiz.title}" is ready!`, {
             label: 'Play now',
@@ -174,6 +176,16 @@ export class QuizzesEffects {
     { dispatch: false },
   );
 
+  readonly announceCreationFailed$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(QuizzesActions.creationFailed),
+        filter(() => !isOnCreatePage(this.router)),
+        tap(({ error }) => this.toast.error(error)),
+      ),
+    { dispatch: false },
+  );
+
   readonly showError$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -185,5 +197,12 @@ export class QuizzesEffects {
 
   private failed(error: unknown) {
     return QuizzesActions.failed({ error: readErrorMessage(error) });
+  }
+
+  private creationFailed(error: unknown) {
+    return QuizzesActions.creationFailed({
+      error: readErrorMessage(error),
+      status: readErrorStatus(error),
+    });
   }
 }

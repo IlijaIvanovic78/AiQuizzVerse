@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, UrlTree } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { Action, Store } from '@ngrx/store';
 import {
@@ -16,8 +16,11 @@ import {
 import { readErrorMessage } from '../../core/api/api-error';
 import { AuthApiService } from '../../core/api/auth-api.service';
 import { ProfileApiService } from '../../core/api/profile-api.service';
+import { RETURN_URL_PARAM } from '../../core/auth/auth.constants';
+import { readReturnUrl } from '../../core/auth/return-url';
 import { TokenStorageService } from '../../core/auth/token-storage.service';
 import { AuthResponse, LoginResult } from '../../core/models/auth.model';
+import { CurrentUser } from '../../core/models/user.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { MatchSocketService } from '../../core/realtime/match-socket.service';
 import { RealtimeSocketService } from '../../core/realtime/realtime-socket.service';
@@ -73,7 +76,7 @@ export class AuthEffects {
     () =>
       this.actions$.pipe(
         ofType(AuthActions.signedIn),
-        tap(({ user }) => void this.router.navigateByUrl(user.avatarKey ? '/home' : '/welcome')),
+        tap(({ user }) => void this.router.navigateByUrl(this.landingUrl(user))),
       ),
     { dispatch: false },
   );
@@ -188,6 +191,18 @@ export class AuthEffects {
       map((response) => this.completeSignIn(response)),
       catchError((error: unknown) => of(this.signInFailed(error))),
     );
+  }
+
+  // A player who opened a share link while logged out goes back to it after signing in.
+  // A new player picks a hero first, so the link travels along to the welcome page.
+  private landingUrl(user: CurrentUser): UrlTree {
+    const returnUrl = readReturnUrl(this.router);
+    if (!user.avatarKey) {
+      return this.router.createUrlTree(['/welcome'], {
+        queryParams: { [RETURN_URL_PARAM]: returnUrl },
+      });
+    }
+    return this.router.parseUrl(returnUrl ?? '/home');
   }
 
   private handleLoginResult(result: LoginResult): Action {

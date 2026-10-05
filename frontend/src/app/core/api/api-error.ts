@@ -13,6 +13,11 @@ export function readErrorMessage(error: unknown): string {
   return serverMessage(error.error) ?? FALLBACK_MESSAGE;
 }
 
+// 0 when the server could not be reached or the error is not an HTTP error at all.
+export function readErrorStatus(error: unknown): number {
+  return error instanceof HttpErrorResponse ? error.status : 0;
+}
+
 function serverMessage(body: unknown): string | null {
   if (typeof body !== 'object' || body === null || !('message' in body)) {
     return null;

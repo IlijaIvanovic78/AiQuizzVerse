@@ -6,6 +6,12 @@ import { PathsActions } from '../paths/paths.actions';
 import { toQuizSummary } from './quiz.mapper';
 import { QuizzesActions } from './quizzes.actions';
 
+// The HTTP status lets the create page explain a 409, 429 or 503 in its own words.
+export interface CreationError {
+  message: string;
+  status: number;
+}
+
 export interface QuizzesState extends EntityState<QuizSummary> {
   loaded: boolean;
   loading: boolean;
@@ -14,6 +20,7 @@ export interface QuizzesState extends EntityState<QuizSummary> {
   saving: boolean;
   creating: boolean;
   created: QuizDetail | null;
+  creationError: CreationError | null;
   progress: QuizProgress | null;
   error: string | null;
 }
@@ -31,6 +38,7 @@ export const initialQuizzesState: QuizzesState = quizzesAdapter.getInitialState(
   saving: false,
   creating: false,
   created: null,
+  creationError: null,
   progress: null,
   error: null,
 });
@@ -69,7 +77,13 @@ export const quizzesFeature = createFeature({
     on(
       QuizzesActions.create,
       QuizzesActions.generate,
-      (state): QuizzesState => ({ ...state, creating: true, created: null, progress: null }),
+      (state): QuizzesState => ({
+        ...state,
+        creating: true,
+        created: null,
+        creationError: null,
+        progress: null,
+      }),
     ),
     on(
       QuizzesActions.created,
@@ -77,8 +91,16 @@ export const quizzesFeature = createFeature({
         quizzesAdapter.addOne(toQuizSummary(quiz), { ...state, creating: false, created: quiz }),
     ),
     on(
+      QuizzesActions.creationFailed,
+      (state, { error, status }): QuizzesState => ({
+        ...state,
+        creating: false,
+        creationError: { message: error, status },
+      }),
+    ),
+    on(
       QuizzesActions.creationReset,
-      (state): QuizzesState => ({ ...state, created: null, progress: null }),
+      (state): QuizzesState => ({ ...state, created: null, creationError: null, progress: null }),
     ),
     on(
       QuizzesActions.progressReceived,

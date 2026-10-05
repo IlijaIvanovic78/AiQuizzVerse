@@ -10,6 +10,7 @@ interface LeaderboardState {
   scope: LeaderboardScope;
   entries: LeaderboardEntry[];
   me: LeaderboardMe | null;
+  loaded: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -18,6 +19,7 @@ const initialState: LeaderboardState = {
   scope: 'friends',
   entries: [],
   me: null,
+  loaded: false,
   loading: false,
   error: null,
 };
@@ -26,16 +28,14 @@ export const leaderboardFeature = createFeature({
   name: 'leaderboard',
   reducer: createReducer(
     initialState,
-    on(
-      LeaderboardActions.load,
-      (state, { scope }): LeaderboardState => ({ ...state, scope, loading: true, error: null }),
-    ),
+    on(LeaderboardActions.load, (state, { scope }) => startLoading(state, scope)),
     on(
       LeaderboardActions.loaded,
       (state, { leaderboard }): LeaderboardState => ({
         ...state,
         entries: leaderboard.entries,
         me: leaderboard.me,
+        loaded: true,
         loading: false,
       }),
     ),
@@ -45,3 +45,11 @@ export const leaderboardFeature = createFeature({
     ),
   ),
 });
+
+// Switching between friends and global must not show the other board's rows while loading.
+function startLoading(state: LeaderboardState, scope: LeaderboardScope): LeaderboardState {
+  if (scope !== state.scope) {
+    return { ...initialState, scope, loading: true };
+  }
+  return { ...state, loading: true, error: null };
+}
