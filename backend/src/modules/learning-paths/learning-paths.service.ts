@@ -1,13 +1,54 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PathStep, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { accuracyPercent, starsForAccuracy } from '../progression/progression.rules';
-import { STEP_REWARDS } from './learning-paths.constants';
-import { PathResult, StepReward, StepWithOwner } from './learning-paths.types';
+import {
+  PATH_DETAIL_INCLUDE,
+  PATH_SUMMARY_INCLUDE,
+  PathDetailRow,
+  toPathDetail,
+  toPathSummary,
+} from './learning-path.mapper';
+import { NOT_YOUR_PATH_MESSAGE, STEP_REWARDS } from './learning-paths.constants';
+import { isStepUnlocked } from './learning-paths.rules';
+import {
+  PathDetail,
+  PathResult,
+  PathSummary,
+  StepReward,
+  StepWithOwner,
+} from './learning-paths.types';
 
 @Injectable()
 export class LearningPathsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findAll(userId: string): Promise<PathSummary[]> {
+    const paths = await this.prisma.learningPath.findMany({
+      where: { ownerId: userId },
+      include: PATH_SUMMARY_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return paths.map(toPathSummary);
+  }
+
+  async findDetail(userId: string, pathId: string): Promise<PathDetail> {
+    const path = await this.findOwnPath(userId, pathId);
+    return toPathDetail(path);
+  }
+
+  /** Step quizzes are soft deleted like any other quiz, so match history and coin totals stay. */
+  async remove(userId: string, pathId: string): Promise<void> {
+    const path = await this.findOwnPath(userId, pathId);
+    const quizIds = path.steps.map((step) => step.quizId);
+    await this.prisma.$transaction([
+      this.prisma.quiz.updateMany({
+        where: { id: { in: quizIds } },
+        data: { deletedAt: new Date() },
+      }),
+      this.prisma.learningPath.delete({ where: { id: pathId } }),
+    ]);
+  }
 
   findStepByQuiz(quizId: string): Promise<StepWithOwner | null> {
     return this.prisma.pathStep.findUnique({
@@ -18,17 +59,14 @@ export class LearningPathsService {
 
   async assertStepUnlocked(userId: string, step: StepWithOwner): Promise<void> {
     if (step.path.ownerId !== userId) {
-      throw new ForbiddenException('This learning path belongs to someone else.');
-    }
-    if (step.position === 1) {
-      return;
+      throw new ForbiddenException(NOT_YOUR_PATH_MESSAGE);
     }
 
     const previous = await this.prisma.pathStep.findUnique({
       where: { pathId_position: { pathId: step.pathId, position: step.position - 1 } },
       select: { completedAt: true },
     });
-    if (!previous?.completedAt) {
+    if (!isStepUnlocked(step.position, Boolean(previous?.completedAt))) {
       throw new ForbiddenException('Clear the previous step first.');
     }
   }
@@ -53,9 +91,34 @@ export class LearningPathsService {
       stepId: saved.id,
       stars,
       cleared,
-      nextStepId: cleared ? await this.findNextStepId(db, saved) : null,
+      nextStepId: cleared ? await this.findNextStepId(saved, db) : null,
       reward,
     };
+  }
+
+  async findNextStepId(
+    step: PathStep,
+    db: Prisma.TransactionClient = this.prisma,
+  ): Promise<string | null> {
+    const next = await db.pathStep.findUnique({
+      where: { pathId_position: { pathId: step.pathId, position: step.position + 1 } },
+      select: { id: true },
+    });
+    return next?.id ?? null;
+  }
+
+  private async findOwnPath(userId: string, pathId: string): Promise<PathDetailRow> {
+    const path = await this.prisma.learningPath.findUnique({
+      where: { id: pathId },
+      include: PATH_DETAIL_INCLUDE,
+    });
+    if (!path) {
+      throw new NotFoundException('We could not find that learning path.');
+    }
+    if (path.ownerId !== userId) {
+      throw new ForbiddenException(NOT_YOUR_PATH_MESSAGE);
+    }
+    return path;
   }
 
   // Conditional updates instead of read-then-write, so two runs finishing at once
@@ -99,16 +162,5 @@ export class LearningPathsService {
       });
     }
     return reward;
-  }
-
-  private async findNextStepId(
-    db: Prisma.TransactionClient,
-    step: PathStep,
-  ): Promise<string | null> {
-    const next = await db.pathStep.findUnique({
-      where: { pathId_position: { pathId: step.pathId, position: step.position + 1 } },
-      select: { id: true },
-    });
-    return next?.id ?? null;
   }
 }
