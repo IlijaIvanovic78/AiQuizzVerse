@@ -44,6 +44,12 @@ enum QuizKind {
   REVIEW
 }
 
+enum QuizSource {
+  TOPIC
+  DOCUMENT
+  MANUAL
+}
+
 enum FriendshipStatus {
   PENDING
   ACCEPTED
@@ -153,6 +159,7 @@ model Quiz {
   audience        Audience
   language        QuizLanguage
   kind            QuizKind     @default(STANDARD)
+  source          QuizSource   @default(MANUAL)
   timePerQuestion Int          @map("time_per_question")
   ownerId         String       @map("owner_id")
   documentId      String?      @map("document_id")
