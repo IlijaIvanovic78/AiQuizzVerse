@@ -223,6 +223,18 @@ describe('a round', () => {
       'ana',
     ]);
   });
+
+  it('tells a duel player who comes back in the middle of the question that it is done', () => {
+    const { session, received, startFirstRound } = setUp('DUEL', ['ana', 'marko']);
+    startFirstRound();
+
+    session.playerDisconnected('marko');
+    session.playerReturned('marko');
+    expect(received<QuestionPayload>('marko', 'match:question')).toHaveLength(2);
+    expect(received<PlayerEventPayload>('marko', 'match:answered')).toEqual([
+      { matchId: 'match-1', userId: 'marko' },
+    ]);
+  });
 });
 
 describe('the reveal', () => {
@@ -294,6 +306,7 @@ describe('the end of a match', () => {
     session.playerReturned('ana');
     expect(payloads('match:round-result')).toHaveLength(0);
     expect(payloads('match:question')).toHaveLength(2);
+    expect(payloads('match:answered')).toHaveLength(0);
 
     jest.advanceTimersByTime(RETURN_GRACE_MS.SOLO);
     expect(results.save).not.toHaveBeenCalled();
@@ -459,6 +472,18 @@ describe('a party round', () => {
     session.submitAnswer('ana', 0, wrongOption());
     session.submitAnswer('marko', 0, wrongOption());
     expect(received('ana', 'match:round-result')).toHaveLength(1);
+  });
+
+  it('keeps the live scores and charges for a player who comes back', () => {
+    const { session, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+
+    session.submitAnswer('marko', 0, correctOption());
+    expect(session.liveStats()).toEqual([
+      { userId: 'ana', score: 0, correctCount: 0, charges: 1 },
+      { userId: 'marko', score: 150, correctCount: 1, charges: 2 },
+      { userId: 'iva', score: 0, correctCount: 0, charges: 1 },
+    ]);
   });
 });
 

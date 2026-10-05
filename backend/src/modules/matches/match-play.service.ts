@@ -6,19 +6,23 @@ import {
   toMatchView,
   toSessionSetup,
 } from './match.mapper';
-import { MatchBoostType, MatchView, SessionSetup } from './matches.types';
+import { LivePlayerStats, MatchBoostType, MatchView, SessionSetup } from './matches.types';
 
 /** The small database steps of a live match: lobby, start, abandon and power-ups. */
 @Injectable()
 export class MatchPlayService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findLobbyView(matchId: string, connectedUserIds: string[]): Promise<MatchView> {
+  async findLobbyView(
+    matchId: string,
+    connectedUserIds: string[],
+    liveStats: LivePlayerStats[],
+  ): Promise<MatchView> {
     const match = await this.prisma.match.findUniqueOrThrow({
       where: { id: matchId },
       include: MATCH_VIEW_INCLUDE,
     });
-    return toMatchView(match, connectedUserIds);
+    return toMatchView(match, connectedUserIds, liveStats);
   }
 
   async loadSessionSetup(matchId: string): Promise<SessionSetup> {

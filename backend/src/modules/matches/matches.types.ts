@@ -5,6 +5,7 @@ import {
   MatchStatus,
   Question,
   QuizKind,
+  QuizLanguage,
   QuizTheme,
 } from '@prisma/client';
 import { Namespace, Socket } from 'socket.io';
@@ -33,6 +34,7 @@ export interface MatchQuizView {
   id: string;
   title: string;
   theme: QuizTheme;
+  language: QuizLanguage;
   questionCount: number;
   timePerQuestion: number;
   kind: QuizKind;
@@ -44,6 +46,14 @@ export interface MatchPlayerView {
   correctCount: number;
   isConnected: boolean;
   /** Sabotage charges; always 0 outside party matches. */
+  charges: number;
+}
+
+/** Numbers a running match keeps in memory; the database gets them only when it ends. */
+export interface LivePlayerStats {
+  userId: string;
+  score: number;
+  correctCount: number;
   charges: number;
 }
 

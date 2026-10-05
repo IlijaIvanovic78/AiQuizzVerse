@@ -40,6 +40,7 @@ import {
   FinishedPlayer,
   GameServer,
   GameServerToClientEvents,
+  LivePlayerStats,
   MatchBoostType,
   MatchSummary,
   PlayerAnswerRecord,
@@ -159,6 +160,15 @@ export class MatchSession {
 
   hasPlayer(userId: string): boolean {
     return this.players.has(userId);
+  }
+
+  liveStats(): LivePlayerStats[] {
+    return [...this.players.values()].map(({ userId, score, correctCount, charges }) => ({
+      userId,
+      score,
+      correctCount,
+      charges,
+    }));
   }
 
   submitAnswer(userId: string, questionIndex: number, optionIndex: number): void {
@@ -606,6 +616,11 @@ export class MatchSession {
     if (this.phase === 'question') {
       const order = this.optionOrderFor(userId, this.index);
       this.emitToUser(userId, 'match:question', this.questionPayload(this.index, order));
+      // Leaving gave up this question, so the page waits for the next one instead of
+      // taking an answer that would not count.
+      if (!this.canAnswer(userId)) {
+        this.emitToUser(userId, 'match:answered', { matchId: this.match.id, userId });
+      }
     }
     if (this.phase === 'reveal') {
       this.sendRoundResult(userId);

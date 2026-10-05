@@ -3,7 +3,9 @@ import { PathResult } from '../learning-paths/learning-paths.types';
 import { ReviewAnswer } from '../review/review.types';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
 import {
+  LivePlayerStats,
   MatchHistoryEntry,
+  MatchPlayerView,
   MatchResult,
   MatchView,
   PlayedRound,
@@ -28,6 +30,7 @@ export const MATCH_VIEW_INCLUDE = {
       id: true,
       title: true,
       theme: true,
+      language: true,
       kind: true,
       timePerQuestion: true,
       _count: { select: { questions: true } },
@@ -62,7 +65,12 @@ export interface ResultExtras {
   coinCapReached: boolean;
 }
 
-export function toMatchView(match: MatchWithPlayers, connectedUserIds: string[]): MatchView {
+/** While a match runs, its scores and sabotage charges come from the live session. */
+export function toMatchView(
+  match: MatchWithPlayers,
+  connectedUserIds: string[],
+  liveStats: LivePlayerStats[] = [],
+): MatchView {
   return {
     id: match.id,
     mode: match.mode,
@@ -73,17 +81,15 @@ export function toMatchView(match: MatchWithPlayers, connectedUserIds: string[])
       id: match.quiz.id,
       title: match.quiz.title,
       theme: match.quiz.theme,
+      language: match.quiz.language,
       questionCount: match.quiz._count.questions,
       timePerQuestion: match.quiz.timePerQuestion,
       kind: match.quiz.kind,
     },
-    players: match.players.map((player) => ({
-      user: toPublicUser(player.user),
-      score: player.score,
-      correctCount: player.correctCount,
-      isConnected: connectedUserIds.includes(player.userId),
-      charges: startingCharges(match.mode),
-    })),
+    players: match.players.map((player) => {
+      const live = liveStats.find((stats) => stats.userId === player.userId);
+      return toMatchPlayerView(player, match.mode, connectedUserIds, live);
+    }),
   };
 }
 
@@ -187,6 +193,21 @@ export function toReviewAnswers(
       correct: answer.correct,
     };
   });
+}
+
+function toMatchPlayerView(
+  player: PlayerWithUser,
+  mode: MatchMode,
+  connectedUserIds: string[],
+  live: LivePlayerStats | undefined,
+): MatchPlayerView {
+  return {
+    user: toPublicUser(player.user),
+    score: live?.score ?? player.score,
+    correctCount: live?.correctCount ?? player.correctCount,
+    isConnected: connectedUserIds.includes(player.userId),
+    charges: live?.charges ?? startingCharges(mode),
+  };
 }
 
 /** The best-scoring other player: the duel opponent, the team partner or the party rival. */

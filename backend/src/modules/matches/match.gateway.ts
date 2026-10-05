@@ -17,7 +17,7 @@ import { MatchIdDto } from './dto/match-id.dto';
 import { NextQuestionDto } from './dto/next-question.dto';
 import { SabotageDto } from './dto/sabotage.dto';
 import { UseBoostDto } from './dto/use-boost.dto';
-import { MatchWithPlayers } from './match.mapper';
+import { MatchWithPlayers, toMatchView } from './match.mapper';
 import { MatchPlayService } from './match-play.service';
 import { MatchResultsService } from './match-results.service';
 import { MatchSession } from './match-session';
@@ -91,7 +91,9 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       socket.emit('match:finished', await this.results.findResult(matchId, userId));
       return;
     }
+    // The view tells a client that reconnects after a restart that the match is over.
     if (match.status === 'ABANDONED') {
+      socket.emit('match:lobby', toMatchView(match, []));
       throw new WsException('This match has ended.');
     }
 
@@ -184,13 +186,16 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     throw new WsException(message);
   }
 
+  /** The room gets the lobby view again, so the others see that the player is back. */
   private async rejoin(matchId: string, userId: string): Promise<void> {
     const session = this.registry.get(matchId);
     if (!session) {
       await this.play.abandon(matchId);
+      await this.broadcastLobby(matchId);
       throw new WsException('This match was interrupted');
     }
     session.playerReturned(userId);
+    await this.broadcastLobby(matchId);
   }
 
   private async leaveLobby(matchId: string, userId: string): Promise<void> {
@@ -218,7 +223,7 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
       session.playerDisconnected(userId);
       return;
     }
-    const view = await this.play.findLobbyView(matchId, connectedUserIds);
+    const view = await this.play.findLobbyView(matchId, connectedUserIds, []);
     if (view.status === 'WAITING') {
       this.emitLobby(view);
     }
@@ -250,7 +255,9 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
   }
 
   private async broadcastLobby(matchId: string): Promise<void> {
-    this.emitLobby(await this.play.findLobbyView(matchId, await this.connectedUserIds(matchId)));
+    const connectedUserIds = await this.connectedUserIds(matchId);
+    const liveStats = this.registry.get(matchId)?.liveStats() ?? [];
+    this.emitLobby(await this.play.findLobbyView(matchId, connectedUserIds, liveStats));
   }
 
   private emitLobby(view: MatchView): void {
