@@ -1,0 +1,16 @@
+const target = process.env.API_PROXY_TARGET ?? 'http://localhost:3000';
+
+module.exports = {
+  '/api': {
+    target,
+    secure: false,
+    changeOrigin: true,
+    pathRewrite: { '^/api': '' },
+  },
+  '/socket.io': {
+    target,
+    secure: false,
+    changeOrigin: true,
+    ws: true,
+  },
+};
