@@ -20,19 +20,17 @@ export interface FriendRequests {
   outgoing: FriendRequest[];
 }
 
-export interface UserSearchResult {
-  user: PublicUser;
+export interface RelationInfo {
   relation: FriendRelation;
   friendshipId: string | null;
+}
+
+export interface UserSearchResult extends RelationInfo {
+  user: PublicUser;
 }
 
 export interface FriendRequestOutcome {
   status: 'SENT' | 'ACCEPTED';
   request: FriendRequest | null;
   friend: Friend | null;
-}
-
-export interface RelationInfo {
-  relation: FriendRelation;
-  friendshipId: string | null;
 }

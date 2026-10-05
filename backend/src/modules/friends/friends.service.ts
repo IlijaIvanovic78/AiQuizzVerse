@@ -10,12 +10,14 @@ import { NotificationsService } from '../realtime/notifications.service';
 import { PresenceService } from '../realtime/presence.service';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
 import {
+  acceptedFriendshipsOf,
+  FRIENDSHIP_USERS_INCLUDE,
   FriendshipWithUsers,
+  involving,
   otherUserId,
   relationTo,
   toFriend,
   toFriendRequest,
-  WITH_FRIENDSHIP_USERS,
 } from './friend.mapper';
 import {
   PLAYER_NOT_FOUND_MESSAGE,
@@ -45,8 +47,8 @@ export class FriendsService {
 
   async listFriends(userId: string): Promise<Friend[]> {
     const friendships = await this.prisma.friendship.findMany({
-      where: { status: 'ACCEPTED', ...involving(userId) },
-      include: WITH_FRIENDSHIP_USERS,
+      where: acceptedFriendshipsOf(userId),
+      include: FRIENDSHIP_USERS_INCLUDE,
     });
     return friendships
       .map((friendship) => this.friendFor(friendship, userId))
@@ -55,7 +57,7 @@ export class FriendsService {
 
   async findFriendIds(userId: string): Promise<string[]> {
     const friendships = await this.prisma.friendship.findMany({
-      where: { status: 'ACCEPTED', ...involving(userId) },
+      where: acceptedFriendshipsOf(userId),
       select: { senderId: true, receiverId: true },
     });
     return friendships.map((friendship) => otherUserId(friendship, userId));
@@ -131,7 +133,7 @@ export class FriendsService {
 
     const friendship = await this.prisma.friendship.findUniqueOrThrow({
       where: { id: requestId },
-      include: WITH_FRIENDSHIP_USERS,
+      include: FRIENDSHIP_USERS_INCLUDE,
     });
     this.notifyAccepted(friendship, userId);
     return this.friendFor(friendship, userId);
@@ -174,7 +176,7 @@ export class FriendsService {
     if (!existing) {
       const friendship = await tx.friendship.create({
         data: { senderId, receiverId },
-        include: WITH_FRIENDSHIP_USERS,
+        include: FRIENDSHIP_USERS_INCLUDE,
       });
       return { friendship, accepted: false };
     }
@@ -188,7 +190,7 @@ export class FriendsService {
     const friendship = await tx.friendship.update({
       where: { id: existing.id },
       data: { status: 'ACCEPTED' },
-      include: WITH_FRIENDSHIP_USERS,
+      include: FRIENDSHIP_USERS_INCLUDE,
     });
     return { friendship, accepted: true };
   }
@@ -211,7 +213,7 @@ export class FriendsService {
   private findPendingRequests(where: Prisma.FriendshipWhereInput): Promise<FriendshipWithUsers[]> {
     return this.prisma.friendship.findMany({
       where: { ...where, status: 'PENDING' },
-      include: WITH_FRIENDSHIP_USERS,
+      include: FRIENDSHIP_USERS_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -237,10 +239,6 @@ export class FriendsService {
     const isOnline = this.presence.isOnline(otherUserId(friendship, viewerId));
     return toFriend(friendship, viewerId, isOnline);
   }
-}
-
-function involving(userId: string): Prisma.FriendshipWhereInput {
-  return { OR: [{ senderId: userId }, { receiverId: userId }] };
 }
 
 function between(userId: string, otherIds: string[]): Prisma.FriendshipWhereInput {

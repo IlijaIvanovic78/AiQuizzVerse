@@ -6,14 +6,16 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { errorStack } from '../../common/utils/errors';
 import { PrismaService } from '../../prisma/prisma.service';
+import { acceptedFriendshipsOf, otherUserId } from '../friends/friend.mapper';
 import { PresenceService } from './presence.service';
 import { DEFAULT_FRONTEND_URL, userRoom } from './realtime.constants';
 import type { RealtimeServer, RealtimeSocket } from './realtime.types';
 import { WsAuthService } from './ws-auth.service';
 
 @WebSocketGateway({
-  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL, credentials: true },
+  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL },
 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -28,12 +30,7 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   ) {}
 
   afterInit(server: RealtimeServer): void {
-    server.use((socket, next) => {
-      this.wsAuth.authenticate(socket).then(
-        () => next(),
-        () => next(new Error('unauthorized')),
-      );
-    });
+    server.use(this.wsAuth.middleware);
   }
 
   async handleConnection(socket: RealtimeSocket): Promise<void> {
@@ -63,17 +60,16 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       }
       this.server.to(friendIds.map(userRoom)).emit(event, { userId });
     } catch (error) {
-      this.logger.error(`Could not notify the friends of ${userId}`, (error as Error).stack);
+      this.logger.error(`Could not notify the friends of ${userId}`, errorStack(error));
     }
   }
 
+  // FriendsModule imports RealtimeModule, so the gateway cannot use FriendsService for this.
   private async findFriendIds(userId: string): Promise<string[]> {
     const friendships = await this.prisma.friendship.findMany({
-      where: { status: 'ACCEPTED', OR: [{ senderId: userId }, { receiverId: userId }] },
+      where: acceptedFriendshipsOf(userId),
       select: { senderId: true, receiverId: true },
     });
-    return friendships.map((friendship) =>
-      friendship.senderId === userId ? friendship.receiverId : friendship.senderId,
-    );
+    return friendships.map((friendship) => otherUserId(friendship, userId));
   }
 }
