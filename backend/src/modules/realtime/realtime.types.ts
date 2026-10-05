@@ -1,5 +1,6 @@
 import { MatchMode } from '@prisma/client';
 import { Server, Socket } from 'socket.io';
+import { ChestView } from '../chests/chests.types';
 import { Friend, FriendRequest } from '../friends/friends.types';
 import { PublicUser } from '../users/users.types';
 
@@ -29,6 +30,7 @@ export interface ServerToClientEvents {
   'duel:invite': (payload: DuelInvite) => void;
   'quiz:progress': (payload: QuizProgress) => void;
   'coins:updated': (payload: { coins: number }) => void;
+  'chest:earned': (payload: { chest: ChestView }) => void;
 }
 
 export type ClientToServerEvents = Record<string, never>;

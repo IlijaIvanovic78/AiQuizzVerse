@@ -1,15 +1,18 @@
 import { BoostType, ItemType } from '@prisma/client';
 
-export interface ShopItem {
+/** A type, not an interface, so an opened chest can store the item it gave as a Json value. */
+export type ShopItem = {
   id: string;
   name: string;
   type: ItemType;
   price: number;
   minLevel: number;
   isStarter: boolean;
+  /** Found only in chests: listed in the shop, but never sold. */
+  isChestOnly: boolean;
   owned: boolean;
   equipped: boolean;
-}
+};
 
 export interface ItemPurchase {
   coins: number;

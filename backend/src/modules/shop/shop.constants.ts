@@ -20,9 +20,15 @@ export const BOOST_CATALOG: BoostCatalogEntry[] = [
     price: 10,
   },
   {
+    type: 'SECOND_CHANCE',
+    name: 'Second chance',
+    description: 'If your answer is wrong, you can try once more for half the points.',
+    price: 20,
+  },
+  {
     type: 'STREAK_FREEZE',
     name: 'Streak freeze',
-    description: 'Keeps your streak safe when you miss a day. Earn it on learning paths.',
+    description: 'Keeps your streak safe when you miss a day. Find it in golden chests.',
     price: null,
   },
 ];

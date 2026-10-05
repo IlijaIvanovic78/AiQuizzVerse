@@ -9,6 +9,7 @@ export function toShopItem(item: Item, customer: ShopCustomer): ShopItem {
     price: item.price,
     minLevel: item.minLevel,
     isStarter: item.isStarter,
+    isChestOnly: item.isChestOnly,
     owned: customer.ownedItemIds.has(item.id),
     equipped: item.id === customer.avatarKey || item.id === customer.petKey,
   };

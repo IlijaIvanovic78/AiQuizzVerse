@@ -87,7 +87,7 @@ export class ShopService {
   async buyBoost(userId: string, type: BoostType): Promise<BoostPurchase> {
     const entry = BOOST_CATALOG.find((boost) => boost.type === type);
     if (!entry || entry.price === null) {
-      throw new BadRequestException("This power-up can't be bought. Earn it on learning paths.");
+      throw new BadRequestException("This power-up can't be bought. Find it in golden chests.");
     }
     const price = entry.price;
 
@@ -105,6 +105,26 @@ export class ShopService {
       return { coins: user.coins, quantity: boost.quantity };
     });
     return { coins, boost: { ...entry, owned: quantity } };
+  }
+
+  async findCustomer(userId: string): Promise<ShopCustomer> {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: {
+        coins: true,
+        xp: true,
+        avatarKey: true,
+        petKey: true,
+        items: { select: { itemId: true } },
+      },
+    });
+    return {
+      coins: user.coins,
+      xp: user.xp,
+      avatarKey: user.avatarKey,
+      petKey: user.petKey,
+      ownedItemIds: new Set(user.items.map((owned) => owned.itemId)),
+    };
   }
 
   // The coin check and the decrement are one statement, so two quick purchases
@@ -130,31 +150,14 @@ export class ShopService {
     }
     return item;
   }
-
-  private async findCustomer(userId: string): Promise<ShopCustomer> {
-    const user = await this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: {
-        coins: true,
-        xp: true,
-        avatarKey: true,
-        petKey: true,
-        items: { select: { itemId: true } },
-      },
-    });
-    return {
-      coins: user.coins,
-      xp: user.xp,
-      avatarKey: user.avatarKey,
-      petKey: user.petKey,
-      ownedItemIds: new Set(user.items.map((owned) => owned.itemId)),
-    };
-  }
 }
 
 function assertCanBuy(item: Item, customer: ShopCustomer): void {
   if (item.isStarter) {
     throw new BadRequestException('Starter heroes are free. You pick one when you begin.');
+  }
+  if (item.isChestOnly) {
+    throw new BadRequestException("This one can't be bought. Find it in chests!");
   }
   if (customer.ownedItemIds.has(item.id)) {
     throw new BadRequestException('You already own this.');
