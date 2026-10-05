@@ -166,6 +166,14 @@ describe('match rewards', () => {
     expect(matchReward({ ...duel, outcome: 'LOSS' })).toEqual({ xp: 20, coins: 7 });
   });
 
+  it('pays a party winner and a party draw like a duel', () => {
+    const party: MatchRewardInput = { ...solo, mode: 'PARTY', correctCount: 1 };
+
+    expect(matchReward({ ...party, outcome: 'WIN' })).toEqual({ xp: 50, coins: 22 });
+    expect(matchReward({ ...party, outcome: 'DRAW' })).toEqual({ xp: 30, coins: 12 });
+    expect(matchReward({ ...party, outcome: 'LOSS' })).toEqual({ xp: 20, coins: 7 });
+  });
+
   it('adds the team bonus when the team wins', () => {
     expect(matchReward({ ...solo, mode: 'TEAM', outcome: 'WIN' })).toEqual({ xp: 70, coins: 23 });
   });

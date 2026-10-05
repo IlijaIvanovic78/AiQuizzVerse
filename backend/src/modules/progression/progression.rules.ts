@@ -10,6 +10,8 @@ import {
   MAX_STREAK_BONUS_COINS,
   NO_REWARD,
   ONE_STAR_ACCURACY,
+  PARTY_DRAW_BONUS,
+  PARTY_WIN_BONUS,
   STREAK_BONUS_COINS_PER_DAY,
   STREAK_FREEZE_GAP_DAYS,
   TEAM_WIN_BONUS,
@@ -132,6 +134,12 @@ function outcomeBonus(mode: MatchMode, outcome: MatchOutcome): Reward {
   }
   if (mode === 'TEAM' && outcome === 'WIN') {
     return TEAM_WIN_BONUS;
+  }
+  if (mode === 'PARTY' && outcome === 'WIN') {
+    return PARTY_WIN_BONUS;
+  }
+  if (mode === 'PARTY' && outcome === 'DRAW') {
+    return PARTY_DRAW_BONUS;
   }
   return NO_REWARD;
 }
