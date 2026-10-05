@@ -318,5 +318,205 @@
     "frameHeight": 32,
     "frames": 4,
     "fps": 8
+  },
+  {
+    "key": "hero-fire-mage",
+    "type": "hero",
+    "name": "Fire Mage",
+    "sheet": "heroes/hero-fire-mage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-frost-knight",
+    "type": "hero",
+    "name": "Frost Knight",
+    "sheet": "heroes/hero-frost-knight.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-shadow-archer",
+    "type": "hero",
+    "name": "Shadow Archer",
+    "sheet": "heroes/hero-shadow-archer.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-forest-ranger",
+    "type": "hero",
+    "name": "Forest Ranger",
+    "sheet": "heroes/hero-forest-ranger.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-desert-nomad",
+    "type": "hero",
+    "name": "Desert Nomad",
+    "sheet": "heroes/hero-desert-nomad.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-storm-lancer",
+    "type": "hero",
+    "name": "Storm Lancer",
+    "sheet": "heroes/hero-storm-lancer.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-crimson-prince",
+    "type": "hero",
+    "name": "Crimson Prince",
+    "sheet": "heroes/hero-crimson-prince.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-sun-paladin",
+    "type": "hero",
+    "name": "Sun Paladin",
+    "sheet": "heroes/hero-sun-paladin.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-golden-king",
+    "type": "hero",
+    "name": "Golden King",
+    "sheet": "heroes/hero-golden-king.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "hero-void-archmage",
+    "type": "hero",
+    "name": "Void Archmage",
+    "sheet": "heroes/hero-void-archmage.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-dragon-red",
+    "type": "pet",
+    "name": "Ember Dragon",
+    "sheet": "pets/pet-dragon-red.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-dragon-green",
+    "type": "pet",
+    "name": "Moss Dragon",
+    "sheet": "pets/pet-dragon-green.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-dragon-blue",
+    "type": "pet",
+    "name": "Frost Dragon",
+    "sheet": "pets/pet-dragon-blue.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-dragon-gold",
+    "type": "pet",
+    "name": "Sun Dragon",
+    "sheet": "pets/pet-dragon-gold.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-slime-green",
+    "type": "pet",
+    "name": "Green Slime",
+    "sheet": "pets/pet-slime-green.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-slime-blue",
+    "type": "pet",
+    "name": "Water Slime",
+    "sheet": "pets/pet-slime-blue.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-slime-pink",
+    "type": "pet",
+    "name": "Bubblegum Slime",
+    "sheet": "pets/pet-slime-pink.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 6
+  },
+  {
+    "key": "pet-arctic-fox",
+    "type": "pet",
+    "name": "Arctic Fox",
+    "sheet": "pets/pet-arctic-fox.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-shadow-wolf",
+    "type": "pet",
+    "name": "Shadow Wolf",
+    "sheet": "pets/pet-shadow-wolf.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
+  },
+  {
+    "key": "pet-golden-bunny",
+    "type": "pet",
+    "name": "Golden Bunny",
+    "sheet": "pets/pet-golden-bunny.png",
+    "frameWidth": 32,
+    "frameHeight": 32,
+    "frames": 4,
+    "fps": 8
   }
 ]
