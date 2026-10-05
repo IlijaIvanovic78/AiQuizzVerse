@@ -1,0 +1,26 @@
+<div class="inline-flex items-center gap-2" role="group" [attr.aria-labelledby]="labelledBy()">
+  <button
+    type="button"
+    class="btn btn-secondary stepper-button"
+    [disabled]="value() <= min()"
+    [attr.aria-label]="'Less: ' + name()"
+    (click)="change(-step())"
+  >
+    -
+  </button>
+  <output
+    class="min-w-[5.5rem] rounded border-3 border-outline bg-night-950 px-2 py-2 text-center font-display text-base text-parchment-100"
+    aria-live="polite"
+  >
+    {{ value() }}{{ unit() }}
+  </output>
+  <button
+    type="button"
+    class="btn btn-secondary stepper-button"
+    [disabled]="value() >= max()"
+    [attr.aria-label]="'More: ' + name()"
+    (click)="change(step())"
+  >
+    +
+  </button>
+</div>

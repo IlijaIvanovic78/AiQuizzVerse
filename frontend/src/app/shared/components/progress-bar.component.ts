@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 export type BarTone = 'torch' | 'jade' | 'ruby' | 'mana' | 'gold';
-export type BarSize = 'sm' | 'md' | 'lg';
+type BarSize = 'sm' | 'md' | 'lg';
 
 const FILL_CLASSES: Record<BarTone, string> = {
   torch: 'bg-torch-400',

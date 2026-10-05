@@ -1,0 +1,42 @@
+<article class="quiz-card panel" [class.quiz-card-linked]="link() !== null">
+  <span class="quiz-ribbon" [class]="ribbon()" aria-hidden="true"></span>
+
+  <div class="flex flex-1 flex-col gap-3 p-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <app-theme-badge [theme]="quiz().theme" />
+      <app-difficulty-badge [difficulty]="quiz().difficulty" />
+    </div>
+
+    <h3 class="text-xl leading-tight">
+      @if (link(); as link) {
+        <a class="quiz-card-link" [routerLink]="link">{{ quiz().title }}</a>
+      } @else {
+        {{ quiz().title }}
+      }
+    </h3>
+
+    <p class="text-sm text-muted">
+      {{ quiz().audience | audienceLabel }} &middot; {{ quiz().language | languageLabel }} &middot;
+      {{ quiz().questionCount }} questions &middot; {{ quiz().timePerQuestion }}s each
+    </p>
+
+    <div class="mt-auto flex items-center justify-between gap-3 pt-1">
+      @if (quiz().bestAccuracy !== null) {
+        <span class="flex items-center gap-1.5 text-sm font-semibold text-gold">
+          <app-pixel-icon name="trophy" />
+          Best {{ quiz().bestAccuracy }}%
+        </span>
+      } @else {
+        <span class="text-sm text-muted">Not played yet</span>
+      }
+      <button
+        type="button"
+        class="btn btn-primary btn-sm quiz-card-play"
+        [disabled]="busy()"
+        (click)="play.emit()"
+      >
+        Play<span class="sr-only"> {{ quiz().title }}</span>
+      </button>
+    </div>
+  </div>
+</article>

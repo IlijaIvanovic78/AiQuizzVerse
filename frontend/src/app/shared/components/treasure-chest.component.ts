@@ -1,18 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { STAR_ACCURACIES } from '../stars';
 import { PixelIconComponent } from './pixel-icon.component';
 import { ProgressBarComponent } from './progress-bar.component';
 
-const STAR_THRESHOLDS = [0.6, 0.8, 1];
+const FULL_PERCENT = 100;
 
-const BURST_COINS = [
-  { x: '-64px', y: '-56px', delay: '0ms' },
-  { x: '-32px', y: '-92px', delay: '60ms' },
-  { x: '0px', y: '-108px', delay: '20ms' },
-  { x: '34px', y: '-88px', delay: '90ms' },
-  { x: '66px', y: '-52px', delay: '40ms' },
-  { x: '14px', y: '-70px', delay: '120ms' },
-];
-
+// The chest bar of solo, path and team games. Every right answer fills it, and the stars on it
+// light up at the accuracies that earn a star.
 @Component({
   selector: 'app-treasure-chest',
   imports: [PixelIconComponent, ProgressBarComponent],
@@ -21,19 +15,17 @@ const BURST_COINS = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TreasureChestComponent {
-  // A fraction from 0 to 1; the stars mark 60%, 80% and 100%.
-  readonly progress = input(0);
-  // Every new number plays the lid bounce and the coin burst once.
-  readonly burst = input(0);
-  readonly label = input('Treasure chest progress');
+  readonly correct = input.required<number>();
+  readonly total = input.required<number>();
+  readonly label = input('Treasure chest');
 
-  protected readonly coins = BURST_COINS;
-  protected readonly burstKeys = computed(() => [{ id: this.burst() }]);
+  protected readonly fraction = computed(() =>
+    this.total() > 0 ? this.correct() / this.total() : 0,
+  );
   protected readonly markers = computed(() =>
-    STAR_THRESHOLDS.map((threshold) => ({
-      threshold,
-      left: `${threshold * 100}%`,
-      reached: this.progress() >= threshold,
+    STAR_ACCURACIES.map((accuracy) => ({
+      accuracy,
+      reached: this.fraction() * FULL_PERCENT >= accuracy,
     })),
   );
 }

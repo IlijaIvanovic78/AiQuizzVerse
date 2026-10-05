@@ -1,0 +1,29 @@
+@switch (relation()) {
+  @case ('NONE') {
+    <button type="button" class="btn btn-primary btn-sm" [disabled]="busy()" (click)="add.emit()">
+      Add friend<span class="sr-only">: {{ username() }}</span>
+    </button>
+  }
+  @case ('REQUEST_RECEIVED') {
+    <button
+      type="button"
+      class="btn btn-success btn-sm"
+      [disabled]="busy()"
+      (click)="accept.emit()"
+    >
+      Accept<span class="sr-only"> {{ username() }}'s request</span>
+    </button>
+  }
+  @case ('REQUEST_SENT') {
+    <span class="badge badge-fog">Request sent</span>
+    <button type="button" class="btn btn-ghost btn-sm" [disabled]="busy()" (click)="cancel.emit()">
+      Cancel<span class="sr-only"> the request to {{ username() }}</span>
+    </button>
+  }
+  @case ('FRIEND') {
+    <span class="badge badge-jade">
+      <app-pixel-icon name="check" [scale]="1" />
+      Friends
+    </span>
+  }
+}

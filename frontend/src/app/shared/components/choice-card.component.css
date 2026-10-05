@@ -1,0 +1,83 @@
+.choice-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  width: 100%;
+  height: 100%;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background-color: var(--night-700);
+  color: var(--parchment-100);
+  text-align: left;
+  box-shadow:
+    inset 0 -4px 0 rgba(0, 0, 0, 0.35),
+    0 4px 0 var(--outline);
+  transition: transform 120ms ease-out;
+}
+
+.choice-card:hover:not(:disabled) {
+  background-color: var(--night-600);
+  transform: translateY(-3px);
+}
+
+.choice-card:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.choice-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.choice-card[aria-pressed='true'],
+.choice-card[aria-pressed='true']:hover {
+  --muted: #6b5038;
+  border-color: var(--torch-600);
+  background-color: var(--parchment-200);
+  background-image: url('/assets/images/textures/parchment.png');
+  color: var(--ink);
+  box-shadow:
+    inset 0 -4px 0 var(--torch-500),
+    0 4px 0 var(--outline);
+}
+
+.choice-art {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  justify-content: center;
+  width: 3.75rem;
+  min-height: 3rem;
+}
+
+.choice-text {
+  color: var(--muted, var(--fog-300));
+  font-size: 0.95rem;
+  line-height: 1.35;
+}
+
+.choice-card[aria-pressed='true'] .choice-text {
+  color: #6b5038;
+}
+
+.choice-badge {
+  position: absolute;
+  top: -0.75rem;
+  right: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .choice-card {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 1.25rem 1rem 1rem;
+    text-align: center;
+  }
+
+  .choice-art {
+    width: 100%;
+    min-height: 5.5rem;
+  }
+}

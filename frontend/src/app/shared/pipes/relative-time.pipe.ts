@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-export type RelativeTimeMode = 'time' | 'day';
+type RelativeTimeMode = 'time' | 'day';
 
 const SECOND_MS = 1000;
 const DAY_MS = 86_400_000;

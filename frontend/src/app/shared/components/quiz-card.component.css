@@ -1,0 +1,41 @@
+.quiz-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  transition: transform 120ms ease-out;
+}
+
+.quiz-card-linked:hover {
+  background-color: var(--night-700);
+  transform: translateY(-3px);
+}
+
+/* The focus ring of the title link is drawn around the whole card. */
+.quiz-card:has(.quiz-card-link:focus-visible) {
+  outline: 3px solid var(--torch-400);
+  outline-offset: 2px;
+}
+
+.quiz-ribbon {
+  display: block;
+  height: 10px;
+  border-bottom: 3px solid var(--outline);
+}
+
+/* The title link covers the whole card, so a tap anywhere opens the quiz. */
+.quiz-card-link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.quiz-card-link:focus-visible {
+  outline: none;
+}
+
+.quiz-card-play {
+  position: relative;
+  z-index: 1;
+}

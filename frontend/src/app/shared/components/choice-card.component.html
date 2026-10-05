@@ -1,0 +1,21 @@
+<button
+  type="button"
+  class="choice-card"
+  [attr.aria-pressed]="selected()"
+  [disabled]="disabled()"
+  (click)="chosen.emit()"
+>
+  <span class="choice-art" aria-hidden="true"><ng-content select="[choiceArt]" /></span>
+  <span class="flex min-w-0 flex-col gap-1">
+    <span class="text-xl font-semibold leading-tight">{{ title() }}</span>
+    @if (text()) {
+      <span class="choice-text">{{ text() }}</span>
+    }
+  </span>
+  @if (selected()) {
+    <span class="badge badge-jade choice-badge">
+      <app-pixel-icon name="check" [scale]="1" />
+      Chosen
+    </span>
+  }
+</button>

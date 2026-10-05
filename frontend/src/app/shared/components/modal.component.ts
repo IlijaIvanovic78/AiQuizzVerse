@@ -13,7 +13,7 @@ import {
 } from '@angular/core';
 import { PixelIconComponent } from './pixel-icon.component';
 
-export type ModalSize = 'sm' | 'md' | 'lg';
+type ModalSize = 'sm' | 'md' | 'lg';
 
 const SIZE_CLASSES: Record<ModalSize, string> = {
   sm: 'max-w-sm',

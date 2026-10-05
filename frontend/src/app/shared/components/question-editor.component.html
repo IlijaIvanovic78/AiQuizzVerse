@@ -1,0 +1,130 @@
+<div class="flex flex-col gap-5" [formGroup]="form()">
+  <div>
+    <label class="field-label" [for]="id + '-text'">Question</label>
+    <textarea
+      class="input font-read text-lg"
+      rows="2"
+      formControlName="text"
+      [id]="id + '-text'"
+      [attr.maxlength]="limits.question"
+      [attr.aria-invalid]="problems().text !== null"
+      [attr.aria-describedby]="id + '-text-problem'"
+    ></textarea>
+    <div [id]="id + '-text-problem'">
+      @if (problems().text; as problem) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          {{ problem }}
+        </p>
+      }
+    </div>
+  </div>
+
+  <fieldset [attr.aria-describedby]="id + '-answers-problem'">
+    <legend class="field-label">Answers</legend>
+    <p class="field-hint -mt-1 mb-3">Tick the box next to the right answer.</p>
+
+    <ol class="flex flex-col gap-2" formArrayName="options">
+      @for (option of form().controls.options.controls; track $index; let i = $index) {
+        <li class="option-row" [class.option-row-right]="correctIndex() === i">
+          <label class="right-pick">
+            <input
+              type="radio"
+              class="sr-only"
+              [name]="id + '-right'"
+              [value]="i"
+              [formControl]="form().controls.correctIndex"
+            />
+            <span class="right-box" aria-hidden="true">
+              @if (correctIndex() === i) {
+                <app-pixel-icon name="check" />
+              }
+            </span>
+            <span class="sr-only">Answer {{ i + 1 }} is the right one</span>
+          </label>
+
+          <div class="min-w-0 flex-1">
+            <input
+              class="input font-read text-lg"
+              [formControlName]="i"
+              [placeholder]="'Answer ' + (i + 1)"
+              [attr.aria-label]="'Answer ' + (i + 1)"
+              [attr.maxlength]="limits.option"
+              [attr.aria-invalid]="problems().options[i] !== null"
+            />
+            @if (problems().options[i]; as problem) {
+              <p class="field-error">
+                <app-pixel-icon name="cross" [scale]="1" />
+                {{ problem }}
+              </p>
+            }
+          </div>
+
+          @if (correctIndex() === i) {
+            <span class="badge badge-jade mt-3 hidden sm:inline-flex">Right answer</span>
+          }
+        </li>
+      }
+    </ol>
+
+    <div [id]="id + '-answers-problem'">
+      @if (problems().sameOptions) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          The 4 answers must all be different.
+        </p>
+      }
+      @if (problems().correctIndex; as problem) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          {{ problem }}
+        </p>
+      }
+    </div>
+  </fieldset>
+
+  <div>
+    <label class="field-label" [for]="id + '-hint'">Hint</label>
+    <input
+      class="input font-read text-lg"
+      formControlName="hint"
+      [id]="id + '-hint'"
+      [attr.maxlength]="limits.hint"
+      [attr.aria-invalid]="problems().hint !== null"
+      [attr.aria-describedby]="id + '-hint-help'"
+    />
+    <div [id]="id + '-hint-help'">
+      @if (problems().hint; as problem) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          {{ problem }}
+        </p>
+      } @else {
+        <p class="field-hint">Point the way, but don't give the answer away.</p>
+      }
+    </div>
+  </div>
+
+  <div>
+    <label class="field-label" [for]="id + '-explanation'">Explanation</label>
+    <textarea
+      class="input font-read text-lg"
+      rows="2"
+      formControlName="explanation"
+      [id]="id + '-explanation'"
+      [attr.maxlength]="limits.explanation"
+      [attr.aria-invalid]="problems().explanation !== null"
+      [attr.aria-describedby]="id + '-explanation-help'"
+    ></textarea>
+    <div [id]="id + '-explanation-help'">
+      @if (problems().explanation; as problem) {
+        <p class="field-error">
+          <app-pixel-icon name="cross" [scale]="1" />
+          {{ problem }}
+        </p>
+      } @else {
+        <p class="field-hint">Shown after the answer. One or two sentences about why.</p>
+      }
+    </div>
+  </div>
+</div>

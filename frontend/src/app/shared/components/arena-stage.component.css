@@ -1,0 +1,33 @@
+:host {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  background: var(--night-900) url('/assets/images/arena-small.webp') center bottom / cover;
+}
+
+@media (min-width: 768px) {
+  :host {
+    background-image: url('/assets/images/arena.webp');
+  }
+}
+
+/* The box keeps the picture's 3:2 shape, so the two spots always stand on the stone
+   platforms painted into it. */
+.spot {
+  position: absolute;
+  bottom: 36.7%;
+  transform: translateX(-50%);
+}
+
+.spot-left {
+  left: 17.3%;
+}
+
+.spot-right {
+  left: 82%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 22%;
+}
