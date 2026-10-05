@@ -1,17 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { PrismaService } from '../../prisma/prisma.service';
 
-interface HealthResponse {
-  status: string;
-  time: string;
-}
-
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
+  constructor(private readonly prisma: PrismaService) {}
+
   @Get()
-  check(): HealthResponse {
-    return {
-      status: 'ok',
-      time: new Date().toISOString(),
-    };
+  async check(): Promise<{ status: 'ok' }> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+    } catch {
+      throw new ServiceUnavailableException('The database is not reachable.');
+    }
+    return { status: 'ok' };
   }
 }

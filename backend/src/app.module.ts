@@ -1,42 +1,43 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from './infrastructure/prisma/prisma.module';
-import { UsersModule } from './modules/users/users.module';
-import { HealthModule } from './modules/health/health.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { ProfileModule } from './modules/profile/profile.module';
-import { FriendshipModule } from './modules/friendship/friendship.module';
-import { EventsModule } from './modules/gateway/events.module';
 import { AiModule } from './modules/ai/ai.module';
-import { UploadModule } from './modules/upload/upload.module';
-import { QuizModule } from './modules/quiz/quiz.module';
-import { GameModule } from './modules/game/game.module';
-import { ShopModule } from './modules/shop/shop.module';
-import { AvatarModule } from './modules/avatar/avatar.module';
-import { RankedModule } from './modules/ranked/ranked.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { DocumentsModule } from './modules/documents/documents.module';
+import { FriendsModule } from './modules/friends/friends.module';
+import { HealthModule } from './modules/health/health.module';
 import { LeaderboardModule } from './modules/leaderboard/leaderboard.module';
+import { LearningPathsModule } from './modules/learning-paths/learning-paths.module';
+import { MatchesModule } from './modules/matches/matches.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ProfileModule } from './modules/profile/profile.module';
+import { ProgressionModule } from './modules/progression/progression.module';
+import { QuizzesModule } from './modules/quizzes/quizzes.module';
+import { RealtimeModule } from './modules/realtime/realtime.module';
+import { ReviewModule } from './modules/review/review.module';
+import { ShopModule } from './modules/shop/shop.module';
+import { UsersModule } from './modules/users/users.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     UsersModule,
     AuthModule,
+    ProgressionModule,
+    RealtimeModule,
+    FriendsModule,
     ProfileModule,
-    FriendshipModule,
-    EventsModule,
-    HealthModule,
+    DocumentsModule,
     AiModule,
-    UploadModule,
-    QuizModule,
-    GameModule,
+    QuizzesModule,
+    LearningPathsModule,
+    ReviewModule,
+    MatchesModule,
     ShopModule,
-    AvatarModule,
-    RankedModule,
+    PaymentsModule,
     LeaderboardModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
