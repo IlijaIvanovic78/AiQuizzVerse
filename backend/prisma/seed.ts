@@ -1,11 +1,17 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { BoostType, PrismaClient } from '@prisma/client';
+import { BoostType, Difficulty, MatchMode, PrismaClient, Question } from '@prisma/client';
 import { hash } from 'bcrypt';
+import { addUtcDays, startOfUtcDay, utcToday } from '../src/common/utils/dates';
 import { BCRYPT_ROUNDS } from '../src/modules/auth/auth.constants';
+import { MS_PER_SECOND } from '../src/modules/matches/matches.constants';
+import { PlayerAnswerRecord } from '../src/modules/matches/matches.types';
+import { answerPoints, findWinnerIds, playerOutcome } from '../src/modules/matches/scoring';
+import { matchReward } from '../src/modules/progression/progression.rules';
 import { toQuizCopy } from '../src/modules/quizzes/quiz.mapper';
 import { STARTER_QUIZ_IDS } from '../src/modules/quizzes/quizzes.constants';
 import { STARTER_BOOSTS } from '../src/modules/users/users.constants';
+import { DEMO_MATCHES, DemoPlayer, SeedMatch, SeedRun } from './seed-data/demo-history';
 import { DEMO_QUIZZES, SeedQuiz } from './seed-data/demo-quizzes';
 import { SEED_ITEMS } from './seed-data/items';
 
@@ -19,7 +25,24 @@ interface DemoUser {
   boosts: { type: BoostType; quantity: number }[];
 }
 
+interface ScoredRun {
+  userId: string;
+  score: number;
+  correctCount: number;
+  answers: PlayerAnswerRecord[];
+}
+
+interface SeedPlayerRow extends ScoredRun {
+  isWinner: boolean;
+  xpEarned: number;
+  coinsEarned: number;
+}
+
+type DemoUserIds = Record<DemoPlayer, string>;
+
 const DEMO_PASSWORD = 'demo1234';
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
+const DEMO_MATCH_MINUTES = 4;
 
 const DEMO_HERO: DemoUser = {
   email: 'demo@quizverse.dev',
@@ -117,6 +140,149 @@ async function copyStarterQuizzesOnce(userId: string): Promise<void> {
   );
 }
 
+/** Only while demo_hero has no finished match, so restarts never add the matches again. */
+async function seedDemoHistory(userIds: DemoUserIds): Promise<boolean> {
+  const finishedMatches = await prisma.matchPlayer.count({
+    where: { userId: userIds.hero, match: { status: 'FINISHED' } },
+  });
+  if (finishedMatches > 0) {
+    return false;
+  }
+  for (const match of DEMO_MATCHES) {
+    await seedMatch(match, userIds);
+  }
+  await seedReviewCards(userIds.hero);
+  await seedStreak(userIds.hero, daysPlayed('hero'));
+  await seedStreak(userIds.friend, daysPlayed('friend'));
+  return true;
+}
+
+async function seedMatch(match: SeedMatch, userIds: DemoUserIds): Promise<void> {
+  const quiz = await prisma.quiz.findUniqueOrThrow({
+    where: { id: match.quizId },
+    include: { questions: { orderBy: { position: 'asc' } } },
+  });
+  const timeLimitMs = quiz.timePerQuestion * MS_PER_SECOND;
+  const runs = match.runs.map((run) =>
+    scoreRun(run, userIds[run.player], quiz.questions, timeLimitMs),
+  );
+  const rows = toPlayerRows(match.mode, quiz.difficulty, runs, quiz.questions.length);
+  const endedAt = playedAt(match.daysAgo, match.minutesEarlier);
+  const startedAt = new Date(endedAt.getTime() - DEMO_MATCH_MINUTES * MS_PER_MINUTE);
+
+  await prisma.match.create({
+    data: {
+      mode: match.mode,
+      status: 'FINISHED',
+      quizId: quiz.id,
+      hostId: runs[0].userId,
+      createdAt: startedAt,
+      startedAt,
+      endedAt,
+      players: { create: rows.map((row) => ({ ...row, joinedAt: startedAt })) },
+    },
+  });
+}
+
+/** A wrong answer picks the option right after the correct one. */
+function scoreRun(
+  run: SeedRun,
+  userId: string,
+  questions: Question[],
+  timeLimitMs: number,
+): ScoredRun {
+  const answers = questions.map((question, index) => {
+    const correct = run.correct[index];
+    const optionIndex = correct
+      ? question.correctIndex
+      : (question.correctIndex + 1) % question.options.length;
+    const points = answerPoints(correct, run.timeLeft * timeLimitMs, timeLimitMs);
+    return { questionId: question.id, optionIndex, correct, points };
+  });
+  return {
+    userId,
+    score: answers.reduce((sum, answer) => sum + answer.points, 0),
+    correctCount: answers.filter((answer) => answer.correct).length,
+    answers,
+  };
+}
+
+function toPlayerRows(
+  mode: MatchMode,
+  difficulty: Difficulty,
+  runs: ScoredRun[],
+  questionCount: number,
+): SeedPlayerRow[] {
+  const winnerIds = findWinnerIds(mode, runs, questionCount);
+  const outcomePlayers = runs.map((run) => ({
+    score: run.score,
+    isWinner: winnerIds.includes(run.userId),
+  }));
+  return runs.map((run, index) => {
+    const outcome = playerOutcome(mode, outcomePlayers[index], outcomePlayers);
+    const reward = matchReward({
+      mode,
+      difficulty,
+      correctCount: run.correctCount,
+      outcome,
+      abandoned: false,
+    });
+    return {
+      ...run,
+      isWinner: outcomePlayers[index].isWinner,
+      xpEarned: reward.xp,
+      coinsEarned: reward.coins,
+    };
+  });
+}
+
+/** Every question demo_hero missed is due today in the mistakes notebook; old cards stay. */
+async function seedReviewCards(heroId: string): Promise<void> {
+  const rows = await prisma.matchPlayer.findMany({
+    where: { userId: heroId },
+    select: { answers: true },
+  });
+  const missedQuestionIds = rows
+    .flatMap((row) => row.answers as PlayerAnswerRecord[])
+    .filter((answer) => !answer.correct)
+    .map((answer) => answer.questionId);
+
+  for (const questionId of new Set(missedQuestionIds)) {
+    const timesWrong = missedQuestionIds.filter((id) => id === questionId).length;
+    await prisma.reviewCard.upsert({
+      where: { userId_questionId: { userId: heroId, questionId } },
+      create: { userId: heroId, questionId, timesWrong, dueOn: utcToday() },
+      update: {},
+    });
+  }
+}
+
+/** The streak counts the days in a row that end with the most recent day played. */
+async function seedStreak(userId: string, daysAgoPlayed: number[]): Promise<void> {
+  const lastDaysAgo = Math.min(...daysAgoPlayed);
+  let streak = 1;
+  while (daysAgoPlayed.includes(lastDaysAgo + streak)) {
+    streak += 1;
+  }
+  await prisma.user.update({
+    where: { id: userId },
+    data: { streak, longestStreak: streak, lastPlayedOn: addUtcDays(utcToday(), -lastDaysAgo) },
+  });
+}
+
+function daysPlayed(player: DemoPlayer): number[] {
+  return DEMO_MATCHES.filter((match) => match.runs.some((run) => run.player === player)).map(
+    (match) => match.daysAgo,
+  );
+}
+
+/** The same time of day, days ago, but never before that day started. */
+function playedAt(daysAgo: number, minutesEarlier: number): Date {
+  const sameTimeThatDay = addUtcDays(new Date(), -daysAgo);
+  const time = sameTimeThatDay.getTime() - minutesEarlier * MS_PER_MINUTE;
+  return new Date(Math.max(time, startOfUtcDay(sameTimeThatDay).getTime()));
+}
+
 async function main(): Promise<void> {
   await seedItems();
   const passwordHash = await hash(DEMO_PASSWORD, BCRYPT_ROUNDS);
@@ -128,9 +294,11 @@ async function main(): Promise<void> {
     await seedDemoQuiz(quiz, heroId);
   }
   await copyStarterQuizzesOnce(friendId);
+  const historyAdded = await seedDemoHistory({ hero: heroId, friend: friendId });
 
+  const history = historyAdded ? `, ${DEMO_MATCHES.length} demo matches` : '';
   console.log(
-    `Seed ready: ${SEED_ITEMS.length} items, 2 demo users, ${DEMO_QUIZZES.length} demo quizzes.`,
+    `Seed ready: ${SEED_ITEMS.length} items, 2 demo users, ${DEMO_QUIZZES.length} demo quizzes${history}.`,
   );
 }
 
