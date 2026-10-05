@@ -1,0 +1,84 @@
+<header class="sticky top-0 z-30 border-b-3 border-outline bg-night-950">
+  <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 md:px-6">
+    <a routerLink="/home" class="shrink-0" aria-label="AI QuizVerse home">
+      <img
+        src="/assets/images/logo.webp"
+        alt=""
+        width="720"
+        height="211"
+        class="h-7 w-auto sm:h-9 md:h-11"
+      />
+    </a>
+
+    <nav
+      aria-label="Main"
+      class="order-last -mx-3 hidden w-full md:block xl:order-none xl:mx-0 xl:w-auto xl:flex-1"
+    >
+      <ul class="flex flex-wrap gap-1 xl:justify-center">
+        @for (link of links; track link.path) {
+          <li>
+            <a
+              class="nav-link"
+              [routerLink]="link.path"
+              routerLinkActive="nav-link-active"
+              ariaCurrentWhenActive="page"
+            >
+              {{ link.label }}
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="ml-auto flex items-center gap-2 sm:gap-3">
+      <a routerLink="/shop" class="coin-link">
+        <app-coin-amount [amount]="user().coins" />
+        <span class="sr-only">, open the shop</span>
+      </a>
+
+      <div class="relative">
+        <button
+          #menuButton
+          type="button"
+          class="menu-button"
+          aria-controls="account-menu"
+          [attr.aria-expanded]="menuOpen()"
+          (click)="toggleMenu()"
+        >
+          <span class="sr-only">Menu for {{ user().username }}</span>
+          <span class="avatar-frame">
+            <app-hero-sprite [heroKey]="user().avatarKey" [scale]="2" [decorative]="true" />
+          </span>
+          <app-level-badge class="hidden sm:inline-flex" [level]="user().level" />
+        </button>
+
+        @if (menuOpen()) {
+          <div
+            id="account-menu"
+            class="panel absolute right-0 top-full z-40 mt-2 w-60 p-2"
+            animate.enter="fade-enter"
+          >
+            <p class="truncate px-3 pb-2 pt-1 font-semibold text-torch-300">
+              {{ user().username }}
+            </p>
+            <ul class="flex flex-col gap-1">
+              @for (link of phoneLinks; track link.path) {
+                <li class="md:hidden">
+                  <a class="menu-item" [routerLink]="link.path" (click)="closeMenu()">
+                    {{ link.label }}
+                  </a>
+                </li>
+              }
+              <li>
+                <a class="menu-item" routerLink="/profile" (click)="closeMenu()">Profile</a>
+              </li>
+              <li>
+                <button type="button" class="menu-item" (click)="logOut()">Log out</button>
+              </li>
+            </ul>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</header>

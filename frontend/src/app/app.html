@@ -1,2 +1,7 @@
 <router-outlet />
-<app-toast-container />
+<app-toast-container
+  [toasts]="toasts()"
+  (actionClicked)="runToastAction($event)"
+  (dismissed)="dismissToast($event)"
+/>
+<app-duel-invite-dialog />

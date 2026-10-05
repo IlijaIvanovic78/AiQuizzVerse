@@ -1,98 +1,146 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/guards';
+import { authGuard } from './core/auth/auth.guard';
+import { guestGuard } from './core/auth/guest.guard';
+import { heroGuard } from './core/auth/hero.guard';
+import { noHeroGuard } from './core/auth/no-hero.guard';
 
 export const routes: Routes = [
-  // Root redirect
   {
-    path: '',
-    redirectTo: 'dashboard',
-    pathMatch: 'full',
-  },
-
-  // Auth routes (guest only)
-  {
-    path: 'auth',
+    path: 'login',
+    title: 'Log in',
     canActivate: [guestGuard],
-    children: [
-      {
-        path: 'login',
-        loadComponent: () =>
-          import('./features/auth/login/login.component').then((m) => m.LoginComponent),
-        title: 'Login - AI QuizVerse',
-      },
-      {
-        path: 'register',
-        loadComponent: () =>
-          import('./features/auth/register/register.component').then((m) => m.RegisterComponent),
-        title: 'Register - AI QuizVerse',
-      },
-      {
-        path: '',
-        redirectTo: 'login',
-        pathMatch: 'full',
-      },
-    ],
+    loadComponent: () =>
+      import('./features/auth/login-page.component').then((m) => m.LoginPageComponent),
   },
-
-  // Authenticated routes (wrapped in Layout)
+  {
+    path: 'register',
+    title: 'Create account',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./features/auth/register-page.component').then((m) => m.RegisterPageComponent),
+  },
+  {
+    path: 'welcome',
+    title: 'Choose your hero',
+    canActivate: [authGuard, noHeroGuard],
+    loadComponent: () =>
+      import('./features/auth/welcome-page.component').then((m) => m.WelcomePageComponent),
+  },
   {
     path: '',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./shared/layout/layout.component').then((m) => m.LayoutComponent),
+    canActivate: [authGuard, heroGuard],
+    loadComponent: () => import('./layout/shell.component').then((m) => m.ShellComponent),
     children: [
-      // Dashboard
+      { path: '', pathMatch: 'full', redirectTo: 'home' },
       {
-        path: 'dashboard',
+        path: 'home',
+        title: 'Home',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
-        title: 'Dashboard - AI QuizVerse',
+          import('./features/home/home-page.component').then((m) => m.HomePageComponent),
       },
-
-      // Profile
       {
-        path: 'profile',
+        path: 'create',
+        title: 'Create',
         loadComponent: () =>
-          import('./features/profile/profile.component').then((m) => m.ProfileComponent),
-        title: 'My Profile - AI QuizVerse',
+          import('./features/create/create-page.component').then((m) => m.CreatePageComponent),
       },
-
-      // Game lobby (with match ID)
       {
-        path: 'game/:id',
+        path: 'library',
+        title: 'Library',
         loadComponent: () =>
-          import('./features/game/game-lobby/game-lobby.component').then((m) => m.GameLobbyComponent),
-        title: 'Game - AI QuizVerse',
+          import('./features/library/library-page.component').then((m) => m.LibraryPageComponent),
       },
-
-      // Shop
+      {
+        path: 'library/:quizId',
+        title: 'Quiz',
+        loadComponent: () =>
+          import('./features/library/quiz-detail-page.component').then(
+            (m) => m.QuizDetailPageComponent,
+          ),
+      },
+      {
+        path: 'play/:matchId',
+        title: 'Play',
+        loadComponent: () =>
+          import('./features/play/match-page.component').then((m) => m.MatchPageComponent),
+      },
+      {
+        path: 'join',
+        title: 'Join a game',
+        loadComponent: () =>
+          import('./features/play/join-page.component').then((m) => m.JoinPageComponent),
+      },
+      {
+        path: 'join/:code',
+        title: 'Join a game',
+        loadComponent: () =>
+          import('./features/play/join-page.component').then((m) => m.JoinPageComponent),
+      },
+      {
+        path: 'paths',
+        title: 'Learning paths',
+        loadComponent: () =>
+          import('./features/paths/paths-page.component').then((m) => m.PathsPageComponent),
+      },
+      {
+        path: 'paths/:pathId',
+        title: 'Learning path',
+        loadComponent: () =>
+          import('./features/paths/path-page.component').then((m) => m.PathPageComponent),
+      },
+      {
+        path: 'review',
+        title: 'Mistakes notebook',
+        loadComponent: () =>
+          import('./features/review/review-page.component').then((m) => m.ReviewPageComponent),
+      },
       {
         path: 'shop',
+        title: 'Shop',
         loadComponent: () =>
-          import('./features/shop/shop.component').then((m) => m.ShopComponent),
-        title: 'Shop - AI QuizVerse',
-      },
-
-      // Ranked
-      {
-        path: 'ranked',
-        loadComponent: () =>
-          import('./features/ranked/ranked-list.component').then((m) => m.RankedListComponent),
-        title: 'Ranked - AI QuizVerse',
+          import('./features/shop/shop-page.component').then((m) => m.ShopPageComponent),
       },
       {
-        path: 'ranked/:id',
+        path: 'shop/checkout/:purchaseId',
+        title: 'Checkout',
         loadComponent: () =>
-          import('./features/ranked/ranked-detail.component').then((m) => m.RankedDetailComponent),
-        title: 'Ranked Journey - AI QuizVerse',
+          import('./features/shop/checkout-page.component').then((m) => m.CheckoutPageComponent),
       },
-
+      {
+        path: 'shop/payment/:purchaseId',
+        title: 'Payment',
+        loadComponent: () =>
+          import('./features/shop/payment-result-page.component').then(
+            (m) => m.PaymentResultPageComponent,
+          ),
+      },
+      {
+        path: 'friends',
+        title: 'Friends',
+        loadComponent: () =>
+          import('./features/friends/friends-page.component').then((m) => m.FriendsPageComponent),
+      },
+      {
+        path: 'leaderboard',
+        title: 'Leaderboard',
+        loadComponent: () =>
+          import('./features/leaderboard/leaderboard-page.component').then(
+            (m) => m.LeaderboardPageComponent,
+          ),
+      },
+      {
+        path: 'profile',
+        title: 'Profile',
+        loadComponent: () =>
+          import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent),
+      },
+      {
+        path: 'profile/:username',
+        title: 'Profile',
+        loadComponent: () =>
+          import('./features/profile/profile-page.component').then((m) => m.ProfilePageComponent),
+      },
     ],
   },
-
-  // Wildcard - redirect to dashboard
-  {
-    path: '**',
-    redirectTo: 'dashboard',
-  },
+  { path: '**', redirectTo: 'home' },
 ];

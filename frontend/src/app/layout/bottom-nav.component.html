@@ -1,0 +1,28 @@
+<nav
+  aria-label="Main"
+  class="fixed inset-x-0 bottom-0 z-30 border-t-3 border-outline bg-night-950 pb-[env(safe-area-inset-bottom)] md:hidden"
+>
+  <ul class="grid grid-cols-5">
+    @for (tab of tabs; track tab.path) {
+      <li>
+        <a
+          class="tab"
+          [routerLink]="tab.path"
+          routerLinkActive="tab-active"
+          ariaCurrentWhenActive="page"
+        >
+          <span class="tab-icon" aria-hidden="true">
+            @if (tab.icon) {
+              <img [src]="tab.icon" alt="" class="h-7 w-auto" />
+            } @else {
+              <span class="tab-hero">
+                <app-hero-sprite [heroKey]="heroKey()" [scale]="2" [decorative]="true" />
+              </span>
+            }
+          </span>
+          <span>{{ tab.label }}</span>
+        </a>
+      </li>
+    }
+  </ul>
+</nav>

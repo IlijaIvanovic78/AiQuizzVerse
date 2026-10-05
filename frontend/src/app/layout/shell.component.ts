@@ -1,0 +1,34 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { Store } from '@ngrx/store';
+import { AuthActions } from '../store/auth/auth.actions';
+import { authFeature } from '../store/auth/auth.reducer';
+import { BottomNavComponent } from './bottom-nav.component';
+import { TopBarComponent } from './top-bar.component';
+
+@Component({
+  selector: 'app-shell',
+  imports: [RouterOutlet, TopBarComponent, BottomNavComponent],
+  template: `
+    @if (user(); as user) {
+      <app-top-bar [user]="user" (logout)="logout()" />
+    }
+    <main class="mx-auto w-full max-w-6xl px-4 pb-28 pt-5 md:px-6 md:pb-12 md:pt-8">
+      <router-outlet />
+    </main>
+    @if (user(); as user) {
+      <app-bottom-nav [heroKey]="user.avatarKey" />
+    }
+  `,
+  host: { class: 'block min-h-dvh' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ShellComponent {
+  private readonly store = inject(Store);
+
+  protected readonly user = this.store.selectSignal(authFeature.selectUser);
+
+  protected logout(): void {
+    this.store.dispatch(AuthActions.logout());
+  }
+}
