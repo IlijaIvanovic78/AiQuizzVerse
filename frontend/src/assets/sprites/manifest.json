@@ -318,25 +318,5 @@
     "frameHeight": 32,
     "frames": 4,
     "fps": 8
-  },
-  {
-    "key": "enemy-slime",
-    "type": "enemy",
-    "name": "Quiz Slime",
-    "sheet": "enemies/enemy-slime.png",
-    "frameWidth": 18,
-    "frameHeight": 18,
-    "frames": 6,
-    "fps": 8
-  },
-  {
-    "key": "enemy-knight",
-    "type": "enemy",
-    "name": "Castle Guard",
-    "sheet": "enemies/enemy-knight.png",
-    "frameWidth": 22,
-    "frameHeight": 22,
-    "frames": 6,
-    "fps": 8
   }
 ]
