@@ -1,0 +1,40 @@
+<app-page-header
+  title="Learning paths"
+  subtitle="Five short steps from first facts to the master challenge."
+>
+  <a routerLink="/create" [queryParams]="newPathQuery" class="btn btn-primary">
+    New learning path
+  </a>
+</app-page-header>
+
+@if (paths().length > 0) {
+  <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    @for (path of paths(); track path.id) {
+      <li>
+        <app-path-card [path]="path" />
+      </li>
+    }
+  </ul>
+} @else if (firstLoadFailed()) {
+  <app-empty-state
+    title="The map room is locked"
+    text="We couldn't load your learning paths. Check your connection and try again."
+    image="shield"
+  >
+    <button type="button" class="btn btn-secondary" (click)="loadPaths()">Try again</button>
+  </app-empty-state>
+} @else if (!loaded()) {
+  <div class="panel flex justify-center px-6 py-12">
+    <app-spinner label="Unrolling your maps..." [showLabel]="true" />
+  </div>
+} @else {
+  <app-empty-state
+    title="No learning paths yet"
+    text="A learning path turns any topic or lesson into 5 steps. Read a short study card, take the quiz, collect stars and open the treasure on the way to the castle."
+    image="sword"
+  >
+    <a routerLink="/create" [queryParams]="newPathQuery" class="btn btn-primary">
+      Make your first path
+    </a>
+  </app-empty-state>
+}

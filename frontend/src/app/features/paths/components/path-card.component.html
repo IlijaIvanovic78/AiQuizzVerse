@@ -1,0 +1,67 @@
+<a
+  class="path-card panel"
+  [class.path-card-complete]="complete()"
+  [routerLink]="['/paths', path().id]"
+>
+  <div class="trail-strip" aria-hidden="true">
+    <ol class="trail-pips">
+      @for (pip of pips(); track pip.position) {
+        <li class="pip" [class]="'pip-' + pip.state" [class.pip-castle]="pip.isCastle">
+          @switch (pip.state) {
+            @case ('cleared') {
+              <app-pixel-icon name="check" [scale]="pip.isCastle ? 2 : 1" />
+            }
+            @case ('locked') {
+              <app-pixel-icon name="lock" [scale]="1" />
+            }
+            @default {
+              <span class="font-display text-xs">{{ pip.position }}</span>
+            }
+          }
+        </li>
+      }
+    </ol>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-3 p-4">
+    <h2 class="line-clamp-2 text-xl leading-tight text-parchment-100">{{ path().topic }}</h2>
+
+    <div class="flex flex-wrap gap-2">
+      <span class="badge badge-mana">{{ path().audience | audienceLabel }}</span>
+      <span class="badge badge-fog">{{ path().language | languageLabel }}</span>
+    </div>
+
+    <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <span class="flex items-center gap-1.5">
+        <app-pixel-icon name="star" />
+        <span class="font-display text-sm text-gold">{{ path().stars }}/{{ path().maxStars }}</span>
+        <span class="sr-only">stars</span>
+      </span>
+      <span class="text-sm text-muted">
+        {{ path().stepsCleared }} of {{ path().totalSteps }} steps cleared
+      </span>
+    </div>
+
+    <div class="next-step mt-auto">
+      @if (path().nextStep; as next) {
+        <p class="text-sm text-muted">Next up: step {{ next.position }}</p>
+        <p class="flex items-center justify-between gap-2 font-semibold text-torch-300">
+          <span class="truncate">{{ next.title }}</span>
+          <span class="go-arrow shrink-0" aria-hidden="true"></span>
+        </p>
+      } @else {
+        <p class="flex items-center gap-2 font-semibold text-jade-400">
+          <app-pixel-icon name="trophy" />
+          Path complete!
+        </p>
+        <p class="text-sm text-muted">
+          @if (perfect()) {
+            Every star collected. Legendary!
+          } @else {
+            Replay a step to collect the missing stars.
+          }
+        </p>
+      }
+    </div>
+  </div>
+</a>

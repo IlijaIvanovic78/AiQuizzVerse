@@ -1,0 +1,122 @@
+<a routerLink="/paths" class="btn btn-ghost btn-sm -ml-3 mb-3">Back to all paths</a>
+
+@if (path(); as path) {
+  <section class="path-banner panel">
+    <div class="banner-shade">
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-torch-300">Learning path</p>
+        <h1 class="mt-1 break-words text-3xl text-parchment-100 md:text-4xl">{{ path.topic }}</h1>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span class="badge badge-torch">{{ sourceLabels[path.source] }}</span>
+          <span class="badge badge-mana">{{ path.audience | audienceLabel }}</span>
+          <span class="badge badge-fog">{{ path.language | languageLabel }}</span>
+        </div>
+      </div>
+
+      <div class="star-total">
+        <app-pixel-icon name="star" [scale]="3" />
+        <div>
+          <p class="font-display text-xl text-gold">{{ totalStars() }}/{{ maxStars() }}</p>
+          <p class="text-sm text-fog-200">stars collected</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner-footer">
+      <div class="min-w-[12rem] flex-1">
+        <app-progress-bar [value]="clearedFraction()" label="Steps cleared" tone="jade" size="sm" />
+        <p class="mt-1 text-sm text-muted">
+          {{ stepsCleared() }} of {{ steps().length }} steps cleared
+        </p>
+      </div>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm -ml-3 shrink-0 sm:ml-0"
+        (click)="confirmingDelete.set(true)"
+      >
+        Delete path
+      </button>
+    </div>
+  </section>
+
+  <div class="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+    <section class="map-panel panel" aria-label="Path map">
+      @if (complete()) {
+        <p class="castle-banner animate-banner-in">
+          <app-pixel-icon name="trophy" [scale]="2" />
+          You reached the castle! Path complete.
+        </p>
+      }
+      <app-path-map
+        [steps]="steps()"
+        [selectedStepId]="selectedStep()?.id ?? null"
+        [heroKey]="heroKey()"
+        (stepSelected)="selectStep($event)"
+      />
+      @if (!isWide()) {
+        <p class="mt-8 text-center text-sm text-muted">Tap a stop to open its study card.</p>
+      }
+    </section>
+
+    @if (isWide()) {
+      @if (selectedStep(); as step) {
+        <aside class="panel-parchment sticky top-24 p-5" aria-label="Selected step">
+          <app-step-panel
+            [step]="step"
+            [totalSteps]="steps().length"
+            [canReadAloud]="canReadAloud"
+            [speaking]="speaking()"
+            [starting]="startingQuiz()"
+            (readAloud)="toggleReadAloud(step)"
+            (takeQuiz)="takeQuiz(step)"
+          />
+        </aside>
+      }
+    }
+  </div>
+
+  @if (dialogOpen() && !isWide()) {
+    @if (selectedStep(); as step) {
+      <app-modal [title]="step.title" [parchment]="true" (closed)="closeDialog()">
+        <app-step-panel
+          [step]="step"
+          [totalSteps]="steps().length"
+          [showTitle]="false"
+          [canReadAloud]="canReadAloud"
+          [speaking]="speaking()"
+          [starting]="startingQuiz()"
+          (readAloud)="toggleReadAloud(step)"
+          (takeQuiz)="takeQuiz(step)"
+        />
+      </app-modal>
+    }
+  }
+
+  @if (confirmingDelete()) {
+    <app-modal title="Delete this path?" size="sm" (closed)="confirmingDelete.set(false)">
+      <p>
+        "{{ path.topic }}" and its {{ steps().length }} step quizzes will be gone for good, together
+        with the stars you collected on it.
+      </p>
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button type="button" class="btn btn-ghost" (click)="confirmingDelete.set(false)">
+          Keep it
+        </button>
+        <button type="button" class="btn btn-danger" (click)="deletePath()">Delete path</button>
+      </div>
+    </app-modal>
+  }
+} @else if (error() && !loading()) {
+  <app-empty-state
+    title="This map got lost"
+    text="We couldn't open this learning path. It may have been deleted, or the connection dropped."
+    image="shield"
+  >
+    <button type="button" class="btn btn-secondary" (click)="reload()">Try again</button>
+    <a routerLink="/paths" class="btn btn-ghost">All paths</a>
+  </app-empty-state>
+} @else {
+  <div class="panel flex justify-center px-6 py-16">
+    <app-spinner label="Drawing the map..." [showLabel]="true" />
+  </div>
+}

@@ -1,0 +1,106 @@
+<div class="map" [style.height.rem]="heightRem()">
+  <!-- Phones get a straight road, md+ screens the winding one. -->
+  <svg
+    class="map-road md:hidden"
+    [attr.viewBox]="viewBox()"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+    focusable="false"
+  >
+    @for (segment of narrowTrail(); track $index) {
+      <path class="road-bed" [attr.d]="segment.d" />
+    }
+    @for (segment of narrowTrail(); track $index) {
+      <path class="road-dash" [class.road-dash-walked]="segment.done" [attr.d]="segment.d" />
+    }
+  </svg>
+  <svg
+    class="map-road hidden md:block"
+    [attr.viewBox]="viewBox()"
+    preserveAspectRatio="none"
+    aria-hidden="true"
+    focusable="false"
+  >
+    @for (segment of wideTrail(); track $index) {
+      <path class="road-bed" [attr.d]="segment.d" />
+    }
+    @for (segment of wideTrail(); track $index) {
+      <path class="road-dash" [class.road-dash-walked]="segment.done" [attr.d]="segment.d" />
+    }
+  </svg>
+
+  <ol class="relative" aria-label="Steps of this path">
+    @for (stop of stops(); track stop.step.id) {
+      <li class="relative" [style.height.rem]="stop.rowHeight">
+        <div
+          class="stop"
+          [class.stop-free-right]="stop.freeSideRight"
+          [style.top.rem]="stopTop"
+          [style.--wide-x]="stop.wideX + '%'"
+        >
+          <div class="relative" [class.animate-unlock]="stop.isNext">
+            @if (stop.isNext && heroKey()) {
+              <div class="stop-hero">
+                <app-hero-sprite [heroKey]="heroKey()" [scale]="3" [decorative]="true" />
+              </div>
+            }
+
+            <button
+              type="button"
+              class="stop-tile"
+              [class.stop-tile-castle]="stop.isCastle"
+              [class.stop-tile-next]="stop.isNext"
+              [class.stop-tile-cleared]="stop.step.cleared"
+              [class.stop-tile-locked]="!stop.step.unlocked"
+              [style.width.rem]="stop.tileSize"
+              [style.height.rem]="stop.tileSize"
+              [attr.aria-pressed]="stop.step.id === selectedStepId()"
+              [attr.aria-label]="stop.label"
+              (click)="stepSelected.emit(stop.step)"
+            >
+              @if (stop.step.cleared) {
+                <app-pixel-icon
+                  [name]="stop.isCastle ? 'trophy' : 'check'"
+                  [scale]="stop.isCastle ? 3 : 2"
+                />
+              } @else if (!stop.step.unlocked) {
+                <app-pixel-icon name="lock" [scale]="2" />
+              } @else if (!stop.isCastle) {
+                <span class="font-display text-xl">{{ stop.step.position }}</span>
+              }
+            </button>
+
+            <img
+              src="/assets/images/icons/chest.webp"
+              alt=""
+              width="256"
+              height="128"
+              class="stop-chest"
+              [class.stop-chest-collected]="stop.step.cleared"
+              [class.stop-chest-locked]="!stop.step.unlocked"
+            />
+
+            @if (stop.step.unlocked) {
+              <span class="stop-stars">
+                <app-star-rating [stars]="stop.step.stars" [scale]="1" />
+              </span>
+            }
+          </div>
+
+          <p class="stop-label" [class.stop-label-locked]="!stop.step.unlocked">
+            <span class="block text-sm text-muted">
+              @if (stop.isCastle) {
+                Castle
+              } @else {
+                Step {{ stop.step.position }}
+              }
+            </span>
+            <span class="line-clamp-2 block font-semibold leading-tight">{{
+              stop.step.title
+            }}</span>
+          </p>
+        </div>
+      </li>
+    }
+  </ol>
+</div>

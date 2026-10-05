@@ -1,0 +1,83 @@
+<div class="flex flex-wrap items-center gap-2">
+  <span class="badge badge-fog">Step {{ step().position }} of {{ totalSteps() }}</span>
+  <app-difficulty-badge [difficulty]="step().difficulty" />
+  <span class="text-sm text-muted">{{ step().questionCount }} questions</span>
+</div>
+
+@if (showTitle()) {
+  <h2 class="mt-3 text-2xl">{{ step().title }}</h2>
+}
+
+@if (step().unlocked) {
+  <section class="study-card mt-4" aria-labelledby="study-card-title">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h3 id="study-card-title" class="text-lg">Study card</h3>
+      @if (canReadAloud()) {
+        <button type="button" class="btn btn-secondary btn-sm" (click)="readAloud.emit()">
+          @if (speaking()) {
+            Stop reading
+          } @else {
+            Read aloud
+          }
+        </button>
+      }
+    </div>
+    <ul class="read-text mt-3 flex flex-col gap-3">
+      @for (point of step().keyPoints; track $index) {
+        <li class="key-point">{{ point }}</li>
+      }
+    </ul>
+  </section>
+} @else {
+  <p class="locked-note mt-4">
+    <app-pixel-icon name="lock" />
+    Clear step {{ step().position - 1 }} to open this step.
+  </p>
+}
+
+<div class="reward mt-5">
+  <img src="/assets/images/icons/chest.webp" alt="" width="256" height="128" class="h-auto w-16" />
+  <div class="min-w-0 flex-1">
+    @if (step().cleared) {
+      <p class="flex items-center gap-1.5 font-semibold">
+        <app-pixel-icon name="check" />
+        Treasure collected
+      </p>
+      <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+        Best
+        <app-star-rating [stars]="step().stars" [scale]="1" />
+        {{ step().bestAccuracy }}% correct
+      </p>
+    } @else {
+      <p class="text-sm text-muted">Clear this step to win</p>
+      <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-semibold">
+        <span class="flex items-center gap-1.5">
+          <app-pixel-icon name="coin" />
+          {{ step().reward.coins }} coins
+        </span>
+        @if (step().reward.boost; as boost) {
+          <span class="flex items-center gap-1.5">
+            <app-boost-icon [type]="boost" size="sm" />
+            {{ boostLabel() }}
+          </span>
+        }
+      </p>
+    }
+  </div>
+</div>
+
+<button
+  type="button"
+  class="btn btn-primary btn-lg mt-5 w-full"
+  [disabled]="!step().unlocked || starting()"
+  (click)="takeQuiz.emit()"
+>
+  @if (!step().unlocked) {
+    <app-pixel-icon name="lock" />
+    Locked
+  } @else if (starting()) {
+    Opening the arena...
+  } @else {
+    {{ quizButtonText() }}
+  }
+</button>

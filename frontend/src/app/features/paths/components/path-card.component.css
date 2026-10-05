@@ -1,0 +1,111 @@
+.path-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  transition:
+    transform 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.path-card:hover {
+  border-color: var(--torch-400);
+  transform: translateY(-3px);
+}
+
+.path-card-complete {
+  border-color: var(--torch-600);
+}
+
+/* A small window onto the arena ground with the five steps drawn over it. */
+.trail-strip {
+  padding: 1rem 1.25rem;
+  border-bottom: 3px solid var(--outline);
+  background: var(--night-900) url('/assets/images/arena-small.webp') center 78% / cover;
+  box-shadow: inset 0 0 0 999px rgba(18, 13, 31, 0.45);
+}
+
+.trail-pips {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.trail-pips::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  left: 1rem;
+  border-top: 4px dashed var(--parchment-300);
+  opacity: 0.7;
+  transform: translateY(-50%);
+}
+
+.pip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.3),
+    0 3px 0 var(--outline);
+}
+
+.pip-cleared {
+  background-color: var(--jade-400);
+}
+
+.pip-next {
+  background-color: var(--torch-400);
+  color: var(--night-950);
+}
+
+.pip-locked {
+  background-color: var(--night-700);
+}
+
+.pip-castle {
+  width: 3rem;
+  height: 3rem;
+  background: var(--night-900) url('/assets/images/arena-small.webp') 41% 18% / 520% auto;
+}
+
+.pip-castle.pip-locked {
+  filter: grayscale(1) brightness(0.7);
+}
+
+.next-step {
+  padding-top: 0.75rem;
+  border-top: 3px dashed var(--night-600);
+}
+
+/* A pixel arrow: a stepped triangle cut out with a polygon. */
+.go-arrow {
+  width: 12px;
+  height: 16px;
+  background-color: var(--torch-300);
+  clip-path: polygon(
+    0 0,
+    25% 0,
+    25% 12.5%,
+    50% 12.5%,
+    50% 25%,
+    75% 25%,
+    75% 37.5%,
+    100% 37.5%,
+    100% 62.5%,
+    75% 62.5%,
+    75% 75%,
+    50% 75%,
+    50% 87.5%,
+    25% 87.5%,
+    25% 100%,
+    0 100%
+  );
+}
