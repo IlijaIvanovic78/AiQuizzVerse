@@ -59,6 +59,7 @@ enum MatchMode {
   SOLO
   DUEL
   TEAM
+  PARTY
 }
 
 enum MatchStatus {
