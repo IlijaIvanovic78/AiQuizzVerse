@@ -14,3 +14,6 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_MAX_LENGTH = 64;
 export const TWO_FACTOR_CODE_PATTERN = /^\d{6}$/;
 export const USERNAME_CHECK_DEBOUNCE_MS = 400;
+
+// The login page keeps the page a logged-out player tried to open, like a /join/CODE share link.
+export const RETURN_URL_PARAM = 'returnUrl';
