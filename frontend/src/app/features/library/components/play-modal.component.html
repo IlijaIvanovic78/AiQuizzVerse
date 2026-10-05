@@ -1,0 +1,77 @@
+<app-modal [title]="title()" (closed)="closed.emit()">
+  <p class="read-text panel-parchment px-4 py-3 font-bold">{{ quizTitle() }}</p>
+
+  @if (chosenMode(); as mode) {
+    <p class="mt-5 text-lg font-semibold">
+      {{ mode === 'DUEL' ? 'Who do you want to challenge?' : 'Who do you want to team up with?' }}
+    </p>
+
+    @if (onlineFriends().length > 0) {
+      <ul class="mt-3 flex flex-col gap-2">
+        @for (friend of onlineFriends(); track friend.friendshipId) {
+          <li class="friend-row">
+            <app-user-avatar size="md" [heroKey]="friend.user.avatarKey" [online]="true" />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate font-semibold">{{ friend.user.username }}</span>
+              <span class="block text-sm text-jade-400">Online</span>
+            </span>
+            <app-level-badge class="hidden sm:inline-flex" [level]="friend.user.level" />
+            <button
+              type="button"
+              class="btn btn-primary btn-sm"
+              [disabled]="busy()"
+              (click)="play.emit({ mode, inviteFriendId: friend.user.id })"
+            >
+              Invite<span class="sr-only"> {{ friend.user.username }}</span>
+            </button>
+          </li>
+        }
+      </ul>
+    } @else if (friendsLoading()) {
+      <div class="mt-3">
+        <app-spinner label="Looking for your friends..." [showLabel]="true" />
+      </div>
+    } @else {
+      <p class="mt-2 text-muted">
+        None of your friends are online right now.
+        <a routerLink="/friends" class="link" (click)="closed.emit()">Find friends</a>
+      </p>
+    }
+
+    <p class="or-line" aria-hidden="true"><span>or</span></p>
+
+    <button
+      type="button"
+      class="btn btn-secondary w-full"
+      [disabled]="busy()"
+      (click)="play.emit({ mode })"
+    >
+      Get a code to share
+    </button>
+    <p class="field-hint text-center">Anyone with the code or link can join your game.</p>
+
+    @if (startMode() === null) {
+      <button type="button" class="btn btn-ghost mt-3" (click)="chosenMode.set(null)">Back</button>
+    }
+  } @else {
+    <ul class="mt-5 grid gap-3 sm:grid-cols-3">
+      @for (choice of modeChoices; track choice.mode) {
+        <li>
+          <app-choice-card
+            [title]="choice.title"
+            [text]="choice.text"
+            [disabled]="busy()"
+            (chosen)="chooseMode(choice.mode)"
+          >
+            <img
+              choiceArt
+              alt=""
+              class="h-12 w-auto"
+              [src]="'/assets/images/icons/' + choice.image + '.webp'"
+            />
+          </app-choice-card>
+        </li>
+      }
+    </ul>
+  }
+</app-modal>

@@ -1,0 +1,220 @@
+<a routerLink="/library" class="btn btn-ghost btn-sm -ml-3">Back to the library</a>
+
+@if (quiz(); as quiz) {
+  <section class="panel mt-3 overflow-hidden" aria-labelledby="quiz-title">
+    <div class="quiz-banner" aria-hidden="true">
+      <app-hero-sprite [heroKey]="user()?.avatarKey ?? null" [scale]="3" [decorative]="true" />
+      <img
+        src="/assets/images/icons/chest.webp"
+        alt=""
+        width="256"
+        height="128"
+        class="h-auto w-24"
+      />
+    </div>
+
+    <div class="p-5 md:p-6">
+      <div class="flex flex-wrap items-center gap-2">
+        <app-theme-badge [theme]="quiz.theme" />
+        <app-difficulty-badge [difficulty]="quiz.difficulty" />
+        <span class="badge badge-fog">{{ sourceLabels[quiz.source] }}</span>
+      </div>
+
+      <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <h1 id="quiz-title" class="min-w-0 break-words text-3xl md:text-4xl">{{ quiz.title }}</h1>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="editingDetails.set(true)">
+          Rename or change time
+        </button>
+      </div>
+
+      <dl class="quiz-facts mt-5">
+        <div>
+          <dt>For</dt>
+          <dd>{{ quiz.audience | audienceLabel }}</dd>
+        </div>
+        <div>
+          <dt>Language</dt>
+          <dd>{{ quiz.language | languageLabel }}</dd>
+        </div>
+        <div>
+          <dt>Questions</dt>
+          <dd>{{ quiz.questions.length }}</dd>
+        </div>
+        <div>
+          <dt>Time each</dt>
+          <dd>{{ quiz.timePerQuestion }}s</dd>
+        </div>
+        <div>
+          <dt>Best score</dt>
+          <dd class="flex items-center gap-1.5">
+            @if (quiz.bestAccuracy !== null) {
+              <app-pixel-icon name="trophy" />
+              {{ quiz.bestAccuracy }}%
+            } @else {
+              Not played yet
+            }
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="mt-8" aria-labelledby="play-title">
+    <h2 id="play-title" class="text-2xl md:text-3xl">Play</h2>
+    <ul class="mt-4 grid gap-4 sm:grid-cols-3">
+      @for (choice of modeChoices; track choice.mode) {
+        <li>
+          <app-choice-card
+            [title]="choice.title"
+            [text]="choice.text"
+            [disabled]="startingMatch()"
+            (chosen)="chooseMode(quiz, choice.mode)"
+          >
+            <img
+              choiceArt
+              alt=""
+              class="h-14 w-auto sm:h-20"
+              [src]="'/assets/images/icons/' + choice.image + '.webp'"
+            />
+          </app-choice-card>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="mt-10" aria-labelledby="questions-title">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h2 id="questions-title" class="text-2xl md:text-3xl">
+        Questions <span class="text-muted">({{ quiz.questions.length }})</span>
+      </h2>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="btn"
+          [class]="showAnswers() ? 'btn-primary' : 'btn-secondary'"
+          [attr.aria-pressed]="showAnswers()"
+          (click)="toggleAnswers()"
+        >
+          <app-pixel-icon [name]="showAnswers() ? 'check' : 'lock'" />
+          Show answers
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          [disabled]="!canAddQuestion() || saving()"
+          (click)="addQuestion(quiz)"
+        >
+          + Add question
+        </button>
+      </div>
+    </div>
+    <p class="mt-2 text-muted">
+      @if (showAnswers()) {
+        Right answers are marked, with the hint and the explanation.
+      } @else {
+        Answers are hidden, so you can test yourself first.
+      }
+    </p>
+
+    <ol class="mt-5 flex flex-col gap-4">
+      @for (question of quiz.questions; track question.id; let index = $index) {
+        <li animate.enter="fade-enter">
+          <app-editable-question
+            [question]="question"
+            [number]="index + 1"
+            [showAnswers]="showAnswers()"
+            [canDelete]="canDeleteQuestion() && !saving()"
+            (edit)="editQuestion(question, index + 1)"
+            (remove)="removing.set(question)"
+          />
+        </li>
+      }
+    </ol>
+    @if (!canDeleteQuestion()) {
+      <p class="field-hint mt-3">
+        A quiz needs at least {{ minQuestions }} questions, so none can be deleted right now.
+      </p>
+    }
+  </section>
+
+  <section class="danger-zone mt-12" aria-labelledby="delete-title">
+    <div>
+      <h2 id="delete-title" class="text-xl">Delete this quiz</h2>
+      <p class="text-muted">It leaves your library. Results you already earned stay.</p>
+    </div>
+    <button type="button" class="btn btn-danger" (click)="deletingQuiz.set(true)">
+      Delete quiz
+    </button>
+  </section>
+
+  @if (friendMode(); as mode) {
+    <app-play-modal
+      [quizTitle]="quiz.title"
+      [startMode]="mode"
+      [onlineFriends]="onlineFriends()"
+      [friendsLoading]="friendsLoading()"
+      [busy]="startingMatch()"
+      (play)="startMatch(quiz, $event)"
+      (closed)="friendMode.set(null)"
+    />
+  }
+
+  @if (draft(); as questionDraft) {
+    <app-question-modal
+      [question]="questionDraft.question"
+      [number]="questionDraft.number"
+      (saved)="saveQuestion(quiz, $event)"
+      (closed)="draft.set(null)"
+    />
+  }
+
+  @if (removing(); as question) {
+    <app-confirm-dialog
+      title="Delete this question?"
+      confirmLabel="Delete question"
+      [message]="question.text"
+      (confirmed)="deleteQuestion(quiz, question)"
+      (closed)="removing.set(null)"
+    />
+  }
+
+  @if (editingDetails()) {
+    <app-quiz-settings-modal
+      [quizTitle]="quiz.title"
+      [timePerQuestion]="quiz.timePerQuestion"
+      (saved)="saveDetails(quiz, $event)"
+      (closed)="editingDetails.set(false)"
+    />
+  }
+
+  @if (deletingQuiz()) {
+    <app-confirm-dialog
+      title="Delete this quiz?"
+      confirmLabel="Delete quiz"
+      [message]="quiz.title + ' and all its questions will be gone for good.'"
+      [busy]="saving()"
+      (confirmed)="deleteQuiz(quiz)"
+      (closed)="deletingQuiz.set(false)"
+    />
+  }
+} @else if (error(); as error) {
+  <div class="panel mt-3 flex flex-col items-center gap-3 p-8 text-center" role="alert">
+    <img
+      src="/assets/images/icons/potion.webp"
+      alt=""
+      width="256"
+      height="148"
+      class="h-16 w-auto"
+    />
+    <h1 class="text-2xl">We couldn't open this quiz</h1>
+    <p class="text-muted">{{ error }}</p>
+    <div class="flex flex-col gap-3 sm:flex-row">
+      <button type="button" class="btn btn-secondary" (click)="reload()">Try again</button>
+      <a routerLink="/library" class="btn btn-primary">Back to the library</a>
+    </div>
+  </div>
+} @else {
+  <div class="panel mt-3 flex justify-center p-10">
+    <app-spinner label="Opening the quiz..." [showLabel]="true" />
+  </div>
+}

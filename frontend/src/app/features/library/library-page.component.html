@@ -1,0 +1,105 @@
+<app-page-header title="Library" subtitle="Your quizzes, ready to play or polish.">
+  <a routerLink="/create" class="btn btn-primary">+ New quiz</a>
+</app-page-header>
+
+@if (!loaded()) {
+  @if (error(); as error) {
+    <app-empty-state
+      role="alert"
+      title="We couldn't open your library"
+      [text]="error"
+      image="potion"
+    >
+      <button type="button" class="btn btn-secondary" (click)="reload()">Try again</button>
+    </app-empty-state>
+  } @else {
+    <div class="panel flex justify-center p-10">
+      <app-spinner label="Opening your library..." [showLabel]="true" />
+    </div>
+  }
+} @else if (quizzes().length === 0) {
+  <app-empty-state title="Your library is empty" [text]="emptyText()" image="chest">
+    <a routerLink="/create" class="btn btn-primary">Create a quiz</a>
+  </app-empty-state>
+} @else {
+  <section aria-labelledby="mine-title">
+    <h2 id="mine-title" class="sr-only">Your quizzes</h2>
+
+    <div class="panel flex flex-col gap-4 p-4 md:p-5">
+      <div>
+        <label for="library-search" class="field-label">Find a quiz</label>
+        <input
+          id="library-search"
+          type="search"
+          class="input"
+          placeholder="Search by name or topic"
+          autocomplete="off"
+          [formControl]="search"
+        />
+      </div>
+      <app-theme-filter
+        [counts]="themeCounts()"
+        [total]="quizzes().length"
+        [selected]="theme()"
+        (selectedChange)="theme.set($event)"
+      />
+    </div>
+
+    <p class="sr-only" aria-live="polite">
+      {{ shownQuizzes().length }} of {{ quizzes().length }} quizzes shown
+    </p>
+
+    @if (shownQuizzes().length > 0) {
+      <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        @for (quiz of shownQuizzes(); track quiz.id) {
+          <li animate.enter="fade-enter">
+            <app-quiz-card [quiz]="quiz" [link]="['/library', quiz.id]" (play)="openPlay(quiz)" />
+          </li>
+        }
+      </ul>
+    } @else {
+      <div class="panel mt-6 flex flex-col items-center gap-3 p-8 text-center">
+        <img
+          src="/assets/images/icons/shield.webp"
+          alt=""
+          width="256"
+          height="187"
+          class="h-16 w-auto"
+        />
+        <p class="text-xl font-semibold">No quiz matches that</p>
+        <p class="text-muted">Try another word or theme.</p>
+        <button type="button" class="btn btn-secondary" (click)="clearFilters()">
+          Show all quizzes
+        </button>
+      </div>
+    }
+  </section>
+}
+
+@if (featured().length > 0) {
+  <section class="mt-12" aria-labelledby="featured-title">
+    <h2 id="featured-title" class="flex items-center gap-2 text-2xl md:text-3xl">
+      <app-pixel-icon name="star" [scale]="2" />
+      Featured quests
+    </h2>
+    <p class="mt-1 text-muted">Hand-made quizzes that everyone can play, alone or with a friend.</p>
+    <ul class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      @for (quiz of featured(); track quiz.id) {
+        <li>
+          <app-quiz-card [quiz]="quiz" (play)="openPlay(quiz)" />
+        </li>
+      }
+    </ul>
+  </section>
+}
+
+@if (playing(); as quiz) {
+  <app-play-modal
+    [quizTitle]="quiz.title"
+    [onlineFriends]="onlineFriends()"
+    [friendsLoading]="friendsLoading()"
+    [busy]="startingMatch()"
+    (play)="play(quiz, $event)"
+    (closed)="playing.set(null)"
+  />
+}

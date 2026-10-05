@@ -1,0 +1,48 @@
+.question-number {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid var(--outline);
+  border-radius: 4px;
+  background-color: var(--torch-400);
+  color: var(--night-950);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+}
+
+.answer {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border: 3px solid rgba(59, 42, 26, 0.35);
+  border-radius: 4px;
+  background-color: rgba(255, 253, 247, 0.6);
+}
+
+.answer-right {
+  border-color: var(--jade-600);
+  background-color: rgba(108, 212, 126, 0.3);
+}
+
+.answer-key {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid var(--ink);
+  border-radius: 2px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.8rem;
+}
+
+.note {
+  padding: 0.625rem 0.75rem;
+  border-left: 6px solid var(--torch-500);
+  background-color: rgba(227, 204, 148, 0.45);
+}

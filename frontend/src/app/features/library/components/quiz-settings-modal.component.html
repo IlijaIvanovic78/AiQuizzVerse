@@ -1,0 +1,42 @@
+<app-modal title="Quiz details" (closed)="closed.emit()">
+  <form class="flex flex-col gap-6" [formGroup]="form" (ngSubmit)="save()">
+    <div>
+      <label for="quiz-settings-title" class="field-label">Name</label>
+      <input
+        id="quiz-settings-title"
+        class="input"
+        formControlName="title"
+        aria-describedby="quiz-settings-title-problem"
+        [attr.maxlength]="limits.title"
+        [attr.aria-invalid]="titleInvalid()"
+      />
+      <div id="quiz-settings-title-problem">
+        @if (titleInvalid()) {
+          <p class="field-error">
+            <app-pixel-icon name="cross" [scale]="1" />
+            Give your quiz a name with at least 3 letters.
+          </p>
+        }
+      </div>
+    </div>
+
+    <div>
+      <p id="quiz-settings-time" class="field-label">Time per question</p>
+      <app-number-stepper
+        labelledBy="quiz-settings-time"
+        name="seconds"
+        unit="s"
+        [value]="time()"
+        [min]="limits.minTime"
+        [max]="limits.maxTime"
+        [step]="limits.timeStep"
+        (valueChange)="time.set($event)"
+      />
+    </div>
+
+    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button type="button" class="btn btn-secondary" (click)="closed.emit()">Cancel</button>
+      <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+  </form>
+</app-modal>

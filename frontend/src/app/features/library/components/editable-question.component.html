@@ -1,0 +1,51 @@
+<article class="panel-parchment p-4 sm:p-5" [attr.aria-labelledby]="'question-' + question().id">
+  <header class="flex items-start gap-3">
+    <span class="question-number" aria-hidden="true">{{ number() }}</span>
+    <p class="read-text flex-1 pt-0.5 font-bold" [id]="'question-' + question().id">
+      <span class="sr-only">Question {{ number() }}: </span>{{ question().text }}
+    </p>
+  </header>
+
+  <ol class="mt-4 grid gap-2 sm:grid-cols-2">
+    @for (option of question().options; track $index; let index = $index) {
+      @let isRight = showAnswers() && index === question().correctIndex;
+      <li class="answer" [class.answer-right]="isRight">
+        <span class="answer-key" aria-hidden="true">{{ index + 1 }}</span>
+        <span class="read-text min-w-0 flex-1 break-words">{{ option }}</span>
+        @if (isRight) {
+          <span class="badge badge-jade shrink-0">
+            <app-pixel-icon name="check" [scale]="1" />
+            Right
+          </span>
+        }
+      </li>
+    }
+  </ol>
+
+  @if (showAnswers()) {
+    <dl class="mt-4 grid gap-3 sm:grid-cols-2" animate.enter="fade-enter">
+      <div class="note">
+        <dt class="font-semibold">Hint</dt>
+        <dd class="read-text">{{ question().hint }}</dd>
+      </div>
+      <div class="note">
+        <dt class="font-semibold">Why</dt>
+        <dd class="read-text">{{ question().explanation }}</dd>
+      </div>
+    </dl>
+  }
+
+  <footer class="mt-4 flex flex-wrap justify-end gap-2">
+    <button type="button" class="btn btn-secondary btn-sm" (click)="edit.emit()">
+      Edit<span class="sr-only"> question {{ number() }}</span>
+    </button>
+    <button
+      type="button"
+      class="btn btn-danger btn-sm"
+      [disabled]="!canDelete()"
+      (click)="remove.emit()"
+    >
+      Delete<span class="sr-only"> question {{ number() }}</span>
+    </button>
+  </footer>
+</article>

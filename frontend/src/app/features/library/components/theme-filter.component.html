@@ -1,0 +1,22 @@
+<div class="flex flex-wrap gap-2" role="group" aria-label="Filter by theme">
+  <button
+    type="button"
+    class="chip"
+    [attr.aria-pressed]="selected() === null"
+    (click)="selectedChange.emit(null)"
+  >
+    All
+    <span class="chip-count">{{ total() }}<span class="sr-only"> quizzes</span></span>
+  </button>
+  @for (item of counts(); track item.theme) {
+    <button
+      type="button"
+      class="chip"
+      [attr.aria-pressed]="selected() === item.theme"
+      (click)="selectedChange.emit(item.theme)"
+    >
+      {{ item.theme | themeLabel }}
+      <span class="chip-count">{{ item.count }}<span class="sr-only"> quizzes</span></span>
+    </button>
+  }
+</div>
