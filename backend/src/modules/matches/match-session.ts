@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
-import { Question } from '@prisma/client';
+import { MatchMode, Question } from '@prisma/client';
 import {
   BehaviorSubject,
   distinct,
@@ -11,6 +11,7 @@ import {
   switchMap,
   take,
   takeUntil,
+  takeWhile,
   tap,
   timer,
   toArray,
@@ -24,11 +25,14 @@ import {
   EXTRA_TIME_MS,
   FIFTY_FIFTY_REMOVED_OPTIONS,
   FREE_HINTS_PER_MATCH,
+  FREEZE_DURATION_MS,
   matchRoom,
+  MIN_PARTY_PLAYERS,
   MS_PER_SECOND,
   NOT_IN_MATCH_MESSAGE,
   RETURN_GRACE_MS,
   REVEAL_MAX_MS,
+  SABOTAGE_DURATION_MS,
 } from './matches.constants';
 import {
   BoostEffect,
@@ -39,20 +43,28 @@ import {
   MatchBoostType,
   MatchSummary,
   PlayerAnswerRecord,
+  PlayedRound,
   QuestionPayload,
-  RoundPlayerResult,
-  RoundResultPayload,
+  SabotageType,
+  ScoredAnswer,
   SessionMatch,
   WaitingNextPayload,
 } from './matches.types';
+import { toRoundResult } from './match.mapper';
 import {
+  MatchOptionOrders,
   OptionOrder,
   pickWrongOptions,
   showOptions,
-  shuffledOptionOrder,
-  toShownIndex,
   toStoredIndex,
 } from './option-order';
+import {
+  chargesAfterRoundWin,
+  SabotageAttempt,
+  sabotageError,
+  startingCharges,
+  wrongAnswerPenalty,
+} from './party-rules';
 import { answerPoints, findWinnerIds } from './scoring';
 
 export interface MatchSessionDeps {
@@ -85,23 +97,26 @@ interface SessionPlayer {
   freeHintsLeft: number;
   boostsThisRound: Set<MatchBoostType>;
   returnTimer: Subscription | null;
+  charges: number;
+  sabotagedThisRound: boolean;
+  frozenUntil: number;
 }
 
 interface MatchEnding {
   status: EndStatus;
-  forfeitedBy: string | null;
+  /** Set when leaving players decided the winners; null lets the scores decide. */
+  winnerIds: string[] | null;
 }
 
 type Phase = 'countdown' | 'question' | 'reveal' | 'finished';
 
-const NORMAL_END: MatchEnding = { status: 'FINISHED', forfeitedBy: null };
-const ABANDONED_END: MatchEnding = { status: 'ABANDONED', forfeitedBy: null };
+const NORMAL_END: MatchEnding = { status: 'FINISHED', winnerIds: null };
+const ABANDONED_END: MatchEnding = { status: 'ABANDONED', winnerIds: [] };
 
 export class MatchSession {
   private readonly logger = new Logger(MatchSession.name);
   private readonly players = new Map<string, SessionPlayer>();
-  /** One shuffled option order per question, the same for every player and rejoin. */
-  private readonly optionOrders: OptionOrder[];
+  private readonly optionOrders: MatchOptionOrders;
 
   private readonly answers$ = new Subject<PlayerAnswer>();
   private readonly nextPresses$ = new Subject<NextPress>();
@@ -116,21 +131,28 @@ export class MatchSession {
   private roundPlayerIds = new Set<string>();
   private answeredUserIds = new Set<string>();
   private waitingForNext = new Set<string>();
-  private lastRoundResult: RoundResultPayload | null = null;
+  private lastRound: PlayedRound | null = null;
+  private smallPartyTimer: Subscription | null = null;
 
   constructor(
     private readonly deps: MatchSessionDeps,
     private readonly match: SessionMatch,
     private readonly questions: Question[],
   ) {
-    match.playerIds.forEach((userId) => this.players.set(userId, newPlayer(userId)));
-    this.optionOrders = questions.map((question) => shuffledOptionOrder(question.options.length));
+    match.playerIds.forEach((userId) => this.players.set(userId, newPlayer(userId, match.mode)));
+    this.optionOrders = new MatchOptionOrders(questions.map((question) => question.options.length));
   }
 
-  start(): void {
+  /** Players who are not here when the match starts count as gone from the first question. */
+  start(connectedUserIds: string[]): void {
     this.emitToRoom('match:starting', {
       matchId: this.match.id,
       countdownSeconds: COUNTDOWN_SECONDS,
+    });
+    this.players.forEach((player) => {
+      if (!connectedUserIds.includes(player.userId)) {
+        this.playerDisconnected(player.userId);
+      }
     });
     this.after(COUNTDOWN_SECONDS * MS_PER_SECOND, () => this.playRound(0));
   }
@@ -140,6 +162,9 @@ export class MatchSession {
   }
 
   submitAnswer(userId: string, questionIndex: number, optionIndex: number): void {
+    if (this.isFrozen(userId)) {
+      throw new WsException('You are frozen!');
+    }
     this.answers$.next({ userId, questionIndex, optionIndex, remainingMs: this.remainingMs() });
   }
 
@@ -165,8 +190,30 @@ export class MatchSession {
       matchId: this.match.id,
       type,
       remaining,
-      ...this.applyBoost(type),
+      ...this.applyBoost(userId, type),
     });
+  }
+
+  sabotage(userId: string, targetUserId: string, type: SabotageType): void {
+    const player = this.requirePlayer(userId);
+    const error = sabotageError(this.sabotageAttempt(player, targetUserId));
+    if (error) {
+      throw new WsException(error);
+    }
+    const target = this.requirePlayer(targetUserId);
+
+    player.charges -= 1;
+    player.sabotagedThisRound = true;
+    this.emitToRoom('match:sabotaged', {
+      matchId: this.match.id,
+      index: this.index,
+      type,
+      fromUserId: userId,
+      targetUserId,
+      durationMs: SABOTAGE_DURATION_MS[type],
+      fromCharges: player.charges,
+    });
+    this.applySabotage(target, type);
   }
 
   playerReturned(userId: string): void {
@@ -177,6 +224,9 @@ export class MatchSession {
     player.connected = true;
     player.returnTimer?.unsubscribe();
     player.returnTimer = null;
+    if (this.match.mode === 'PARTY') {
+      this.watchPartySize();
+    }
     this.sendCurrentState(userId);
   }
 
@@ -188,6 +238,10 @@ export class MatchSession {
     this.markGone(player);
     if (this.match.mode !== 'SOLO') {
       this.stopWaitingFor(userId);
+    }
+    if (this.match.mode === 'PARTY') {
+      this.watchPartySize();
+      return;
     }
     player.returnTimer = this.after(RETURN_GRACE_MS[this.match.mode], () => {
       void this.runSafely(() => this.dropPlayer(userId));
@@ -202,6 +256,9 @@ export class MatchSession {
     if (player.connected) {
       this.markGone(player);
     }
+    if (this.match.mode === 'PARTY') {
+      this.stopWaitingFor(userId);
+    }
     await this.dropPlayer(userId);
   }
 
@@ -215,21 +272,22 @@ export class MatchSession {
     this.index = index;
     this.roundPlayerIds = new Set(this.activePlayerIds());
     this.answeredUserIds.clear();
-    this.players.forEach((player) => player.boostsThisRound.clear());
+    this.players.forEach((player) => resetRoundState(player));
     this.deadlineAt$.next(Date.now() + this.timeLimitMs());
 
     this.collectAnswers(index)
       .pipe(takeUntil(this.destroy$))
       .subscribe((answers) => this.endRound(index, answers));
-    this.emitToRoom('match:question', this.questionPayload(index));
+    this.emitToRoom('match:question', this.questionPayload(index, this.optionOrders.shared(index)));
   }
 
-  // take() closes the round as soon as everyone has answered, takeUntil() when the time is up;
-  // whichever comes first completes the stream and toArray() hands over the answers.
+  // take() ends the round once everyone has answered and takeUntil() when the time is up.
+  // In a party takeWhile() ends it on the first correct answer; `true` keeps that answer.
   private collectAnswers(index: number): Observable<PlayerAnswer[]> {
     return this.answers$.pipe(
       filter((answer) => answer.questionIndex === index && this.canAnswer(answer.userId)),
       tap((answer) => this.recordAnswer(answer)),
+      takeWhile((answer) => !this.winsPartyRound(answer), true),
       take(this.expectedAnswers()),
       takeUntil(this.deadline$),
       toArray(),
@@ -246,8 +304,13 @@ export class MatchSession {
 
   private recordAnswer(answer: PlayerAnswer): void {
     this.answeredUserIds.add(answer.userId);
-    if (answer.optionIndex !== null) {
-      this.emitToRoom('match:answered', { matchId: this.match.id, userId: answer.userId });
+    if (answer.optionIndex === null) {
+      return;
+    }
+    const { userId, questionIndex } = answer;
+    this.emitToRoom('match:answered', { matchId: this.match.id, userId });
+    if (this.match.mode === 'PARTY' && !this.isCorrect(answer)) {
+      this.emitToRoom('match:locked-out', { matchId: this.match.id, index: questionIndex, userId });
     }
   }
 
@@ -255,40 +318,73 @@ export class MatchSession {
     return this.roundPlayerIds.size;
   }
 
+  private winsPartyRound(answer: PlayerAnswer): boolean {
+    return this.match.mode === 'PARTY' && this.isCorrect(answer);
+  }
+
+  private isCorrect(answer: PlayerAnswer): boolean {
+    return this.storedOption(answer) === this.questions[answer.questionIndex].correctIndex;
+  }
+
+  /** The answer in the stored option order, or null when the player gave none. */
+  private storedOption(answer: PlayerAnswer | undefined): number | null {
+    if (!answer || answer.optionIndex === null) {
+      return null;
+    }
+    const order = this.optionOrderFor(answer.userId, answer.questionIndex);
+    return toStoredIndex(order, answer.optionIndex);
+  }
+
+  /** The shared shuffled order, or the player's own one after a SCRAMBLE. */
+  private optionOrderFor(userId: string, questionIndex: number): OptionOrder {
+    return this.optionOrders.forPlayer(userId, questionIndex);
+  }
+
   private endRound(index: number, answers: PlayerAnswer[]): void {
     this.phase = 'reveal';
-    const question = this.questions[index];
+    const winner = answers.find((answer) => this.winsPartyRound(answer));
     const players = [...this.players.values()].map((player) => {
       const answer = answers.find((candidate) => candidate.userId === player.userId);
-      return this.scoreAnswer(player, question, answer);
+      return this.scoreAnswer(player, answer);
     });
-    this.lastRoundResult = {
-      matchId: this.match.id,
+    this.lastRound = {
       index,
-      correctIndex: toShownIndex(this.optionOrders[index], question.correctIndex),
-      explanation: question.explanation,
+      winnerUserId: winner?.userId ?? null,
       players,
       teamCorrect: this.teamCorrect(),
     };
-    this.emitToRoom('match:round-result', this.lastRoundResult);
+    this.players.forEach((player) => this.sendRoundResult(player.userId));
     this.waitForNextPresses(index);
   }
 
-  private scoreAnswer(
-    player: SessionPlayer,
-    question: Question,
-    answer: PlayerAnswer | undefined,
-  ): RoundPlayerResult {
-    const shownIndex = answer?.optionIndex ?? null;
-    const order = this.optionOrders[this.index];
-    const storedIndex = shownIndex === null ? null : toStoredIndex(order, shownIndex);
+  private scoreAnswer(player: SessionPlayer, answer: PlayerAnswer | undefined): ScoredAnswer {
+    const question = this.questions[this.index];
+    const storedIndex = this.storedOption(answer);
     const correct = storedIndex === question.correctIndex;
-    const points = answerPoints(correct, answer?.remainingMs ?? 0, this.timeLimitMs());
+    const lockedOut = this.match.mode === 'PARTY' && storedIndex !== null && !correct;
+    const points = lockedOut
+      ? wrongAnswerPenalty(player.score)
+      : answerPoints(correct, answer?.remainingMs ?? 0, this.timeLimitMs());
 
     player.answers.push({ questionId: question.id, optionIndex: storedIndex, correct, points });
     player.score += points;
     player.correctCount += correct ? 1 : 0;
-    return { userId: player.userId, optionIndex: shownIndex, correct, points, score: player.score };
+    if (correct && this.match.mode === 'PARTY') {
+      player.charges = chargesAfterRoundWin(player.charges);
+    }
+    const { userId, score, charges } = player;
+    return { userId, storedIndex, correct, points, score, charges };
+  }
+
+  /** Sent per player, because after a SCRAMBLE players see the options in different orders. */
+  private sendRoundResult(userId: string): void {
+    if (!this.lastRound) {
+      return;
+    }
+    const { index } = this.lastRound;
+    const order = this.optionOrderFor(userId, index);
+    const result = toRoundResult(this.match.id, this.questions[index], order, this.lastRound);
+    this.emitToUser(userId, 'match:round-result', result);
   }
 
   private waitForNextPresses(index: number): void {
@@ -324,7 +420,7 @@ export class MatchSession {
   }
 
   private assertCanUseBoost(player: SessionPlayer, type: MatchBoostType): void {
-    if (this.match.mode === 'DUEL') {
+    if (this.match.mode === 'DUEL' || this.match.mode === 'PARTY') {
       throw new WsException('Power-ups are off in duels. Fair fight!');
     }
     if (!this.canAnswer(player.userId)) {
@@ -348,13 +444,13 @@ export class MatchSession {
     return type === 'HINT' ? owned + player.freeHintsLeft : owned;
   }
 
-  private applyBoost(type: MatchBoostType): BoostEffect {
+  private applyBoost(userId: string, type: MatchBoostType): BoostEffect {
     const question = this.questions[this.index];
     if (type === 'HINT') {
       return { hint: question.hint };
     }
     if (type === 'FIFTY_FIFTY') {
-      const order = this.optionOrders[this.index];
+      const order = this.optionOrderFor(userId, this.index);
       const correct = question.correctIndex;
       return { eliminatedOptions: pickWrongOptions(order, correct, FIFTY_FIFTY_REMOVED_OPTIONS) };
     }
@@ -366,6 +462,45 @@ export class MatchSession {
     const remainingMs = this.remainingMs();
     this.emitToRoom('match:deadline', { matchId: this.match.id, index: this.index, remainingMs });
     return remainingMs;
+  }
+
+  private sabotageAttempt(player: SessionPlayer, targetUserId: string): SabotageAttempt {
+    const target = this.players.get(targetUserId);
+    return {
+      mode: this.match.mode,
+      questionOpen: this.phase === 'question',
+      fromUserId: player.userId,
+      targetUserId,
+      charges: player.charges,
+      alreadySabotaged: player.sabotagedThisRound,
+      target: target
+        ? { connected: target.connected, canAnswer: this.canAnswer(targetUserId) }
+        : null,
+    };
+  }
+
+  /** INK only needs the match:sabotaged event: the clients draw it. */
+  private applySabotage(target: SessionPlayer, type: SabotageType): void {
+    if (type === 'FREEZE') {
+      target.frozenUntil = Date.now() + FREEZE_DURATION_MS;
+    }
+    if (type === 'SCRAMBLE') {
+      this.scrambleOptions(target);
+    }
+  }
+
+  private scrambleOptions(target: SessionPlayer): void {
+    const order = this.optionOrders.scramble(target.userId, this.index);
+    this.emitToUser(target.userId, 'match:options', {
+      matchId: this.match.id,
+      index: this.index,
+      options: showOptions(this.questions[this.index].options, order),
+    });
+  }
+
+  private isFrozen(userId: string): boolean {
+    const player = this.players.get(userId);
+    return player !== undefined && player.frozenUntil > Date.now();
   }
 
   private markGone(player: SessionPlayer): void {
@@ -386,11 +521,40 @@ export class MatchSession {
   }
 
   private async dropPlayer(userId: string): Promise<void> {
+    if (this.match.mode === 'PARTY') {
+      await this.endPartyIfTooSmall();
+      return;
+    }
     if (this.match.mode === 'DUEL') {
-      await this.finish({ status: 'FINISHED', forfeitedBy: userId });
+      const winnerIds = this.match.playerIds.filter((playerId) => playerId !== userId);
+      await this.finish({ status: 'FINISHED', winnerIds });
       return;
     }
     await this.finish(ABANDONED_END);
+  }
+
+  // A party goes on without the players who left while at least two are still here.
+  // With fewer, the others get the usual grace time to come back before it ends.
+  private watchPartySize(): void {
+    if (this.connectedPlayerIds().length >= MIN_PARTY_PLAYERS) {
+      this.smallPartyTimer?.unsubscribe();
+      this.smallPartyTimer = null;
+      return;
+    }
+    this.smallPartyTimer ??= this.after(RETURN_GRACE_MS.PARTY, () => {
+      void this.runSafely(() => this.endPartyIfTooSmall());
+    });
+  }
+
+  /** The last player still here wins the party; with nobody left it is abandoned. */
+  private async endPartyIfTooSmall(): Promise<void> {
+    const connectedIds = this.connectedPlayerIds();
+    if (connectedIds.length >= MIN_PARTY_PLAYERS) {
+      return;
+    }
+    const ending: MatchEnding =
+      connectedIds.length === 1 ? { status: 'FINISHED', winnerIds: connectedIds } : ABANDONED_END;
+    await this.finish(ending);
   }
 
   private async finish(ending: MatchEnding): Promise<void> {
@@ -415,12 +579,14 @@ export class MatchSession {
   }
 
   private summarize(ending: MatchEnding): MatchSummary {
-    const winnerIds = this.winnerIds(ending);
+    const players = [...this.players.values()];
+    const winnerIds =
+      ending.winnerIds ?? findWinnerIds(this.match.mode, players, this.questions.length);
     return {
       match: this.match,
       status: ending.status,
       questions: this.questions,
-      players: [...this.players.values()].map((player) => ({
+      players: players.map((player) => ({
         userId: player.userId,
         score: player.score,
         correctCount: player.correctCount,
@@ -431,16 +597,6 @@ export class MatchSession {
     };
   }
 
-  private winnerIds(ending: MatchEnding): string[] {
-    if (ending.status === 'ABANDONED') {
-      return [];
-    }
-    if (ending.forfeitedBy) {
-      return this.match.playerIds.filter((userId) => userId !== ending.forfeitedBy);
-    }
-    return findWinnerIds(this.match.mode, [...this.players.values()], this.questions.length);
-  }
-
   private announceResult({ userId, result, coins }: FinishedPlayer): void {
     this.emitToUser(userId, 'match:finished', result);
     this.deps.notifications.emitToUser(userId, 'coins:updated', { coins });
@@ -448,30 +604,36 @@ export class MatchSession {
 
   private sendCurrentState(userId: string): void {
     if (this.phase === 'question') {
-      this.emitToUser(userId, 'match:question', this.questionPayload(this.index));
+      const order = this.optionOrderFor(userId, this.index);
+      this.emitToUser(userId, 'match:question', this.questionPayload(this.index, order));
     }
-    if (this.phase === 'reveal' && this.lastRoundResult) {
-      this.emitToUser(userId, 'match:round-result', this.lastRoundResult);
+    if (this.phase === 'reveal') {
+      this.sendRoundResult(userId);
       this.emitToUser(userId, 'match:waiting-next', this.waitingNextPayload());
     }
+  }
+
+  private connectedPlayerIds(): string[] {
+    return [...this.players.values()]
+      .filter((player) => player.connected)
+      .map((player) => player.userId);
   }
 
   // When nobody is connected everyone counts, so rounds run out their timer
   // instead of racing past.
   private activePlayerIds(): string[] {
-    const connected = [...this.players.values()].filter((player) => player.connected);
-    const active = connected.length > 0 ? connected : [...this.players.values()];
-    return active.map((player) => player.userId);
+    const connected = this.connectedPlayerIds();
+    return connected.length > 0 ? connected : [...this.players.keys()];
   }
 
-  private questionPayload(index: number): QuestionPayload {
+  private questionPayload(index: number, order: OptionOrder): QuestionPayload {
     const question = this.questions[index];
     return {
       matchId: this.match.id,
       index,
       total: this.questions.length,
       text: question.text,
-      options: showOptions(question.options, this.optionOrders[index]),
+      options: showOptions(question.options, order),
       timeLimitSeconds: this.match.quiz.timePerQuestion,
       remainingMs: this.remainingMs(),
     };
@@ -529,7 +691,7 @@ export class MatchSession {
   }
 }
 
-function newPlayer(userId: string): SessionPlayer {
+function newPlayer(userId: string, mode: MatchMode): SessionPlayer {
   return {
     userId,
     connected: true,
@@ -539,5 +701,15 @@ function newPlayer(userId: string): SessionPlayer {
     freeHintsLeft: FREE_HINTS_PER_MATCH,
     boostsThisRound: new Set(),
     returnTimer: null,
+    charges: startingCharges(mode),
+    sabotagedThisRound: false,
+    frozenUntil: 0,
   };
+}
+
+/** Power-ups, sabotage and freezes count per question. */
+function resetRoundState(player: SessionPlayer): void {
+  player.boostsThisRound.clear();
+  player.sabotagedThisRound = false;
+  player.frozenUntil = 0;
 }

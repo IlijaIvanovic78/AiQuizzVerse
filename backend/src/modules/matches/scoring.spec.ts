@@ -1,4 +1,11 @@
-import { answerPoints, duelWinnerIds, findWinnerIds, playerOutcome, teamWon } from './scoring';
+import {
+  answerPoints,
+  duelWinnerIds,
+  findWinnerIds,
+  partyWinnerIds,
+  playerOutcome,
+  teamWon,
+} from './scoring';
 
 const TIME_LIMIT_MS = 30_000;
 
@@ -73,19 +80,53 @@ describe('team result', () => {
   });
 });
 
+describe('party winner', () => {
+  it('is the player with the highest score', () => {
+    const winners = partyWinnerIds([
+      { userId: 'ana', correctCount: 2, score: 275 },
+      { userId: 'marko', correctCount: 3, score: 260 },
+      { userId: 'iva', correctCount: 0, score: 0 },
+    ]);
+    expect(winners).toEqual(['ana']);
+  });
+
+  it('is nobody when the top score is shared', () => {
+    const players = [
+      { userId: 'ana', correctCount: 2, score: 275 },
+      { userId: 'marko', correctCount: 2, score: 275 },
+      { userId: 'iva', correctCount: 1, score: 140 },
+    ];
+    expect(partyWinnerIds(players)).toEqual([]);
+    expect(findWinnerIds('PARTY', players, 5)).toEqual([]);
+  });
+});
+
 describe('player outcome', () => {
+  const winner = { score: 300, isWinner: true };
+  const loser = { score: 100, isWinner: false };
+
   it('is DONE for solo play', () => {
-    expect(playerOutcome('SOLO', false, false)).toBe('DONE');
+    expect(playerOutcome('SOLO', loser, [loser])).toBe('DONE');
   });
 
   it('tells a duel win, loss and draw apart', () => {
-    expect(playerOutcome('DUEL', true, true)).toBe('WIN');
-    expect(playerOutcome('DUEL', false, true)).toBe('LOSS');
-    expect(playerOutcome('DUEL', false, false)).toBe('DRAW');
+    const drawn = { score: 200, isWinner: false };
+    expect(playerOutcome('DUEL', winner, [winner, loser])).toBe('WIN');
+    expect(playerOutcome('DUEL', loser, [winner, loser])).toBe('LOSS');
+    expect(playerOutcome('DUEL', drawn, [drawn, drawn])).toBe('DRAW');
+  });
+
+  it('is a draw in a party only for the players who share the top score', () => {
+    const top = { score: 300, isWinner: false };
+    const players = [top, top, loser];
+    expect(playerOutcome('PARTY', top, players)).toBe('DRAW');
+    expect(playerOutcome('PARTY', loser, players)).toBe('LOSS');
+    expect(playerOutcome('PARTY', winner, [winner, loser, loser])).toBe('WIN');
   });
 
   it('has no draw for teams', () => {
-    expect(playerOutcome('TEAM', true, true)).toBe('WIN');
-    expect(playerOutcome('TEAM', false, false)).toBe('LOSS');
+    const teammate = { score: 100, isWinner: false };
+    expect(playerOutcome('TEAM', winner, [winner, winner])).toBe('WIN');
+    expect(playerOutcome('TEAM', teammate, [teammate, teammate])).toBe('LOSS');
   });
 });

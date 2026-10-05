@@ -1,4 +1,4 @@
-import { Prisma, Question } from '@prisma/client';
+import { MatchMode, Prisma, Question } from '@prisma/client';
 import { PathResult } from '../learning-paths/learning-paths.types';
 import { ReviewAnswer } from '../review/review.types';
 import { PUBLIC_USER_SELECT, toPublicUser } from '../users/user.mapper';
@@ -6,11 +6,15 @@ import {
   MatchHistoryEntry,
   MatchResult,
   MatchView,
+  PlayedRound,
   PlayerAnswerRecord,
   ResultPlayer,
   ResultQuestion,
+  RoundResultPayload,
   SessionSetup,
 } from './matches.types';
+import { OptionOrder, toShownIndex } from './option-order';
+import { startingCharges } from './party-rules';
 import { playerOutcome } from './scoring';
 
 const PLAYERS_WITH_USERS = {
@@ -50,6 +54,7 @@ export type MatchWithPlayers = Prisma.MatchGetPayload<{ include: typeof MATCH_VI
 export type HistoryRow = Prisma.MatchPlayerGetPayload<{ include: typeof HISTORY_INCLUDE }>;
 export type ResultMatch = Prisma.MatchGetPayload<{ include: typeof MATCH_RESULT_INCLUDE }>;
 export type ResultMatchPlayer = ResultMatch['players'][number];
+type PlayerWithUser = MatchWithPlayers['players'][number];
 type SessionSetupRow = Prisma.MatchGetPayload<{ include: typeof SESSION_SETUP_INCLUDE }>;
 
 export interface ResultExtras {
@@ -77,14 +82,14 @@ export function toMatchView(match: MatchWithPlayers, connectedUserIds: string[])
       score: player.score,
       correctCount: player.correctCount,
       isConnected: connectedUserIds.includes(player.userId),
+      charges: startingCharges(match.mode),
     })),
   };
 }
 
 export function toHistoryEntry(row: HistoryRow): MatchHistoryEntry {
   const { match } = row;
-  const opponent = match.players.find((player) => player.userId !== row.userId);
-  const someoneWon = match.players.some((player) => player.isWinner);
+  const opponent = bestOtherPlayer(match.players, row.userId);
   return {
     matchId: match.id,
     mode: match.mode,
@@ -94,7 +99,7 @@ export function toHistoryEntry(row: HistoryRow): MatchHistoryEntry {
     myScore: row.score,
     correctCount: row.correctCount,
     questionCount: match.quiz._count.questions,
-    result: playerOutcome(match.mode, row.isWinner, someoneWon),
+    result: playerOutcome(match.mode, row, match.players),
     opponent: opponent ? toPublicUser(opponent.user) : null,
   };
 }
@@ -112,11 +117,38 @@ export function toMatchResult(
     theme: match.quiz.theme,
     kind: match.quiz.kind,
     questionCount: match.quiz.questions.length,
-    players: match.players.map(toResultPlayer),
+    players: byScore(match.players).map(toResultPlayer),
     questions: toResultQuestions(match.quiz.questions, readAnswers(viewer.answers)),
     path: extras.path,
     leveledUp: viewer.leveledUp,
     coinCapReached: extras.coinCapReached,
+  };
+}
+
+/** A round result with option indexes in the order of the player who receives it. */
+export function toRoundResult(
+  matchId: string,
+  question: Question,
+  order: OptionOrder,
+  round: PlayedRound,
+): RoundResultPayload {
+  const shownIndex = (storedIndex: number | null) =>
+    storedIndex === null ? null : toShownIndex(order, storedIndex);
+  return {
+    matchId,
+    index: round.index,
+    correctIndex: toShownIndex(order, question.correctIndex),
+    explanation: question.explanation,
+    winnerUserId: round.winnerUserId,
+    players: round.players.map((player) => ({
+      userId: player.userId,
+      optionIndex: shownIndex(player.storedIndex),
+      correct: player.correct,
+      points: player.points,
+      score: player.score,
+      charges: player.charges,
+    })),
+    teamCorrect: round.teamCorrect,
   };
 }
 
@@ -138,18 +170,32 @@ export function toSessionSetup(match: SessionSetupRow): SessionSetup {
   };
 }
 
-/** Review quizzes hold copies, so mistakes are recorded on the original question's card. */
+// Review quizzes hold copies, so mistakes are recorded on the original question's card.
+// In a party the first correct answer closes the round, so a question the player never
+// got to answer is not a mistake.
 export function toReviewAnswers(
+  mode: MatchMode,
   answers: PlayerAnswerRecord[],
   questions: Question[],
 ): ReviewAnswer[] {
-  return answers.map((answer) => {
+  const reviewed =
+    mode === 'PARTY' ? answers.filter((answer) => answer.optionIndex !== null) : answers;
+  return reviewed.map((answer) => {
     const question = questions.find((candidate) => candidate.id === answer.questionId);
     return {
       questionId: question?.sourceQuestionId ?? answer.questionId,
       correct: answer.correct,
     };
   });
+}
+
+/** The best-scoring other player: the duel opponent, the team partner or the party rival. */
+function bestOtherPlayer(players: PlayerWithUser[], userId: string): PlayerWithUser | undefined {
+  return byScore(players.filter((player) => player.userId !== userId))[0];
+}
+
+function byScore(players: PlayerWithUser[]): PlayerWithUser[] {
+  return [...players].sort((first, second) => second.score - first.score);
 }
 
 function toResultPlayer(player: ResultMatchPlayer): ResultPlayer {

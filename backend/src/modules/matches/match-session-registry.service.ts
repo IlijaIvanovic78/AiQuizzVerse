@@ -21,7 +21,7 @@ export class MatchSessionRegistry implements OnModuleDestroy {
 
   // The database claim decides who starts the match; has() and set() run
   // without an await between them.
-  async start(matchId: string, server: GameServer): Promise<void> {
+  async start(matchId: string, server: GameServer, connectedUserIds: string[]): Promise<void> {
     const { match, questions } = await this.play.loadSessionSetup(matchId);
     const claimed = await this.play.claimStart(matchId);
     if (!claimed || this.sessions.has(matchId)) {
@@ -29,7 +29,7 @@ export class MatchSessionRegistry implements OnModuleDestroy {
     }
     const session = new MatchSession(this.sessionDeps(server), match, questions);
     this.sessions.set(matchId, session);
-    session.start();
+    session.start(connectedUserIds);
   }
 
   onModuleDestroy(): void {

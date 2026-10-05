@@ -28,7 +28,7 @@ import {
   INVITE_CODE_LENGTH,
   MATCH_NOT_FOUND_MESSAGE,
   MATCH_STARTED_MESSAGE,
-  MAX_PLAYERS,
+  MAX_PLAYERS_BY_MODE,
   NOT_IN_MATCH_MESSAGE,
 } from './matches.constants';
 import { MatchHistoryEntry, MatchView } from './matches.types';
@@ -93,7 +93,7 @@ export class MatchesService implements OnModuleInit {
       if (match.status !== 'WAITING') {
         throw new ConflictException(MATCH_STARTED_MESSAGE);
       }
-      if (match.players.length >= MAX_PLAYERS) {
+      if (match.players.length >= MAX_PLAYERS_BY_MODE[match.mode]) {
         throw new ConflictException('This match is full.');
       }
       await tx.matchPlayer.create({ data: { matchId: match.id, userId } });
@@ -131,7 +131,7 @@ export class MatchesService implements OnModuleInit {
   async rematch(matchId: string, userId: string): Promise<MatchView> {
     const previous = await this.findForPlayer(matchId, userId);
     if (previous.status !== 'FINISHED' || previous.mode === 'SOLO') {
-      throw new BadRequestException('Only finished duels and team matches can be played again.');
+      throw new BadRequestException('Only finished duel, team and party matches can be replayed.');
     }
     const quiz = await this.prisma.quiz.findFirst({
       where: { id: previous.quiz.id, deletedAt: null },
@@ -142,10 +142,9 @@ export class MatchesService implements OnModuleInit {
     }
 
     const match = await this.createMatch(userId, quiz.id, previous.mode);
-    const other = previous.players.find((player) => player.userId !== userId);
-    if (other) {
-      this.sendInvite(match, other.userId);
-    }
+    previous.players
+      .filter((player) => player.userId !== userId)
+      .forEach((player) => this.sendInvite(match, player.userId));
     return toMatchView(match, NOBODY_CONNECTED);
   }
 
@@ -193,7 +192,7 @@ export class MatchesService implements OnModuleInit {
 
   private async assertCanInvite(mode: MatchMode, userId: string, friendId: string): Promise<void> {
     if (mode === 'SOLO') {
-      throw new BadRequestException('Solo matches are just for you. Pick a duel or team match.');
+      throw new BadRequestException('Solo matches are just for you. Pick a duel, team or party.');
     }
     const friendship = await this.prisma.friendship.findFirst({
       where: {

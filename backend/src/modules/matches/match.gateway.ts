@@ -15,13 +15,19 @@ import { WsAuthService } from '../realtime/ws-auth.service';
 import { AnswerDto } from './dto/answer.dto';
 import { MatchIdDto } from './dto/match-id.dto';
 import { NextQuestionDto } from './dto/next-question.dto';
+import { SabotageDto } from './dto/sabotage.dto';
 import { UseBoostDto } from './dto/use-boost.dto';
 import { MatchWithPlayers } from './match.mapper';
 import { MatchPlayService } from './match-play.service';
 import { MatchResultsService } from './match-results.service';
 import { MatchSession } from './match-session';
 import { MatchSessionRegistry } from './match-session-registry.service';
-import { GAME_NAMESPACE, MATCH_STARTED_MESSAGE, matchRoom, MAX_PLAYERS } from './matches.constants';
+import {
+  GAME_NAMESPACE,
+  MATCH_STARTED_MESSAGE,
+  matchRoom,
+  MIN_PLAYERS_TO_START,
+} from './matches.constants';
 import { MatchesService } from './matches.service';
 import type { GameServer, GameSocket, MatchView } from './matches.types';
 import { WsExceptionFilter } from './ws-exception.filter';
@@ -148,22 +154,34 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     await this.sessionFor(dto.matchId, userId).useBoost(userId, dto.type);
   }
 
+  @SubscribeMessage('match:sabotage')
+  sabotage(@ConnectedSocket() socket: GameSocket, @MessageBody() dto: SabotageDto): void {
+    const { userId } = socket.data;
+    this.sessionFor(dto.matchId, userId).sabotage(userId, dto.targetUserId, dto.type);
+  }
+
   private async startMatch(match: MatchWithPlayers): Promise<void> {
     if (match.status !== 'WAITING') {
       throw new WsException(MATCH_STARTED_MESSAGE);
     }
-    if (match.mode !== 'SOLO' && !(await this.bothPlayersConnected(match))) {
-      throw new WsException('Wait until both players are here.');
-    }
-    await this.registry.start(match.id, this.server);
+    const connectedUserIds = await this.connectedUserIds(match.id);
+    this.assertEnoughPlayers(match, connectedUserIds);
+    await this.registry.start(match.id, this.server, connectedUserIds);
   }
 
-  private async bothPlayersConnected(match: MatchWithPlayers): Promise<boolean> {
-    const connectedUserIds = await this.connectedUserIds(match.id);
-    return (
-      match.players.length === MAX_PLAYERS &&
-      match.players.every((player) => connectedUserIds.includes(player.userId))
+  private assertEnoughPlayers(match: MatchWithPlayers, connectedUserIds: string[]): void {
+    const connectedPlayers = match.players.filter((player) =>
+      connectedUserIds.includes(player.userId),
     );
+    const neededPlayers = MIN_PLAYERS_TO_START[match.mode];
+    if (connectedPlayers.length >= neededPlayers) {
+      return;
+    }
+    const message =
+      match.mode === 'PARTY'
+        ? `Wait until at least ${neededPlayers} players are here.`
+        : 'Wait until both players are here.';
+    throw new WsException(message);
   }
 
   private async rejoin(matchId: string, userId: string): Promise<void> {

@@ -14,9 +14,12 @@ import { PublicUser } from '../users/users.types';
 import { AnswerDto } from './dto/answer.dto';
 import { MatchIdDto } from './dto/match-id.dto';
 import { NextQuestionDto } from './dto/next-question.dto';
+import { SabotageDto } from './dto/sabotage.dto';
 import { UseBoostDto } from './dto/use-boost.dto';
 
 export type MatchBoostType = Exclude<BoostType, 'STREAK_FREEZE'>;
+
+export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE';
 
 /** Stored in MatchPlayer.answers; optionIndex is in the stored order, not the shuffled one. */
 export type PlayerAnswerRecord = {
@@ -40,6 +43,8 @@ export interface MatchPlayerView {
   score: number;
   correctCount: number;
   isConnected: boolean;
+  /** Sabotage charges; always 0 outside party matches. */
+  charges: number;
 }
 
 export interface MatchView {
@@ -131,15 +136,59 @@ export interface RoundPlayerResult {
   correct: boolean;
   points: number;
   score: number;
+  charges: number;
 }
 
+/** Sent to each player separately, with option indexes in the order that player saw. */
 export interface RoundResultPayload {
   matchId: string;
   index: number;
   correctIndex: number;
   explanation: string;
+  /** Party matches: who answered correctly first. Always null in other modes. */
+  winnerUserId: string | null;
   players: RoundPlayerResult[];
   teamCorrect: number;
+}
+
+export interface LockedOutPayload {
+  matchId: string;
+  index: number;
+  userId: string;
+}
+
+export interface OptionsPayload {
+  matchId: string;
+  index: number;
+  options: string[];
+}
+
+export interface SabotagedPayload {
+  matchId: string;
+  index: number;
+  type: SabotageType;
+  fromUserId: string;
+  targetUserId: string;
+  /** How long the effect lasts; 0 for SCRAMBLE, which lasts until the question ends. */
+  durationMs: number;
+  fromCharges: number;
+}
+
+/** A scored round in the stored option order, so every player can get it in their own order. */
+export interface PlayedRound {
+  index: number;
+  winnerUserId: string | null;
+  players: ScoredAnswer[];
+  teamCorrect: number;
+}
+
+export interface ScoredAnswer {
+  userId: string;
+  storedIndex: number | null;
+  correct: boolean;
+  points: number;
+  score: number;
+  charges: number;
 }
 
 export interface WaitingNextPayload {
@@ -174,6 +223,9 @@ export interface GameServerToClientEvents {
   'match:round-result': (payload: RoundResultPayload) => void;
   'match:waiting-next': (payload: WaitingNextPayload) => void;
   'match:boost-used': (payload: BoostUsedPayload) => void;
+  'match:locked-out': (payload: LockedOutPayload) => void;
+  'match:options': (payload: OptionsPayload) => void;
+  'match:sabotaged': (payload: SabotagedPayload) => void;
   'match:finished': (payload: MatchResult) => void;
   'match:player-left': (payload: PlayerEventPayload) => void;
   'match:error': (payload: MatchErrorPayload) => void;
@@ -186,6 +238,7 @@ export interface GameClientToServerEvents {
   'match:answer': (payload: AnswerDto) => void;
   'match:next': (payload: NextQuestionDto) => void;
   'match:boost': (payload: UseBoostDto) => void;
+  'match:sabotage': (payload: SabotageDto) => void;
 }
 
 export interface GameSocketData {

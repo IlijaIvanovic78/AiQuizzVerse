@@ -99,21 +99,21 @@ export class MatchResultsService {
     summary: MatchSummary,
     player: PlayerSummary,
   ): Promise<PlayerReward> {
-    const someoneWon = summary.players.some((candidate) => candidate.isWinner);
+    const { mode } = summary.match;
     const reward = await this.progression.rewardMatchPlayer(
       player.userId,
       {
-        mode: summary.match.mode,
+        mode,
         difficulty: summary.match.quiz.difficulty,
         correctCount: player.correctCount,
-        outcome: playerOutcome(summary.match.mode, player.isWinner, someoneWon),
+        outcome: playerOutcome(mode, player, summary.players),
         abandoned: summary.status === 'ABANDONED',
       },
       tx,
     );
     await this.review.recordAnswers(
       player.userId,
-      toReviewAnswers(player.answers, summary.questions),
+      toReviewAnswers(mode, player.answers, summary.questions),
       tx,
     );
     return reward;
@@ -216,12 +216,11 @@ export class MatchResultsService {
   // The daily cap is the only thing that lowers match coins, so earning less
   // than the match was worth means the cap was hit.
   private coinCapWasReached(match: ResultMatch, viewer: ResultMatchPlayer): boolean {
-    const someoneWon = match.players.some((player) => player.isWinner);
     const fullReward = matchReward({
       mode: match.mode,
       difficulty: match.quiz.difficulty,
       correctCount: viewer.correctCount,
-      outcome: playerOutcome(match.mode, viewer.isWinner, someoneWon),
+      outcome: playerOutcome(match.mode, viewer, match.players),
       abandoned: false,
     });
     return viewer.coinsEarned < fullReward.coins;

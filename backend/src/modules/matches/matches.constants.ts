@@ -1,9 +1,23 @@
 import { MatchMode } from '@prisma/client';
-import { MatchBoostType } from './matches.types';
+import { MatchBoostType, SabotageType } from './matches.types';
 
 export const GAME_NAMESPACE = '/game';
-export const MAX_PLAYERS = 2;
 export const HISTORY_LIMIT = 20;
+
+export const MAX_PLAYERS_BY_MODE: Record<MatchMode, number> = {
+  SOLO: 1,
+  DUEL: 2,
+  TEAM: 2,
+  PARTY: 4,
+};
+
+/** Connected players the host needs before the match can start. */
+export const MIN_PLAYERS_TO_START: Record<MatchMode, number> = {
+  SOLO: 1,
+  DUEL: 2,
+  TEAM: 2,
+  PARTY: 2,
+};
 
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export const INVITE_CODE_LENGTH = 6;
@@ -20,18 +34,36 @@ export const FREE_HINTS_PER_MATCH = 2;
 export const FIFTY_FIFTY_REMOVED_OPTIONS = 2;
 export const EXTRA_TIME_MS = 15_000;
 
+/** A party keeps going while this many players are connected. */
+export const MIN_PARTY_PLAYERS = 2;
+export const PARTY_START_CHARGES = 1;
+export const PARTY_MAX_CHARGES = 2;
+export const PARTY_WRONG_PENALTY = 25;
+
+export const SABOTAGE_TYPES: SabotageType[] = ['INK', 'FREEZE', 'SCRAMBLE'];
+export const INK_DURATION_MS = 4_000;
+export const FREEZE_DURATION_MS = 3_000;
+export const SABOTAGE_DURATION_MS: Record<SabotageType, number> = {
+  INK: INK_DURATION_MS,
+  FREEZE: FREEZE_DURATION_MS,
+  SCRAMBLE: 0,
+};
+
 /** How long the explanation stays open when not everyone pressed Next. */
 export const REVEAL_MAX_MS: Record<MatchMode, number> = {
   SOLO: 60_000,
   DUEL: 15_000,
   TEAM: 15_000,
+  PARTY: 15_000,
 };
 
-/** How long a disconnected player has to come back before the match goes on without them. */
+// How long a disconnected player has to come back before the match ends without them.
+// A party goes on without them and only ends once fewer than two players are left that long.
 export const RETURN_GRACE_MS: Record<MatchMode, number> = {
   SOLO: 60_000,
   DUEL: 30_000,
   TEAM: 30_000,
+  PARTY: 30_000,
 };
 
 // Finishing writes every answer, reward and review card, which can take longer
