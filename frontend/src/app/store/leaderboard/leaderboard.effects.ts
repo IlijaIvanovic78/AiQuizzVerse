@@ -1,40 +1,37 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
-import { switchMap, map, catchError } from 'rxjs/operators';
-import { LeaderboardApiService } from '../../services/leaderboard-api.service';
-import * as LeaderboardActions from './leaderboard.actions';
+import { catchError, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage } from '../../core/api/api-error';
+import { LeaderboardApiService } from '../../core/api/leaderboard-api.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { LeaderboardActions } from './leaderboard.actions';
 
 @Injectable()
 export class LeaderboardEffects {
-  private actions$ = inject(Actions);
-  private leaderboardApi = inject(LeaderboardApiService);
+  private readonly actions$ = inject(Actions);
+  private readonly leaderboardApi = inject(LeaderboardApiService);
+  private readonly toast = inject(ToastService);
 
-  loadGlobal$ = createEffect(() =>
+  readonly load$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(LeaderboardActions.loadGlobalLeaderboard),
-      switchMap(() =>
-        this.leaderboardApi.getGlobalLeaderboard().pipe(
-          map((entries) => LeaderboardActions.loadGlobalLeaderboardSuccess({ entries })),
-          catchError((err) =>
-            of(LeaderboardActions.loadGlobalLeaderboardFailure({ error: err?.error?.message || 'Failed to load leaderboard' })),
+      ofType(LeaderboardActions.load),
+      switchMap(({ scope }) =>
+        this.leaderboardApi.get(scope).pipe(
+          map((leaderboard) => LeaderboardActions.loaded({ leaderboard })),
+          catchError((error: unknown) =>
+            of(LeaderboardActions.failed({ error: readErrorMessage(error) })),
           ),
         ),
       ),
     ),
   );
 
-  loadFriends$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(LeaderboardActions.loadFriendsLeaderboard),
-      switchMap(() =>
-        this.leaderboardApi.getFriendsLeaderboard().pipe(
-          map((entries) => LeaderboardActions.loadFriendsLeaderboardSuccess({ entries })),
-          catchError((err) =>
-            of(LeaderboardActions.loadFriendsLeaderboardFailure({ error: err?.error?.message || 'Failed to load leaderboard' })),
-          ),
-        ),
+  readonly showError$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(LeaderboardActions.failed),
+        tap(({ error }) => this.toast.error(error)),
       ),
-    ),
+    { dispatch: false },
   );
 }

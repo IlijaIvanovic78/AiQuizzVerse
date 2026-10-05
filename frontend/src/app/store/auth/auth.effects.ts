@@ -1,275 +1,218 @@
-import { inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { catchError, map, switchMap, tap, of } from 'rxjs';
-import { AuthService } from '../../core/services';
-import { SocketService } from '../../services';
-import { is2FARequired } from '../../core/models';
+import { Action, Store } from '@ngrx/store';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  exhaustMap,
+  map,
+  of,
+  switchMap,
+  tap,
+  withLatestFrom,
+} from 'rxjs';
+import { readErrorMessage } from '../../core/api/api-error';
+import { AuthApiService } from '../../core/api/auth-api.service';
+import { ProfileApiService } from '../../core/api/profile-api.service';
+import { TokenStorageService } from '../../core/auth/token-storage.service';
+import { AuthResponse, LoginResult } from '../../core/models/auth.model';
+import { ToastService } from '../../core/notifications/toast.service';
+import { MatchSocketService } from '../../core/realtime/match-socket.service';
+import { RealtimeSocketService } from '../../core/realtime/realtime-socket.service';
+import { MatchSocketActions } from '../match/match-socket.actions';
 import { AuthActions } from './auth.actions';
+import { authFeature } from './auth.reducer';
 
-/**
- * Auth Effects
- * Handles all side effects for authentication (API calls, navigation, storage).
- */
+@Injectable()
 export class AuthEffects {
-  private actions$ = inject(Actions);
-  private authService = inject(AuthService);
-  private socketService = inject(SocketService);
-  private router = inject(Router);
+  private readonly actions$ = inject(Actions);
+  private readonly store = inject(Store);
+  private readonly authApi = inject(AuthApiService);
+  private readonly profileApi = inject(ProfileApiService);
+  private readonly tokens = inject(TokenStorageService);
+  private readonly realtimeSocket = inject(RealtimeSocketService);
+  private readonly matchSocket = inject(MatchSocketService);
+  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
-  // ==================== REGISTER ====================
-  register$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.register),
-      switchMap(({ credentials }) =>
-        this.authService.register(credentials).pipe(
-          map((response) => AuthActions.registerSuccess({ response })),
-          catchError((error) =>
-            of(AuthActions.registerFailure({ error: error.error?.message || 'Registration failed' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  registerSuccess$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(AuthActions.registerSuccess),
-        tap(({ response }) => {
-          // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
-          // Connect WebSocket with access token
-          this.socketService.connect(response.accessToken);
-          // Navigate to dashboard
-          this.router.navigate(['/dashboard']);
-        }),
-      ),
-    { dispatch: false },
-  );
-
-  // ==================== LOGIN ====================
-  login$ = createEffect(() =>
+  readonly login$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AuthActions.login),
-      switchMap(({ credentials }) =>
-        this.authService.login(credentials).pipe(
-          map((response) => {
-            if (is2FARequired(response)) {
-              return AuthActions.login2FARequired({ response });
-            }
-            return AuthActions.loginSuccess({ response });
-          }),
-          catchError((error) =>
-            of(AuthActions.loginFailure({ error: error.error?.message || 'Login failed' })),
-          ),
+      exhaustMap(({ credentials }) =>
+        this.authApi.login(credentials).pipe(
+          map((result) => this.handleLoginResult(result)),
+          catchError((error: unknown) => of(this.signInFailed(error))),
         ),
       ),
     ),
   );
 
-  loginSuccess$ = createEffect(
+  readonly submitTwoFactorCode$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.submitTwoFactorCode),
+      withLatestFrom(this.store.select(authFeature.selectTwoFactorToken)),
+      exhaustMap(([{ code }, twoFactorToken]) => this.loginWithCode(twoFactorToken, code)),
+    ),
+  );
+
+  readonly register$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.register),
+      exhaustMap(({ request }) =>
+        this.authApi.register(request).pipe(
+          map((response) => this.completeSignIn(response)),
+          catchError((error: unknown) => of(this.signInFailed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly enterApp$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.loginSuccess),
-        tap(({ response }) => {
-          // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
-          // Connect WebSocket with access token
-          this.socketService.connect(response.accessToken);
-          // Navigate to dashboard
-          this.router.navigate(['/dashboard']);
-        }),
+        ofType(AuthActions.signedIn),
+        tap(({ user }) => void this.router.navigateByUrl(user.avatarKey ? '/home' : '/welcome')),
       ),
     { dispatch: false },
   );
 
-  // ==================== 2FA LOGIN ====================
-  login2FA$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.login2FA),
-      switchMap(({ request }) =>
-        this.authService.login2FA(request).pipe(
-          map((response) => AuthActions.login2FASuccess({ response })),
-          catchError((error) =>
-            of(AuthActions.login2FAFailure({ error: error.error?.message || '2FA verification failed' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  login2FASuccess$ = createEffect(
+  readonly connectRealtime$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.login2FASuccess),
-        tap(({ response }) => {
-          // Store tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
-          // Connect WebSocket with access token
-          this.socketService.connect(response.accessToken);
-          // Navigate to dashboard
-          this.router.navigate(['/dashboard']);
-        }),
+        ofType(AuthActions.signedIn, AuthActions.sessionRestored),
+        tap(() => this.realtimeSocket.connect()),
       ),
     { dispatch: false },
   );
 
-  // ==================== LOGOUT ====================
-  logout$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.logout),
-      switchMap(() =>
-        this.authService.logout().pipe(
-          map(() => AuthActions.logoutSuccess()),
-          catchError(() => of(AuthActions.logoutSuccess())), // Always succeed logout locally
-        ),
-      ),
-    ),
-  );
-
-  logoutSuccess$ = createEffect(
+  readonly logout$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.logoutSuccess),
+        ofType(AuthActions.logout),
+        exhaustMap(() => this.authApi.logout().pipe(catchError(() => of(null)))),
         tap(() => {
-          // Disconnect WebSocket
-          this.socketService.disconnect();
-          // Clear tokens from localStorage
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          // Navigate to login
-          this.router.navigate(['/auth/login']);
+          this.closeSession();
+          void this.router.navigateByUrl('/login');
         }),
       ),
     { dispatch: false },
   );
 
-  // ==================== PROFILE ====================
-  loadProfile$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.loadProfile),
-      switchMap(() =>
-        this.authService.getProfile().pipe(
-          map((user) => AuthActions.loadProfileSuccess({ user })),
-          catchError((error) =>
-            of(AuthActions.loadProfileFailure({ error: error.error?.message || 'Failed to load profile' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // Connect socket after profile loaded (handles page refresh case)
-  loadProfileSuccess$ = createEffect(
+  readonly sessionExpired$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.loadProfileSuccess),
+        ofType(AuthActions.sessionExpired),
         tap(() => {
-          const token = localStorage.getItem('accessToken');
-          if (token && !this.socketService.isConnected()) {
-            this.socketService.connect(token);
-          }
+          this.closeSession();
+          this.toast.info('Your session ended. Please log in again.');
+          void this.router.navigateByUrl('/login');
         }),
       ),
     { dispatch: false },
   );
 
-  // Clear tokens on profile load failure (invalid/expired token)
-  loadProfileFailure$ = createEffect(
+  // Rewards change XP, coins and streak on the server, so the hero is reloaded after a match.
+  readonly refreshUser$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.refreshUser, MatchSocketActions.finished),
+      switchMap(() =>
+        this.authApi.me().pipe(
+          map((user) => AuthActions.userRefreshed({ user })),
+          catchError(() => EMPTY),
+        ),
+      ),
+    ),
+  );
+
+  readonly changeUsername$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.changeUsername),
+      exhaustMap(({ username }) =>
+        this.profileApi.updateMe({ username }).pipe(
+          map((user) => AuthActions.usernameChanged({ user })),
+          catchError((error: unknown) => of(this.settingsFailed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly enableTwoFactor$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.enableTwoFactor),
+      exhaustMap(({ code }) =>
+        this.authApi.enableTwoFactor(code).pipe(
+          map((user) => AuthActions.twoFactorChanged({ user })),
+          catchError((error: unknown) => of(this.settingsFailed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly disableTwoFactor$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AuthActions.disableTwoFactor),
+      exhaustMap(({ code }) =>
+        this.authApi.disableTwoFactor(code).pipe(
+          map((user) => AuthActions.twoFactorChanged({ user })),
+          catchError((error: unknown) => of(this.settingsFailed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly announceSettings$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.loadProfileFailure),
-        tap(() => {
-          this.socketService.disconnect();
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          this.router.navigate(['/auth/login']);
-        }),
+        ofType(AuthActions.usernameChanged, AuthActions.twoFactorChanged),
+        tap(() => this.toast.success('Settings saved.')),
       ),
     { dispatch: false },
   );
 
-  // ==================== 2FA SETUP ====================
-  enable2FA$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.enable2FA),
-      switchMap(() =>
-        this.authService.enable2FA().pipe(
-          map((response) => AuthActions.enable2FASuccess({ response })),
-          catchError((error) =>
-            of(AuthActions.enable2FAFailure({ error: error.error?.message || 'Failed to enable 2FA' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  verify2FA$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.verify2FA),
-      switchMap(({ request }) =>
-        this.authService.verify2FA(request.token).pipe(
-          switchMap(() => [
-            AuthActions.verify2FASuccess(),
-            AuthActions.loadProfile(), // Reload profile to get updated twoFaEnabled
-          ]),
-          catchError((error) =>
-            of(AuthActions.verify2FAFailure({ error: error.error?.message || 'Failed to verify 2FA' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // ==================== DISABLE 2FA ====================
-  disable2FA$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.disable2FA),
-      switchMap(() =>
-        this.authService.disable2FA().pipe(
-          switchMap(() => [
-            AuthActions.disable2FASuccess(),
-            AuthActions.loadProfile(), // Reload profile to get updated twoFaEnabled
-          ]),
-          catchError((error) =>
-            of(AuthActions.disable2FAFailure({ error: error.error?.message || 'Failed to disable 2FA' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  // ==================== REFRESH TOKEN (triggered from interceptor) ====================
-  refreshToken$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(AuthActions.refreshToken),
-      switchMap(({ refreshToken }) =>
-        this.authService.refreshToken(refreshToken).pipe(
-          map((response) =>
-            AuthActions.refreshTokenSuccess({ response }),
-          ),
-          catchError((error) =>
-            of(AuthActions.refreshTokenFailure({ error: error.error?.message || 'Token refresh failed' })),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  refreshTokenSuccess$ = createEffect(
+  readonly showSettingsError$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AuthActions.refreshTokenSuccess),
-        tap(({ response }) => {
-          // Update tokens in localStorage
-          localStorage.setItem('accessToken', response.accessToken);
-          localStorage.setItem('refreshToken', response.refreshToken);
-        }),
+        ofType(AuthActions.settingsFailed),
+        tap(({ error }) => this.toast.error(error)),
       ),
     { dispatch: false },
   );
+
+  private loginWithCode(twoFactorToken: string | null, code: string): Observable<Action> {
+    if (!twoFactorToken) {
+      return of(AuthActions.twoFactorCancelled());
+    }
+    return this.authApi.loginWithTwoFactor({ twoFactorToken, code }).pipe(
+      map((response) => this.completeSignIn(response)),
+      catchError((error: unknown) => of(this.signInFailed(error))),
+    );
+  }
+
+  private handleLoginResult(result: LoginResult): Action {
+    if ('twoFactorRequired' in result) {
+      return AuthActions.twoFactorRequired({ twoFactorToken: result.twoFactorToken });
+    }
+    return this.completeSignIn(result);
+  }
+
+  private completeSignIn(response: AuthResponse): Action {
+    this.tokens.save(response);
+    return AuthActions.signedIn({ user: response.user });
+  }
+
+  private closeSession(): void {
+    this.tokens.clear();
+    this.realtimeSocket.disconnect();
+    this.matchSocket.disconnect();
+  }
+
+  private signInFailed(error: unknown) {
+    return AuthActions.signInFailed({ error: readErrorMessage(error) });
+  }
+
+  private settingsFailed(error: unknown) {
+    return AuthActions.settingsFailed({ error: readErrorMessage(error) });
+  }
 }

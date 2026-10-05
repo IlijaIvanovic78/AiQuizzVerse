@@ -1,26 +1,37 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
-import { switchMap, map, catchError } from 'rxjs/operators';
-import { GameApiService } from '../../services/game-api.service';
-import * as MatchHistoryActions from './match-history.actions';
+import { catchError, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage } from '../../core/api/api-error';
+import { MatchesApiService } from '../../core/api/matches-api.service';
+import { ToastService } from '../../core/notifications/toast.service';
+import { MatchHistoryActions } from './match-history.actions';
 
 @Injectable()
 export class MatchHistoryEffects {
-  private actions$ = inject(Actions);
-  private gameApi = inject(GameApiService);
+  private readonly actions$ = inject(Actions);
+  private readonly matchesApi = inject(MatchesApiService);
+  private readonly toast = inject(ToastService);
 
-  loadHistory$ = createEffect(() =>
+  readonly load$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(MatchHistoryActions.loadMatchHistory),
+      ofType(MatchHistoryActions.load),
       switchMap(() =>
-        this.gameApi.getHistory().pipe(
-          map((matches) => MatchHistoryActions.loadMatchHistorySuccess({ matches })),
-          catchError((err) =>
-            of(MatchHistoryActions.loadMatchHistoryFailure({ error: err?.error?.message || 'Failed to load match history' })),
+        this.matchesApi.history().pipe(
+          map((entries) => MatchHistoryActions.loaded({ entries })),
+          catchError((error: unknown) =>
+            of(MatchHistoryActions.failed({ error: readErrorMessage(error) })),
           ),
         ),
       ),
     ),
+  );
+
+  readonly showError$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(MatchHistoryActions.failed),
+        tap(({ error }) => this.toast.error(error)),
+      ),
+    { dispatch: false },
   );
 }

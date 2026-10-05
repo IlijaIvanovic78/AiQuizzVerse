@@ -1,25 +1,24 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { ShopItem, UserItem, UserBoost, BoostType } from '../../models';
+import { BoostOffer, BoostType, ShopItem } from '../../core/models/shop.model';
+import { CurrentUser } from '../../core/models/user.model';
 
 export const ShopActions = createActionGroup({
   source: 'Shop',
   events: {
     'Load Items': emptyProps(),
-    'Load Items Success': props<{ items: ShopItem[] }>(),
-    'Load Items Failure': props<{ error: string }>(),
-
+    'Items Loaded': props<{ items: ShopItem[] }>(),
     'Buy Item': props<{ itemId: string }>(),
-    'Buy Item Success': props<{ userItem: UserItem }>(),
-    'Buy Item Failure': props<{ error: string }>(),
-
-    'Buy Boost': props<{ boostType: BoostType }>(),
-    'Buy Boost Success': props<{ boost: UserBoost }>(),
-    'Buy Boost Failure': props<{ error: string }>(),
-
+    'Item Bought': props<{ coins: number; item: ShopItem }>(),
+    'Equip Item': props<{ itemId: string }>(),
+    'Item Equipped': props<{ user: CurrentUser }>(),
+    'Unequip Pet': emptyProps(),
+    'Pet Unequipped': props<{ user: CurrentUser }>(),
+    'Claim Starter': props<{ itemId: string }>(),
+    'Starter Claimed': props<{ user: CurrentUser }>(),
     'Load Boosts': emptyProps(),
-    'Load Boosts Success': props<{ boosts: UserBoost[] }>(),
-    'Load Boosts Failure': props<{ error: string }>(),
-
-    'Clear Error': emptyProps(),
+    'Boosts Loaded': props<{ boosts: BoostOffer[] }>(),
+    'Buy Boost': props<{ boostType: BoostType }>(),
+    'Boost Bought': props<{ coins: number; boost: BoostOffer }>(),
+    Failed: props<{ error: string }>(),
   },
 });

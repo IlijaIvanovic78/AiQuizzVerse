@@ -1,23 +1,41 @@
-import { createReducer, on } from '@ngrx/store';
-import { initialMatchHistoryState } from './match-history.state';
-import * as MatchHistoryActions from './match-history.actions';
+import { createFeature, createReducer, on } from '@ngrx/store';
+import { MatchHistoryEntry } from '../../core/models/match.model';
+import { MatchHistoryActions } from './match-history.actions';
 
-export const matchHistoryReducer = createReducer(
-  initialMatchHistoryState,
+interface MatchHistoryState {
+  entries: MatchHistoryEntry[];
+  loaded: boolean;
+  loading: boolean;
+  error: string | null;
+}
 
-  on(MatchHistoryActions.loadMatchHistory, (state) => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-  on(MatchHistoryActions.loadMatchHistorySuccess, (state, { matches }) => ({
-    ...state,
-    matches,
-    loading: false,
-  })),
-  on(MatchHistoryActions.loadMatchHistoryFailure, (state, { error }) => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-);
+const initialState: MatchHistoryState = {
+  entries: [],
+  loaded: false,
+  loading: false,
+  error: null,
+};
+
+export const matchHistoryFeature = createFeature({
+  name: 'matchHistory',
+  reducer: createReducer(
+    initialState,
+    on(
+      MatchHistoryActions.load,
+      (state): MatchHistoryState => ({ ...state, loading: true, error: null }),
+    ),
+    on(
+      MatchHistoryActions.loaded,
+      (state, { entries }): MatchHistoryState => ({
+        ...state,
+        entries,
+        loaded: true,
+        loading: false,
+      }),
+    ),
+    on(
+      MatchHistoryActions.failed,
+      (state, { error }): MatchHistoryState => ({ ...state, loading: false, error }),
+    ),
+  ),
+});

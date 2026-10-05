@@ -1,224 +1,135 @@
 import { Injectable, inject } from '@angular/core';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { of } from 'rxjs';
-import { map, catchError, switchMap, debounceTime, filter, tap } from 'rxjs/operators';
+import { Action } from '@ngrx/store';
+import { Observable, catchError, concatMap, debounceTime, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage } from '../../core/api/api-error';
+import { FriendsApiService } from '../../core/api/friends-api.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { FriendsActions } from './friends.actions';
-import { FriendsApiService, SocketService, ToastService } from '../../services';
-import { Friend } from '../../models';
+import { MIN_SEARCH_LENGTH, SEARCH_DEBOUNCE_MS } from './friends.constants';
 
 @Injectable()
 export class FriendsEffects {
-  private actions$ = inject(Actions);
-  private friendsApi = inject(FriendsApiService);
-  private socketService = inject(SocketService);
-  private toastService = inject(ToastService);
+  private readonly actions$ = inject(Actions);
+  private readonly friendsApi = inject(FriendsApiService);
+  private readonly toast = inject(ToastService);
 
-  // Load Friends
-  loadFriends$ = createEffect(() =>
+  readonly load$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.loadFriends),
+      ofType(FriendsActions.load),
       switchMap(() =>
-        this.friendsApi.getFriends().pipe(
-          map((friends) => FriendsActions.loadFriendsSuccess({ friends })),
-          catchError((error) =>
-            of(FriendsActions.loadFriendsFailure({ error: error.message }))
-          )
-        )
-      )
-    )
+        this.friendsApi.list().pipe(
+          map((friends) => FriendsActions.loaded({ friends })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // Load Pending Requests
-  loadPendingRequests$ = createEffect(() =>
+  readonly loadRequests$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.loadPendingRequests),
+      ofType(FriendsActions.loadRequests),
       switchMap(() =>
-        this.friendsApi.getPendingRequests().pipe(
-          map((requests) => FriendsActions.loadPendingRequestsSuccess({ requests })),
-          catchError((error) =>
-            of(FriendsActions.loadPendingRequestsFailure({ error: error.message }))
-          )
-        )
-      )
-    )
+        this.friendsApi.requests().pipe(
+          map((requests) => FriendsActions.requestsLoaded({ requests })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // Load Sent Requests
-  loadSentRequests$ = createEffect(() =>
+  // Wait until typing pauses, and drop the answer for an older query when a newer one starts.
+  readonly search$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.loadSentRequests),
-      switchMap(() =>
-        this.friendsApi.getSentRequests().pipe(
-          map((requests) => FriendsActions.loadSentRequestsSuccess({ requests })),
-          catchError((error) =>
-            of(FriendsActions.loadSentRequestsFailure({ error: error.message }))
-          )
-        )
-      )
-    )
+      ofType(FriendsActions.search),
+      debounceTime(SEARCH_DEBOUNCE_MS),
+      switchMap(({ query }) => this.searchUsers(query.trim())),
+    ),
   );
 
-  // Search Users (with debounce)
-  searchUsers$ = createEffect(() =>
+  readonly sendRequest$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.searchUsers),
-      debounceTime(300), // Wait 300ms after last keystroke
-      filter(({ query }) => query.trim().length >= 2), // Minimum 2 characters
-      switchMap(({ query }) =>
-        this.friendsApi.searchUsers(query).pipe(
-          map((results) => FriendsActions.searchUsersSuccess({ results })),
-          catchError((error) =>
-            of(FriendsActions.searchUsersFailure({ error: error.message }))
-          )
-        )
-      )
-    )
+      ofType(FriendsActions.sendRequest),
+      concatMap(({ userId }) =>
+        this.friendsApi.sendRequest({ userId }).pipe(
+          map((outcome) => FriendsActions.requestSent({ outcome })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // Send Friend Request
-  sendFriendRequest$ = createEffect(() =>
+  readonly acceptRequest$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.sendFriendRequest),
-      switchMap(({ userId }) =>
-        this.friendsApi.sendFriendRequest(userId).pipe(
-          map((friendship) => FriendsActions.sendFriendRequestSuccess({ friendship })),
-          catchError((error) =>
-            of(FriendsActions.sendFriendRequestFailure({ error: error.message, userId }))
-          )
-        )
-      )
-    )
+      ofType(FriendsActions.acceptRequest),
+      concatMap(({ requestId }) =>
+        this.friendsApi.acceptRequest(requestId).pipe(
+          map((friend) => FriendsActions.friendAdded({ friend })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // Accept Friend Request
-  acceptFriendRequest$ = createEffect(() =>
+  readonly removeRequest$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(FriendsActions.acceptFriendRequest),
-      switchMap(({ friendshipId }) =>
-        this.friendsApi.acceptFriendRequest(friendshipId).pipe(
-          map((friendship) => FriendsActions.acceptFriendRequestSuccess({ friendship })),
-          catchError((error) =>
-            of(
-              FriendsActions.acceptFriendRequestFailure({
-                error: error.message,
-                friendshipId,
-              })
-            )
-          )
-        )
-      )
-    )
+      ofType(FriendsActions.removeRequest),
+      concatMap(({ requestId }) =>
+        this.friendsApi.removeRequest(requestId).pipe(
+          map(() => FriendsActions.requestRemoved({ requestId })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // After accepting, reload friends list
-  reloadFriendsAfterAccept$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(FriendsActions.acceptFriendRequestSuccess),
-      map(() => FriendsActions.loadFriends())
-    )
-  );
-
-  // Reject Friend Request
-  rejectFriendRequest$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(FriendsActions.rejectFriendRequest),
-      switchMap(({ friendshipId }) =>
-        this.friendsApi.rejectFriendRequest(friendshipId).pipe(
-          map(() => FriendsActions.rejectFriendRequestSuccess({ friendshipId })),
-          catchError((error) =>
-            of(
-              FriendsActions.rejectFriendRequestFailure({
-                error: error.message,
-                friendshipId,
-              })
-            )
-          )
-        )
-      )
-    )
-  );
-
-  // Remove Friend
-  removeFriend$ = createEffect(() =>
+  readonly removeFriend$ = createEffect(() =>
     this.actions$.pipe(
       ofType(FriendsActions.removeFriend),
-      switchMap(({ friendshipId }) =>
+      concatMap(({ friendshipId }) =>
         this.friendsApi.removeFriend(friendshipId).pipe(
-          map(() => FriendsActions.removeFriendSuccess({ friendshipId })),
-          catchError((error) =>
-            of(
-              FriendsActions.removeFriendFailure({
-                error: error.message,
-                friendshipId,
-              })
-            )
-          )
-        )
-      )
-    )
+          map(() => FriendsActions.friendRemoved({ friendshipId })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
   );
 
-  // Socket Event Listeners - Friend Online
-  friendOnline$ = createEffect(() =>
-    this.socketService.friendOnline$.pipe(
-      map(({ userId }) => FriendsActions.friendOnline({ userId }))
-    )
+  readonly announceRequestSent$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(FriendsActions.requestSent),
+        tap(({ outcome }) => {
+          if (outcome.friend) {
+            this.toast.success(`You and ${outcome.friend.user.username} are now friends!`);
+          } else {
+            this.toast.success('Friend request sent.');
+          }
+        }),
+      ),
+    { dispatch: false },
   );
 
-  // Socket Event Listeners - Friend Offline
-  friendOffline$ = createEffect(() =>
-    this.socketService.friendOffline$.pipe(
-      map(({ userId }) => FriendsActions.friendOffline({ userId }))
-    )
+  readonly showError$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(FriendsActions.failed),
+        tap(({ error }) => this.toast.error(error)),
+      ),
+    { dispatch: false },
   );
 
-  // Socket Event Listeners - Friend Request Received
-  friendRequestReceived$ = createEffect(() =>
-    this.socketService.friendRequestSent$.pipe(
-      tap(({ from }) => {
-        this.toastService.info(
-          'New Friend Request',
-          `${from.username} sent you a friend request!`,
-          7000
-        );
-      }),
-      map(({ friendshipId, from }) =>
-        FriendsActions.friendRequestReceived({
-          request: {
-            id: friendshipId,
-            from,
-            createdAt: new Date().toISOString(),
-          },
-        })
-      )
-    )
-  );
+  private searchUsers(query: string): Observable<Action> {
+    if (query.length < MIN_SEARCH_LENGTH) {
+      return of(FriendsActions.searchResultsLoaded({ results: [] }));
+    }
+    return this.friendsApi.search(query).pipe(
+      map((results) => FriendsActions.searchResultsLoaded({ results })),
+      catchError((error: unknown) => of(this.failed(error))),
+    );
+  }
 
-  // Socket Event Listeners - Friend Request Accepted
-  friendRequestAcceptedNotification$ = createEffect(() =>
-    this.socketService.friendRequestAccepted$.pipe(
-      tap(({ friend }) => {
-        this.toastService.success(
-          'Friend Request Accepted',
-          `${friend.username} accepted your friend request!`,
-          7000
-        );
-      }),
-      map(({ friendshipId, friend }) => {
-        const friendData: Friend = {
-          id: friendshipId,
-          userId: friend.id,
-          username: friend.username,
-          email: friend.email,
-          avatarUrl: friend.avatarUrl,
-          status: 'online', // They just accepted, so they're online
-          since: new Date().toISOString(),
-        };
-        return FriendsActions.friendRequestAcceptedNotification({
-          friendshipId,
-          friend: friendData,
-        });
-      })
-    )
-  );
+  private failed(error: unknown) {
+    return FriendsActions.failed({ error: readErrorMessage(error) });
+  }
 }

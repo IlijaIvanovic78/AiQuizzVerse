@@ -1,227 +1,93 @@
-import { createReducer, on } from '@ngrx/store';
+import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
+import { CurrentUser } from '../../core/models/user.model';
+import { PaymentsActions } from '../shop/payments.actions';
+import { ShopActions } from '../shop/shop.actions';
 import { AuthActions } from './auth.actions';
-import { AvatarActions } from '../avatar/avatar.actions';
-import { AuthState, initialAuthState } from './auth.state';
 
-/**
- * Auth Reducer
- * Handles all authentication state transitions.
- */
-export const authReducer = createReducer(
-  initialAuthState,
+type AuthStatus = 'unknown' | 'authenticated' | 'anonymous';
 
-  // ==================== REGISTER ====================
-  on(AuthActions.register, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
+interface AuthState {
+  user: CurrentUser | null;
+  status: AuthStatus;
+  error: string | null;
+  twoFactorToken: string | null;
+  pending: boolean;
+}
 
-  on(AuthActions.registerSuccess, (state, { response }): AuthState => ({
-    ...state,
-    user: response.user,
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    isAuthenticated: true,
-    loading: false,
-    error: null,
-  })),
+const initialState: AuthState = {
+  user: null,
+  status: 'unknown',
+  error: null,
+  twoFactorToken: null,
+  pending: false,
+};
 
-  on(AuthActions.registerFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
+const signedOutState: AuthState = { ...initialState, status: 'anonymous' };
 
-  // ==================== LOGIN ====================
-  on(AuthActions.login, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-    is2FARequired: false,
-    pending2FAUserId: null,
-  })),
+export const authFeature = createFeature({
+  name: 'auth',
+  reducer: createReducer(
+    initialState,
+    on(
+      AuthActions.login,
+      AuthActions.register,
+      AuthActions.submitTwoFactorCode,
+      AuthActions.changeUsername,
+      AuthActions.enableTwoFactor,
+      AuthActions.disableTwoFactor,
+      (state): AuthState => ({ ...state, pending: true, error: null }),
+    ),
+    on(
+      AuthActions.twoFactorRequired,
+      (state, { twoFactorToken }): AuthState => ({ ...state, pending: false, twoFactorToken }),
+    ),
+    on(
+      AuthActions.twoFactorCancelled,
+      (state): AuthState => ({ ...state, twoFactorToken: null, error: null }),
+    ),
+    on(
+      AuthActions.signedIn,
+      AuthActions.sessionRestored,
+      (_state, { user }): AuthState => ({ ...initialState, user, status: 'authenticated' }),
+    ),
+    on(
+      AuthActions.signInFailed,
+      AuthActions.settingsFailed,
+      (state, { error }): AuthState => ({ ...state, pending: false, error }),
+    ),
+    on(
+      AuthActions.sessionMissing,
+      AuthActions.sessionExpired,
+      AuthActions.logout,
+      (): AuthState => signedOutState,
+    ),
+    on(
+      AuthActions.tokensRefreshed,
+      AuthActions.userRefreshed,
+      AuthActions.usernameChanged,
+      AuthActions.twoFactorChanged,
+      ShopActions.itemEquipped,
+      ShopActions.petUnequipped,
+      ShopActions.starterClaimed,
+      (state, { user }): AuthState => ({ ...state, user, pending: false }),
+    ),
+    on(
+      AuthActions.coinsUpdated,
+      ShopActions.itemBought,
+      ShopActions.boostBought,
+      PaymentsActions.purchaseConfirmed,
+      (state, { coins }): AuthState => withCoins(state, coins),
+    ),
+  ),
+  extraSelectors: ({ selectUser, selectStatus }) => ({
+    selectIsAuthenticated: createSelector(selectStatus, (status) => status === 'authenticated'),
+    selectCoins: createSelector(selectUser, (user) => user?.coins ?? 0),
+  }),
+});
 
-  on(AuthActions.loginSuccess, (state, { response }): AuthState => ({
-    ...state,
-    user: response.user,
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    isAuthenticated: true,
-    is2FARequired: false,
-    pending2FAUserId: null,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.login2FARequired, (state, { response }): AuthState => ({
-    ...state,
-    is2FARequired: true,
-    pending2FAUserId: response.userId,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.loginFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-
-  // ==================== 2FA LOGIN ====================
-  on(AuthActions.login2FA, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-
-  on(AuthActions.login2FASuccess, (state, { response }): AuthState => ({
-    ...state,
-    user: response.user,
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    isAuthenticated: true,
-    is2FARequired: false,
-    pending2FAUserId: null,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.login2FAFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-
-  // ==================== REFRESH TOKEN ====================
-  on(AuthActions.refreshToken, (state): AuthState => ({
-    ...state,
-    // Don't set loading=true for refresh to avoid UI flicker
-  })),
-
-  on(AuthActions.refreshTokenSuccess, (state, { response }): AuthState => ({
-    ...state,
-    user: response.user,
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
-    isAuthenticated: true,
-  })),
-
-  on(AuthActions.refreshTokenFailure, (state): AuthState => ({
-    ...initialAuthState, // Reset to initial state on refresh failure
-  })),
-
-  // ==================== RESTORE TOKENS ====================
-  on(AuthActions.restoreTokens, (state, { accessToken, refreshToken }): AuthState => ({
-    ...state,
-    accessToken,
-    refreshToken,
-    isAuthenticated: true,
-  })),
-
-  // ==================== LOGOUT ====================
-  on(AuthActions.logout, (): AuthState => ({
-    ...initialAuthState,
-  })),
-
-  on(AuthActions.logoutSuccess, (): AuthState => ({
-    ...initialAuthState,
-  })),
-
-  // ==================== PROFILE ====================
-  on(AuthActions.loadProfile, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-
-  on(AuthActions.loadProfileSuccess, (state, { user }): AuthState => ({
-    ...state,
-    user,
-    isAuthenticated: true,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.loadProfileFailure, (state, { error }): AuthState => ({
-    ...initialAuthState,
-    error,
-  })),
-
-  // ==================== 2FA SETUP ====================
-  on(AuthActions.enable2FA, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-
-  on(AuthActions.enable2FASuccess, (state, { response }): AuthState => ({
-    ...state,
-    twoFAQrCodeUrl: response.qrCode,
-    twoFASecret: response.secret,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.enable2FAFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-
-  on(AuthActions.verify2FA, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-
-  on(AuthActions.verify2FASuccess, (state): AuthState => ({
-    ...state,
-    twoFAQrCodeUrl: null,
-    twoFASecret: null,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.verify2FAFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-
-  // ==================== 2FA DISABLE ====================
-  on(AuthActions.disable2FA, (state): AuthState => ({
-    ...state,
-    loading: true,
-    error: null,
-  })),
-
-  on(AuthActions.disable2FASuccess, (state): AuthState => ({
-    ...state,
-    loading: false,
-    error: null,
-  })),
-
-  on(AuthActions.disable2FAFailure, (state, { error }): AuthState => ({
-    ...state,
-    loading: false,
-    error,
-  })),
-
-  // ==================== AVATAR / PET (cross-slice) ====================
-  on(AvatarActions.unequipPetSuccess, (state): AuthState => ({
-    ...state,
-    user: state.user ? { ...state.user, petUrl: null } : null,
-  })),
-
-  on(AvatarActions.selectPetSuccess, (state, { equipped }): AuthState => ({
-    ...state,
-    user: state.user ? { ...state.user, petUrl: equipped.item.imagePath } : null,
-  })),
-
-  // ==================== UI ====================
-  on(AuthActions.clearError, (state): AuthState => ({
-    ...state,
-    error: null,
-  })),
-);
+function withCoins(state: AuthState, coins: number): AuthState {
+  if (!state.user) {
+    return state;
+  }
+  return { ...state, user: { ...state.user, coins } };
+}

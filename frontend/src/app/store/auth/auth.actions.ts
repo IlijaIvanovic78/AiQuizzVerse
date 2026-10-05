@@ -1,69 +1,30 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import {
-  User,
-  RegisterRequest,
-  LoginRequest,
-  LoginResponse,
-  TwoFARequiredResponse,
-  Login2FARequest,
-  Enable2FAResponse,
-  Verify2FARequest,
-} from '../../core/models';
+import { LoginRequest, RegisterRequest } from '../../core/models/auth.model';
+import { CurrentUser } from '../../core/models/user.model';
 
-/**
- * Auth Actions
- * All actions related to authentication flow.
- */
 export const AuthActions = createActionGroup({
   source: 'Auth',
   events: {
-    // ==================== REGISTER ====================
-    'Register': props<{ credentials: RegisterRequest }>(),
-    'Register Success': props<{ response: LoginResponse }>(),
-    'Register Failure': props<{ error: string }>(),
-
-    // ==================== LOGIN ====================
-    'Login': props<{ credentials: LoginRequest }>(),
-    'Login Success': props<{ response: LoginResponse }>(),
-    'Login 2FA Required': props<{ response: TwoFARequiredResponse }>(),
-    'Login Failure': props<{ error: string }>(),
-
-    // ==================== 2FA LOGIN ====================
-    'Login 2FA': props<{ request: Login2FARequest }>(),
-    'Login 2FA Success': props<{ response: LoginResponse }>(),
-    'Login 2FA Failure': props<{ error: string }>(),
-
-    // ==================== REFRESH TOKEN ====================
-    'Refresh Token': props<{ refreshToken: string }>(),
-    'Refresh Token Success': props<{ response: LoginResponse }>(),
-    'Refresh Token Failure': props<{ error: string }>(),
-
-    // ==================== RESTORE TOKENS (app init from localStorage) ====================
-    'Restore Tokens': props<{ accessToken: string; refreshToken: string }>(),
-
-    // ==================== LOGOUT ====================
-    'Logout': emptyProps(),
-    'Logout Success': emptyProps(),
-
-    // ==================== PROFILE ====================
-    'Load Profile': emptyProps(),
-    'Load Profile Success': props<{ user: User }>(),
-    'Load Profile Failure': props<{ error: string }>(),
-
-    // ==================== 2FA SETUP ====================
-    'Enable 2FA': emptyProps(),
-    'Enable 2FA Success': props<{ response: Enable2FAResponse }>(),
-    'Enable 2FA Failure': props<{ error: string }>(),
-
-    'Verify 2FA': props<{ request: Verify2FARequest }>(),
-    'Verify 2FA Success': emptyProps(),
-    'Verify 2FA Failure': props<{ error: string }>(),
-
-    'Disable 2FA': emptyProps(),
-    'Disable 2FA Success': emptyProps(),
-    'Disable 2FA Failure': props<{ error: string }>(),
-
-    // ==================== UI ====================
-    'Clear Error': emptyProps(),
+    Login: props<{ credentials: LoginRequest }>(),
+    Register: props<{ request: RegisterRequest }>(),
+    'Two Factor Required': props<{ twoFactorToken: string }>(),
+    'Submit Two Factor Code': props<{ code: string }>(),
+    'Two Factor Cancelled': emptyProps(),
+    'Signed In': props<{ user: CurrentUser }>(),
+    'Sign In Failed': props<{ error: string }>(),
+    'Session Restored': props<{ user: CurrentUser }>(),
+    'Session Missing': emptyProps(),
+    'Session Expired': emptyProps(),
+    'Tokens Refreshed': props<{ user: CurrentUser }>(),
+    Logout: emptyProps(),
+    'Refresh User': emptyProps(),
+    'User Refreshed': props<{ user: CurrentUser }>(),
+    'Coins Updated': props<{ coins: number }>(),
+    'Change Username': props<{ username: string }>(),
+    'Username Changed': props<{ user: CurrentUser }>(),
+    'Enable Two Factor': props<{ code: string }>(),
+    'Disable Two Factor': props<{ code: string }>(),
+    'Two Factor Changed': props<{ user: CurrentUser }>(),
+    'Settings Failed': props<{ error: string }>(),
   },
 });

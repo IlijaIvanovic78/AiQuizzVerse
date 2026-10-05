@@ -1,0 +1,24 @@
+import { createActionGroup, props } from '@ngrx/store';
+import { MatchResult, MatchView } from '../../core/models/match.model';
+import {
+  BoostUsedEvent,
+  MatchQuestionEvent,
+  RoundResultEvent,
+} from '../../core/models/realtime-events.model';
+
+export const MatchSocketActions = createActionGroup({
+  source: 'Match Socket',
+  events: {
+    'Lobby Updated': props<{ match: MatchView }>(),
+    'Countdown Started': props<{ countdownSeconds: number }>(),
+    'Question Received': props<{ question: MatchQuestionEvent; deadlineAt: number }>(),
+    'Player Answered': props<{ userId: string }>(),
+    'Deadline Changed': props<{ deadlineAt: number }>(),
+    'Round Finished': props<{ round: RoundResultEvent }>(),
+    'Waiting For Next': props<{ userIds: string[] }>(),
+    'Boost Used': props<{ boost: BoostUsedEvent; deadlineAt: number | null }>(),
+    Finished: props<{ result: MatchResult }>(),
+    'Player Left': props<{ userId: string }>(),
+    'Error Received': props<{ error: string }>(),
+  },
+});

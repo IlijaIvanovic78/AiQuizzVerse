@@ -1,12 +1,11 @@
-import { createAction, props } from '@ngrx/store';
-import { MatchHistoryEntry } from './match-history.state';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
+import { MatchHistoryEntry } from '../../core/models/match.model';
 
-export const loadMatchHistory = createAction('[MatchHistory] Load');
-export const loadMatchHistorySuccess = createAction(
-  '[MatchHistory] Load Success',
-  props<{ matches: MatchHistoryEntry[] }>(),
-);
-export const loadMatchHistoryFailure = createAction(
-  '[MatchHistory] Load Failure',
-  props<{ error: string }>(),
-);
+export const MatchHistoryActions = createActionGroup({
+  source: 'Match History',
+  events: {
+    Load: emptyProps(),
+    Loaded: props<{ entries: MatchHistoryEntry[] }>(),
+    Failed: props<{ error: string }>(),
+  },
+});

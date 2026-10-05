@@ -1,64 +1,140 @@
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
+import { catchError, exhaustMap, map, of, switchMap, tap } from 'rxjs';
+import { readErrorMessage } from '../../core/api/api-error';
+import { ShopApiService } from '../../core/api/shop-api.service';
+import { ToastService } from '../../core/notifications/toast.service';
 import { ShopActions } from './shop.actions';
-import { AuthActions } from '../auth/auth.actions';
-import { ShopApiService } from '../../services';
-import { map, catchError, exhaustMap, switchMap } from 'rxjs/operators';
-import { of } from 'rxjs';
 
 @Injectable()
 export class ShopEffects {
   private readonly actions$ = inject(Actions);
   private readonly shopApi = inject(ShopApiService);
+  private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
-  loadItems$ = createEffect(() =>
+  readonly loadItems$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ShopActions.loadItems),
-      exhaustMap(() =>
-        this.shopApi.getItems().pipe(
-          map((items) => ShopActions.loadItemsSuccess({ items })),
-          catchError((err) => of(ShopActions.loadItemsFailure({ error: err.error?.message || 'Failed to load items' }))),
+      switchMap(() =>
+        this.shopApi.items().pipe(
+          map((items) => ShopActions.itemsLoaded({ items })),
+          catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
     ),
   );
 
-  buyItem$ = createEffect(() =>
+  readonly buyItem$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ShopActions.buyItem),
       exhaustMap(({ itemId }) =>
         this.shopApi.buyItem(itemId).pipe(
-          switchMap((userItem) => [ShopActions.buyItemSuccess({ userItem }), AuthActions.loadProfile()]),
-          catchError((err) => {
-            const msg = err?.error?.message || err?.message || 'Purchase failed';
-            return of(ShopActions.buyItemFailure({ error: Array.isArray(msg) ? msg.join(', ') : msg }));
-          }),
+          map(({ coins, item }) => ShopActions.itemBought({ coins, item })),
+          catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
     ),
   );
 
-  buyBoost$ = createEffect(() =>
+  readonly equipItem$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ShopActions.equipItem),
+      exhaustMap(({ itemId }) =>
+        this.shopApi.equipItem(itemId).pipe(
+          map((user) => ShopActions.itemEquipped({ user })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly unequipPet$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ShopActions.unequipPet),
+      exhaustMap(() =>
+        this.shopApi.unequipPet().pipe(
+          map((user) => ShopActions.petUnequipped({ user })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly claimStarter$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ShopActions.claimStarter),
+      exhaustMap(({ itemId }) =>
+        this.shopApi.claimStarter(itemId).pipe(
+          map((user) => ShopActions.starterClaimed({ user })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly loadBoosts$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(ShopActions.loadBoosts),
+      switchMap(() =>
+        this.shopApi.boosts().pipe(
+          map((boosts) => ShopActions.boostsLoaded({ boosts })),
+          catchError((error: unknown) => of(this.failed(error))),
+        ),
+      ),
+    ),
+  );
+
+  readonly buyBoost$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ShopActions.buyBoost),
       exhaustMap(({ boostType }) =>
         this.shopApi.buyBoost(boostType).pipe(
-          switchMap((boost) => [ShopActions.buyBoostSuccess({ boost }), AuthActions.loadProfile()]),
-          catchError((err) => of(ShopActions.buyBoostFailure({ error: err.error?.message || 'Purchase failed' }))),
+          map(({ coins, boost }) => ShopActions.boostBought({ coins, boost })),
+          catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
     ),
   );
 
-  loadBoosts$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(ShopActions.loadBoosts),
-      exhaustMap(() =>
-        this.shopApi.getMyBoosts().pipe(
-          map((boosts) => ShopActions.loadBoostsSuccess({ boosts })),
-          catchError((err) => of(ShopActions.loadBoostsFailure({ error: err.error?.message || 'Failed to load boosts' }))),
-        ),
+  readonly announceItem$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ShopActions.itemBought),
+        tap(({ item }) => this.toast.success(`${item.name} joined your team!`)),
       ),
-    ),
+    { dispatch: false },
   );
+
+  readonly announceBoost$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ShopActions.boostBought),
+        tap(({ boost }) => this.toast.success(`+1 ${boost.name}`)),
+      ),
+    { dispatch: false },
+  );
+
+  readonly enterAfterStarter$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ShopActions.starterClaimed),
+        tap(() => void this.router.navigateByUrl('/home')),
+      ),
+    { dispatch: false },
+  );
+
+  readonly showError$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ShopActions.failed),
+        tap(({ error }) => this.toast.error(error)),
+      ),
+    { dispatch: false },
+  );
+
+  private failed(error: unknown) {
+    return ShopActions.failed({ error: readErrorMessage(error) });
+  }
 }

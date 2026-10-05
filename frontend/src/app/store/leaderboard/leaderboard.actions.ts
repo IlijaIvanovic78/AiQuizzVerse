@@ -1,24 +1,11 @@
-import { createAction, props } from '@ngrx/store';
-import { LeaderboardEntry } from '../../models/leaderboard.model';
+import { createActionGroup, props } from '@ngrx/store';
+import { Leaderboard, LeaderboardScope } from '../../core/models/leaderboard.model';
 
-// Global leaderboard
-export const loadGlobalLeaderboard = createAction('[Leaderboard] Load Global');
-export const loadGlobalLeaderboardSuccess = createAction(
-  '[Leaderboard] Load Global Success',
-  props<{ entries: LeaderboardEntry[] }>(),
-);
-export const loadGlobalLeaderboardFailure = createAction(
-  '[Leaderboard] Load Global Failure',
-  props<{ error: string }>(),
-);
-
-// Friends leaderboard
-export const loadFriendsLeaderboard = createAction('[Leaderboard] Load Friends');
-export const loadFriendsLeaderboardSuccess = createAction(
-  '[Leaderboard] Load Friends Success',
-  props<{ entries: LeaderboardEntry[] }>(),
-);
-export const loadFriendsLeaderboardFailure = createAction(
-  '[Leaderboard] Load Friends Failure',
-  props<{ error: string }>(),
-);
+export const LeaderboardActions = createActionGroup({
+  source: 'Leaderboard',
+  events: {
+    Load: props<{ scope: LeaderboardScope }>(),
+    Loaded: props<{ leaderboard: Leaderboard }>(),
+    Failed: props<{ error: string }>(),
+  },
+});
