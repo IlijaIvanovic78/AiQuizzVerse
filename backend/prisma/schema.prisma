@@ -79,6 +79,21 @@ enum BoostType {
   FIFTY_FIFTY
   EXTRA_TIME
   STREAK_FREEZE
+  SECOND_CHANCE
+}
+
+enum ChestType {
+  WOODEN
+  SILVER
+  GOLDEN
+}
+
+enum ChestSource {
+  DAILY_MATCH
+  VICTORY
+  PATH_STEP
+  LEVEL_UP
+  STREAK
 }
 
 enum PurchaseStatus {
@@ -116,6 +131,7 @@ model User {
   items            UserItem[]
   boosts           UserBoost[]
   purchases        Purchase[]
+  chests           UserChest[]
 
   @@map("users")
 }
@@ -247,6 +263,7 @@ model Match {
   quiz    Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
   host    User          @relation(fields: [hostId], references: [id], onDelete: Cascade)
   players MatchPlayer[]
+  chests  UserChest[]
 
   @@index([status])
   @@index([endedAt])
@@ -254,13 +271,13 @@ model Match {
 }
 
 model MatchPlayer {
-  id           String   @id @default(uuid())
-  matchId      String   @map("match_id")
-  userId       String   @map("user_id")
-  score        Int      @default(0)
-  correctCount Int      @default(0) @map("correct_count")
-  isWinner     Boolean  @default(false) @map("is_winner")
-  xpEarned     Int      @default(0) @map("xp_earned")
+  id             String   @id @default(uuid())
+  matchId        String   @map("match_id")
+  userId         String   @map("user_id")
+  score          Int      @default(0)
+  correctCount   Int      @default(0) @map("correct_count")
+  isWinner       Boolean  @default(false) @map("is_winner")
+  xpEarned       Int      @default(0) @map("xp_earned")
   coinsEarned    Int      @default(0) @map("coins_earned")
   coinCapReached Boolean  @default(false) @map("coin_cap_reached")
   leveledUp      Boolean  @default(false) @map("leveled_up")
@@ -293,12 +310,13 @@ model ReviewCard {
 }
 
 model Item {
-  id        String   @id
-  name      String
-  type      ItemType
-  price     Int
-  minLevel  Int      @default(1) @map("min_level")
-  isStarter Boolean  @default(false) @map("is_starter")
+  id          String   @id
+  name        String
+  type        ItemType
+  price       Int
+  minLevel    Int      @default(1) @map("min_level")
+  isStarter   Boolean  @default(false) @map("is_starter")
+  isChestOnly Boolean  @default(false) @map("is_chest_only")
 
   owners UserItem[]
 
@@ -328,6 +346,24 @@ model UserBoost {
 
   @@unique([userId, type])
   @@map("user_boosts")
+}
+
+model UserChest {
+  id       String      @id @default(uuid())
+  userId   String      @map("user_id")
+  type     ChestType
+  source   ChestSource
+  matchId  String?     @map("match_id")
+  earnedAt DateTime    @default(now()) @map("earned_at")
+  openedAt DateTime?   @map("opened_at")
+  reward   Json?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([userId, openedAt])
+  @@index([matchId])
+  @@map("user_chests")
 }
 
 model Purchase {
