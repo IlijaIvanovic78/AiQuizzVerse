@@ -7,13 +7,18 @@ import { DAILY_AI_LIMIT, PATH_GENERATION_COST } from './quizzes.constants';
 import { QuizzesService } from './quizzes.service';
 
 describe('QuizGenerationService limits', () => {
+  let generatedToday: number;
   let service: QuizGenerationService;
 
   beforeEach(() => {
+    generatedToday = 0;
+    const quizzes = {
+      countGeneratedSince: () => Promise.resolve(generatedToday),
+    } as unknown as QuizzesService;
     service = new QuizGenerationService(
       {} as QuizWriterService,
       {} as DocumentsService,
-      {} as QuizzesService,
+      quizzes,
       {} as NotificationsService,
     );
   });
@@ -29,6 +34,7 @@ describe('QuizGenerationService limits', () => {
     await expect(service.runWithLimits('user-1', 1, () => Promise.resolve())).rejects.toThrow(
       ConflictException,
     );
+    await Promise.resolve();
     finishFirst();
     await first;
     await expect(service.runWithLimits('user-1', 1, () => Promise.resolve())).resolves.toBe(
@@ -49,27 +55,18 @@ describe('QuizGenerationService limits', () => {
     await first;
   });
 
-  it('stops at the daily limit, counting a path as several generations', async () => {
-    const pathsPerDay = Math.floor(DAILY_AI_LIMIT / PATH_GENERATION_COST);
-    for (let i = 0; i < pathsPerDay; i++) {
-      await service.runWithLimits('user-1', PATH_GENERATION_COST, () => Promise.resolve());
-    }
+  it('refuses a learning path that would go over the daily limit', async () => {
+    generatedToday = DAILY_AI_LIMIT - PATH_GENERATION_COST + 1;
 
-    const refused = service.runWithLimits('user-1', 1, () => Promise.resolve());
+    const refused = service.runWithLimits('user-1', PATH_GENERATION_COST, () => Promise.resolve());
 
     await expect(refused).rejects.toThrow(HttpException);
     await expect(refused).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
   });
 
-  it('does not count failed generations', async () => {
-    for (let i = 0; i < DAILY_AI_LIMIT + 1; i++) {
-      await expect(
-        service.runWithLimits('user-1', 1, () => Promise.reject(new Error('OpenAI is down'))),
-      ).rejects.toThrow('OpenAI is down');
-    }
+  it('still allows a single quiz right below the limit', async () => {
+    generatedToday = DAILY_AI_LIMIT - 1;
 
-    await expect(service.runWithLimits('user-1', 1, () => Promise.resolve())).resolves.toBe(
-      undefined,
-    );
+    await expect(service.runWithLimits('user-1', 1, () => Promise.resolve(1))).resolves.toBe(1);
   });
 });

@@ -1,4 +1,4 @@
-export const QUIZ_MODEL = 'gpt-4o-mini';
+export const QUIZ_MODEL = 'gpt-4.1-mini';
 export const WRITER_TEMPERATURE = 0.7;
 export const REVIEWER_TEMPERATURE = 0;
 export const AI_TIMEOUT_MS = 60_000;

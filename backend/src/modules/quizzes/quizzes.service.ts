@@ -151,6 +151,18 @@ export class QuizzesService {
     return quiz.id;
   }
 
+  /** Counts AI-written quizzes (a learning path writes five), deleted ones included. */
+  countGeneratedSince(userId: string, since: Date): Promise<number> {
+    return this.prisma.quiz.count({
+      where: {
+        ownerId: userId,
+        createdAt: { gte: since },
+        source: { not: 'MANUAL' },
+        kind: { not: 'REVIEW' },
+      },
+    });
+  }
+
   private async loadDetail(userId: string, quizId: string): Promise<QuizDetail> {
     const quiz = await this.prisma.quiz.findUniqueOrThrow({
       where: { id: quizId },

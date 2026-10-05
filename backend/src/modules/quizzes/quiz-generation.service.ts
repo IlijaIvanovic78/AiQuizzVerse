@@ -20,15 +20,9 @@ import {
 import { QuizzesService } from './quizzes.service';
 import { QuizDetail } from './quizzes.types';
 
-interface DailyUsage {
-  day: number;
-  used: number;
-}
-
 @Injectable()
 export class QuizGenerationService {
   private readonly usersGenerating = new Set<string>();
-  private readonly usageByUser = new Map<string, DailyUsage>();
 
   constructor(
     private readonly quizWriter: QuizWriterService,
@@ -49,20 +43,22 @@ export class QuizGenerationService {
     if (this.usersGenerating.has(userId)) {
       throw new ConflictException("You're already creating something");
     }
-    if (this.usedToday(userId) + cost > DAILY_AI_LIMIT) {
+    this.usersGenerating.add(userId);
+    try {
+      await this.assertDailyLimit(userId, cost);
+      return await generate();
+    } finally {
+      this.usersGenerating.delete(userId);
+    }
+  }
+
+  private async assertDailyLimit(userId: string, cost: number): Promise<void> {
+    const usedToday = await this.quizzes.countGeneratedSince(userId, utcToday());
+    if (usedToday + cost > DAILY_AI_LIMIT) {
       throw new HttpException(
         'The quiz master needs a rest. Try again tomorrow!',
         HttpStatus.TOO_MANY_REQUESTS,
       );
-    }
-
-    this.usersGenerating.add(userId);
-    try {
-      const result = await generate();
-      this.recordUsage(userId, cost);
-      return result;
-    } finally {
-      this.usersGenerating.delete(userId);
     }
   }
 
@@ -87,16 +83,6 @@ export class QuizGenerationService {
     });
     this.reportProgress(userId, 'saving', 1);
     return this.quizzes.findDetail(userId, quizId);
-  }
-
-  private usedToday(userId: string): number {
-    const usage = this.usageByUser.get(userId);
-    return usage?.day === utcToday().getTime() ? usage.used : 0;
-  }
-
-  private recordUsage(userId: string, cost: number): void {
-    const used = this.usedToday(userId) + cost;
-    this.usageByUser.set(userId, { day: utcToday().getTime(), used });
   }
 
   private reportProgress(userId: string, step: GenerationStep, done = 0): void {
