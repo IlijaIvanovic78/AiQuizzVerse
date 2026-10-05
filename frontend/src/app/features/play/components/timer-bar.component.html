@@ -1,8 +1,8 @@
 <div class="panel flex items-center gap-3 px-3 py-1.5">
   <span
     class="w-24 shrink-0 text-sm font-semibold"
-    [class.text-ruby-400]="warning()"
-    [class.text-jade-400]="locked()"
+    [class.text-ruby-400]="warning() || lockedOut()"
+    [class.text-jade-400]="locked() && !lockedOut()"
   >
     {{ status() }}
   </span>
@@ -12,9 +12,7 @@
     [class.text-ruby-400]="warning()"
     aria-hidden="true"
   >
-    @for (second of secondKeys(); track second) {
-      <span class="inline-block" [class.animate-pop]="warning()">{{ second }}</span>
-    }
+    <span class="seconds" [class.seconds-warning]="warning()">{{ seconds() }}</span>
   </span>
   <span class="sr-only">{{ seconds() }} seconds</span>
 </div>

@@ -1,0 +1,18 @@
+.seconds {
+  display: inline-block;
+}
+
+/* The number pops once a second while time runs out. */
+.seconds-warning {
+  animation: second-pop 1s ease-out infinite;
+}
+
+@keyframes second-pop {
+  0% {
+    transform: scale(1.4);
+  }
+  35%,
+  100% {
+    transform: scale(1);
+  }
+}

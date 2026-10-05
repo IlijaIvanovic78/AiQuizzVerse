@@ -26,14 +26,18 @@ const BURST_COINS = [
 })
 export class BattleArenaComponent {
   readonly leftFighters = input.required<ArenaFighter[]>();
-  readonly rightFighter = input<ArenaFighter | null>(null);
+  // A duel rival, or the other half of a party, faces the player from the right platform.
+  readonly rightFighters = input<ArenaFighter[]>([]);
   readonly showChest = input(false);
-  // Every new number sends coins from the heroes into the chest once.
-  readonly strikeKey = input(0);
+  // Turning this on sends coins from the heroes into the chest once.
+  readonly coinsFlying = input(false);
   // A dashed spot for the player who has not joined yet.
   readonly emptySide = input<ArenaSide | null>(null);
   // A wide, low arena for pages where it sits above other content, like the lobby and results.
   readonly banner = input(false);
+  // Two heroes on each platform, like a party of three or four: the heroes keep their size,
+  // but their status bubbles show only an icon so they don't cover each other.
+  readonly crowded = input(false);
 
   private readonly tabletUp = screenMatches(TABLET_UP);
   private readonly desktopUp = screenMatches(DESKTOP_UP);
@@ -46,18 +50,20 @@ export class BattleArenaComponent {
     return this.tabletUp() ? HERO_SCALES.tablet : HERO_SCALES.phone;
   });
   protected readonly petScale = computed(() => this.heroScale() - 1);
-  protected readonly strikes = computed(() => [this.strikeKey()]);
   protected readonly flyingCoinDelays = FLYING_COIN_DELAYS_MS;
   protected readonly burstCoins = BURST_COINS;
   protected readonly coinsLandMs = COINS_LAND_MS;
 
   protected readonly description = computed(() => {
-    const names = this.leftFighters().map((fighter) => (fighter.isMe ? 'You' : fighter.name));
-    const team = names.join(' and ') || 'The arena';
-    const rival = this.rightFighter();
-    if (rival) {
-      return `${team} against ${rival.name}`;
+    const team = namesOf(this.leftFighters()) || 'The arena';
+    const rivals = namesOf(this.rightFighters());
+    if (rivals) {
+      return `${team} against ${rivals}`;
     }
     return this.showChest() ? `${team} next to the treasure chest` : team;
   });
+}
+
+function namesOf(fighters: ArenaFighter[]): string {
+  return fighters.map((fighter) => (fighter.isMe ? 'You' : fighter.name)).join(' and ');
 }

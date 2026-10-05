@@ -27,7 +27,12 @@
             [decorative]="true"
           />
         }
-        <app-arena-fighter class="arena-fighter" [fighter]="fighter" [scale]="heroScale()" />
+        <app-arena-fighter
+          class="arena-fighter"
+          [fighter]="fighter"
+          [scale]="heroScale()"
+          [compact]="crowded()"
+        />
       }
       @if (emptySide() === 'left') {
         <div class="arena-empty" aria-hidden="true">
@@ -37,14 +42,15 @@
     </div>
 
     <div class="arena-spot arena-spot-right">
-      @if (rightFighter(); as rival) {
+      @for (rival of rightFighters(); track rival.id) {
         <app-arena-fighter
           class="arena-fighter"
           [fighter]="rival"
           [scale]="heroScale()"
           [flip]="true"
+          [compact]="crowded()"
         />
-        @if (rival.petKey) {
+        @if ($count === 1 && rival.petKey) {
           <app-pet-sprite
             class="arena-pet"
             [petKey]="rival.petKey"
@@ -53,12 +59,12 @@
             [decorative]="true"
           />
         }
-      } @else if (emptySide() === 'right') {
-        <div class="arena-empty" aria-hidden="true">
-          <span class="animate-blink font-display text-lg">?</span>
-        </div>
-      } @else if (showChest()) {
-        @for (strike of strikes(); track strike) {
+      } @empty {
+        @if (emptySide() === 'right') {
+          <div class="arena-empty" aria-hidden="true">
+            <span class="animate-blink font-display text-lg">?</span>
+          </div>
+        } @else if (showChest()) {
           <div class="arena-chest">
             <img
               src="/assets/images/icons/chest.webp"
@@ -66,10 +72,10 @@
               width="256"
               height="128"
               class="arena-chest-image"
-              [class.animate-chest-bounce]="strike > 0"
+              [class.animate-chest-bounce]="coinsFlying()"
               [style.animation-delay.ms]="coinsLandMs"
             />
-            @if (strike > 0) {
+            @if (coinsFlying()) {
               <div class="arena-burst" aria-hidden="true">
                 @for (coin of burstCoins; track $index) {
                   <img
@@ -90,21 +96,19 @@
       }
     </div>
 
-    @if (showChest() && strikeKey() > 0) {
-      @for (strike of strikes(); track strike) {
-        <div class="coin-trail" aria-hidden="true">
-          @for (delay of flyingCoinDelays; track $index) {
-            <img
-              src="/assets/images/icons/coin.png"
-              alt=""
-              width="16"
-              height="16"
-              class="flying-coin pixelated"
-              [style.animation-delay.ms]="delay"
-            />
-          }
-        </div>
-      }
+    @if (showChest() && coinsFlying()) {
+      <div class="coin-trail" aria-hidden="true">
+        @for (delay of flyingCoinDelays; track $index) {
+          <img
+            src="/assets/images/icons/coin.png"
+            alt=""
+            width="16"
+            height="16"
+            class="flying-coin pixelated"
+            [style.animation-delay.ms]="delay"
+          />
+        }
+      </div>
     }
   </div>
 
