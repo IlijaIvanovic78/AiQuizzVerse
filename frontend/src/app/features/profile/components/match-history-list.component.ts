@@ -7,7 +7,7 @@ import { ThemeLabelPipe } from '../../../shared/pipes/theme-label.pipe';
 import { MODE_LABELS } from '../../../shared/play-modes';
 import { RECENT_MATCHES_SHOWN } from '../profile.constants';
 
-// A lost duel is still a good fight; the app never says "Defeat".
+// A lost party is still a good fight; the app never says "Defeat".
 const OUTCOME_LOOKS: Record<MatchOutcome, { label: string; badge: string }> = {
   WIN: { label: 'Victory', badge: 'badge-jade' },
   LOSS: { label: 'Good fight', badge: 'badge-fog' },

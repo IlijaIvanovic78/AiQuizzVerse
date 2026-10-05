@@ -30,7 +30,7 @@ export class HeroSpriteComponent {
   readonly heroKey = input.required<string | null>();
   readonly scale = input(DEFAULT_SPRITE_SCALE);
   readonly action = input<HeroAction>('idle');
-  // Flipped heroes face left, like the opponent in a duel.
+  // Flipped heroes face left, like the rivals on the right side of a party.
   readonly flip = input(false);
   readonly decorative = input(false);
 

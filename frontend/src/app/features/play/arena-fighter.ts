@@ -43,17 +43,14 @@ export interface ArenaSides {
 }
 
 // The fighters come with the player first, and the player always stands on the left.
-// A team shares the left platform, a duel rival stands on the right, and a party splits
-// into two halves that face each other.
+// A solo player and a team share the left platform; a party splits into two halves that face
+// each other, so two players stand one on each side.
 export function arenaSides(mode: MatchMode, fighters: ArenaFighter[]): ArenaSides {
-  if (mode === 'TEAM') {
+  if (mode !== 'PARTY') {
     return { left: fighters, right: [] };
   }
-  if (mode === 'PARTY') {
-    const half = Math.ceil(fighters.length / 2);
-    return { left: fighters.slice(0, half), right: fighters.slice(half) };
-  }
-  return { left: fighters.slice(0, 1), right: fighters.slice(1, 2) };
+  const half = Math.ceil(fighters.length / 2);
+  return { left: fighters.slice(0, half), right: fighters.slice(half) };
 }
 
 // A hero who only stands in the arena, like on the results screen: nothing happens to them.

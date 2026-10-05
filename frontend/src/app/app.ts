@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Toast, ToastService } from './core/notifications/toast.service';
-import { DuelInviteDialogComponent } from './layout/duel-invite-dialog.component';
+import { MatchInviteDialogComponent } from './layout/match-invite-dialog.component';
 import { ToastContainerComponent } from './shared/components/toast-container.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToastContainerComponent, DuelInviteDialogComponent],
+  imports: [RouterOutlet, ToastContainerComponent, MatchInviteDialogComponent],
   templateUrl: './app.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

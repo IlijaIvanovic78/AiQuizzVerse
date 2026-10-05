@@ -3,7 +3,7 @@ import { PathResult } from './path.model';
 import { QuizKind, QuizLanguage, QuizTheme } from './quiz.model';
 import { PublicUser } from './user.model';
 
-export type MatchMode = 'SOLO' | 'DUEL' | 'TEAM' | 'PARTY';
+export type MatchMode = 'SOLO' | 'TEAM' | 'PARTY';
 
 export type MatchStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED' | 'ABANDONED';
 

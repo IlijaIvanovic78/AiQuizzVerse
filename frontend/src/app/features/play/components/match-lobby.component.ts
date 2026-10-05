@@ -14,7 +14,6 @@ interface LobbyStatus {
 
 const START_LABELS: Record<MatchMode, string> = {
   SOLO: 'Start',
-  DUEL: 'Start the duel',
   TEAM: 'Start team match',
   PARTY: 'Start the party',
 };
@@ -67,10 +66,10 @@ export class MatchLobbyComponent {
       const hostName = host?.user.username ?? 'The host';
       return { title: "You're in!", text: `${hostName} will start the match soon.` };
     }
-    return this.match().mode === 'PARTY' ? this.partyStatus() : this.pairStatus();
+    return this.match().mode === 'PARTY' ? this.partyStatus() : this.teamStatus();
   });
 
-  private pairStatus(): LobbyStatus {
+  private teamStatus(): LobbyStatus {
     const guestName = this.match().players.find((player) => player.user.id !== this.meId())?.user
       .username;
     if (!guestName) {

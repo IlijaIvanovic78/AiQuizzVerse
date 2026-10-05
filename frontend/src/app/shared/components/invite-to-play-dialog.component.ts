@@ -40,7 +40,7 @@ export class InviteToPlayDialogComponent {
   readonly closed = output<void>();
 
   protected readonly modes = MODE_CHOICES.filter((choice) => choice.mode !== 'SOLO');
-  protected readonly mode = signal<MatchMode>('DUEL');
+  protected readonly mode = signal<MatchMode>('PARTY');
   protected readonly selectedQuizId = signal<string | null>(null);
   protected readonly title = computed(() => `Invite ${this.friend().username}`);
 

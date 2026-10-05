@@ -6,8 +6,8 @@ import { Friend, FriendRequest } from '../models/friend.model';
 import {
   ChestEarnedEvent,
   CoinsUpdatedEvent,
-  DuelInvite,
   FriendRemovedEvent,
+  MatchInvite,
   PresenceEvent,
   QuizProgress,
   RequestRemovedEvent,
@@ -29,7 +29,7 @@ export class RealtimeSocketService {
   readonly friendAccepted$ = fromEvent<Friend>(this.socket, 'friend:accepted');
   readonly requestRemoved$ = fromEvent<RequestRemovedEvent>(this.socket, 'friend:request-removed');
   readonly friendRemoved$ = fromEvent<FriendRemovedEvent>(this.socket, 'friend:removed');
-  readonly duelInvite$ = fromEvent<DuelInvite>(this.socket, 'duel:invite');
+  readonly matchInvite$ = fromEvent<MatchInvite>(this.socket, 'match:invite');
   readonly quizProgress$ = fromEvent<QuizProgress>(this.socket, 'quiz:progress');
   readonly coinsUpdated$ = fromEvent<CoinsUpdatedEvent>(this.socket, 'coins:updated');
   readonly chestEarned$ = fromEvent<ChestEarnedEvent>(this.socket, 'chest:earned');

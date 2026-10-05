@@ -57,9 +57,10 @@
       <button type="button" class="btn btn-ghost mt-3" (click)="chosenMode.set(null)">Back</button>
     }
   } @else {
+    <!-- The party, last in the list, gets a whole row for its longer text. -->
     <ul class="mt-5 grid gap-3 sm:grid-cols-2">
       @for (choice of modeChoices; track choice.mode) {
-        <li>
+        <li class="sm:last:col-span-2">
           <app-choice-card
             [title]="choice.title"
             [text]="choice.text"

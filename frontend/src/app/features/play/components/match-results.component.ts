@@ -42,17 +42,11 @@ const HEADLINE_COLORS: Record<ResultTone, string> = {
 
 const SCORES_TITLES: Record<MatchMode, string> = {
   SOLO: 'Score',
-  DUEL: 'Duel scores',
   TEAM: 'Team scores',
   PARTY: 'Final ranking',
 };
 
-const LEFT_NOTES: Record<MatchMode, string> = {
-  SOLO: '',
-  DUEL: 'Your rival left the match, so the win is yours.',
-  TEAM: '',
-  PARTY: 'Everyone else left the party, so the win is yours.',
-};
+const RIVALS_LEFT_NOTE = 'Everyone else left the party, so the win is yours.';
 
 @Component({
   selector: 'app-match-results',
@@ -134,7 +128,7 @@ export class MatchResultsComponent {
   // The match page only knows that the others are gone. If the player lost before they left,
   // the win is not theirs, so the note stays hidden.
   protected readonly leftNote = computed(() =>
-    this.rivalLeft() && this.me()?.isWinner ? LEFT_NOTES[this.result().mode] : '',
+    this.rivalLeft() && this.me()?.isWinner ? RIVALS_LEFT_NOTE : '',
   );
   // Coins fly into the chest once when the player earned some treasure.
   protected readonly coinsFlying = computed(() => this.teamCorrect() > 0);

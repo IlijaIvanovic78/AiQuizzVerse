@@ -1,18 +1,18 @@
-import { DuelInvite } from '../../core/models/realtime-events.model';
+import { MatchInvite } from '../../core/models/realtime-events.model';
 import { MatchActions } from '../match/match.actions';
-import { duelInviteFeature } from './duel-invite.reducer';
+import { matchInviteFeature } from './match-invite.reducer';
 
-const reducer = duelInviteFeature.reducer;
+const reducer = matchInviteFeature.reducer;
 
-const invite: DuelInvite = {
+const invite: MatchInvite = {
   matchId: 'match-2',
   inviteCode: 'ABC234',
-  mode: 'DUEL',
+  mode: 'PARTY',
   quizTitle: 'Animals of the World',
   from: { id: 'friend', username: 'demo_friend', avatarKey: null, petKey: null, level: 4 },
 };
 
-describe('duel invite reducer', () => {
+describe('match invite reducer', () => {
   it('keeps a received invite while the player moves between pages', () => {
     const received = reducer(undefined, MatchActions.inviteReceived({ invite }));
 

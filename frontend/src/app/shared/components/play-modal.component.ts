@@ -22,14 +22,12 @@ export type PlayChoice = Omit<CreateMatchRequest, 'quizId'>;
 
 const MODAL_TITLES: Record<MatchMode, string> = {
   SOLO: 'Play solo',
-  DUEL: 'Duel a friend',
   TEAM: 'Team up',
-  PARTY: 'Start a party',
+  PARTY: 'Party with friends',
 };
 
 const FRIEND_QUESTIONS: Record<MatchMode, string> = {
   SOLO: '',
-  DUEL: 'Who do you want to challenge?',
   TEAM: 'Who do you want to team up with?',
   PARTY: 'Who do you want to invite first?',
 };

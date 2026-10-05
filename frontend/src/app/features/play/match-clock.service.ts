@@ -19,7 +19,7 @@ import { MatchSocketActions } from '../../store/match/match-socket.actions';
 import { MatchActions } from '../../store/match/match.actions';
 import { matchFeature } from '../../store/match/match.reducer';
 import {
-  COUNTDOWN_NUMBERS,
+  COUNTDOWN_LABELS,
   COUNTDOWN_STEP_MS,
   MS_PER_SECOND,
   TIMER_TICK_MS,
@@ -72,10 +72,7 @@ export class MatchClockService {
   });
 
   private countdownLabels(): Observable<string> {
-    const finalWord = this.mode() === 'DUEL' ? 'FIGHT!' : 'GO!';
-    return zip(from([...COUNTDOWN_NUMBERS, finalWord]), timer(0, COUNTDOWN_STEP_MS)).pipe(
-      map(([label]) => label),
-    );
+    return zip(from(COUNTDOWN_LABELS), timer(0, COUNTDOWN_STEP_MS)).pipe(map(([label]) => label));
   }
 
   // The bar freezes when the player answers, which shows how fast they were.

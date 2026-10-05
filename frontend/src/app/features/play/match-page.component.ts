@@ -60,7 +60,6 @@ const RUNNING_PHASES: MatchPhase[] = ['countdown', 'question', 'reveal'];
 
 const LEAVE_WARNINGS: Record<MatchMode, string> = {
   SOLO: 'If you leave now, this quiz stops and you get no rewards for it.',
-  DUEL: 'Leaving counts as giving up, so your rival wins the duel.',
   TEAM: 'Leaving ends the team match for both of you.',
   PARTY: 'Leaving counts as giving up. The party goes on without you.',
 };
@@ -253,12 +252,10 @@ export class MatchPageComponent {
       : 'Entering the arena...';
   });
   protected readonly leaveWarning = computed(() => LEAVE_WARNINGS[this.mode()]);
-  // A duel or party that ended because everyone else left.
+  // A party that ended because everyone else left.
   protected readonly rivalLeft = computed(
     () =>
-      (this.mode() === 'DUEL' || this.isParty()) &&
-      this.others().length > 0 &&
-      this.others().every((fighter) => fighter.away),
+      this.isParty() && this.others().length > 0 && this.others().every((fighter) => fighter.away),
   );
   protected readonly interruptedText = computed(
     () => this.error() ?? 'This match stopped before it was finished.',

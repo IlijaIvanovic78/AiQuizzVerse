@@ -23,7 +23,7 @@ export interface FriendRemovedEvent {
   friendshipId: string;
 }
 
-export interface DuelInvite {
+export interface MatchInvite {
   matchId: string;
   inviteCode: string;
   mode: MatchMode;

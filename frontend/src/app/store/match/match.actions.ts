@@ -5,7 +5,7 @@ import {
   MatchResult,
   MatchView,
 } from '../../core/models/match.model';
-import { DuelInvite } from '../../core/models/realtime-events.model';
+import { MatchInvite } from '../../core/models/realtime-events.model';
 import { MatchBoostType } from '../../core/models/shop.model';
 
 export const MatchActions = createActionGroup({
@@ -28,8 +28,8 @@ export const MatchActions = createActionGroup({
     'Raise Shield': emptyProps(),
     'Invite Friend': props<{ matchId: string; friendId: string }>(),
     'Friend Invited': emptyProps(),
-    'Invite Received': props<{ invite: DuelInvite }>(),
-    'Invite Accepted': props<{ invite: DuelInvite }>(),
+    'Invite Received': props<{ invite: MatchInvite }>(),
+    'Invite Accepted': props<{ invite: MatchInvite }>(),
     'Invite Dismissed': emptyProps(),
     Failed: props<{ error: string }>(),
   },

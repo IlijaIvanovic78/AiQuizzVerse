@@ -22,7 +22,7 @@ export interface RankedPlayer {
 
 const PLACE_NAMES = ['first', 'second', 'third', 'fourth'];
 
-// Solo and team players fill a treasure chest; duels and parties are played for points.
+// Solo and team players fill a treasure chest; a party is played for points.
 export function hasTreasureChest(mode: MatchMode): boolean {
   return mode === 'SOLO' || mode === 'TEAM';
 }
@@ -66,9 +66,6 @@ export function rankPlayers(players: MatchResultPlayer[]): RankedPlayer[] {
 }
 
 export function resultHeadline(result: MatchResult, meId: string): ResultHeadline {
-  if (result.mode === 'DUEL') {
-    return duelHeadline(result, meId);
-  }
   if (result.mode === 'PARTY') {
     return partyHeadline(result, meId);
   }
@@ -86,26 +83,6 @@ function soloHeadline(result: MatchResult, meId: string): ResultHeadline {
   }
   const title = result.kind === 'PATH_STEP' ? 'Step cleared!' : 'Victory!';
   return { title, subtitle: score, tone: 'victory' };
-}
-
-function duelHeadline(result: MatchResult, meId: string): ResultHeadline {
-  const rival = result.players.find((player) => player.user.id !== meId);
-  const rivalName = rival?.user.username ?? 'your rival';
-  if (findPlayer(result, meId)?.isWinner) {
-    return { title: 'Victory!', subtitle: `You beat ${rivalName}. Well played!`, tone: 'victory' };
-  }
-  if (rival?.isWinner) {
-    return {
-      title: 'Good fight!',
-      subtitle: `${rivalName} won this time. Ask for a rematch!`,
-      tone: 'almost',
-    };
-  }
-  return {
-    title: 'Draw!',
-    subtitle: `You and ${rivalName} are evenly matched.`,
-    tone: 'draw',
-  };
 }
 
 function partyHeadline(result: MatchResult, meId: string): ResultHeadline {

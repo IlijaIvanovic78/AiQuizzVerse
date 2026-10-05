@@ -76,24 +76,6 @@ describe('resultHeadline', () => {
 
     expect(headline.title).toBe('Step cleared!');
   });
-
-  it('calls a duel without a winner a draw', () => {
-    const duel = result({
-      mode: 'DUEL',
-      players: [player('hero', 3, false), player('rival', 3, false)],
-    });
-
-    expect(resultHeadline(duel, 'hero').title).toBe('Draw!');
-  });
-
-  it('cheers for the duel loser too', () => {
-    const duel = result({
-      mode: 'DUEL',
-      players: [player('hero', 2, false), player('rival', 4, true)],
-    });
-
-    expect(resultHeadline(duel, 'hero').title).toBe('Good fight!');
-  });
 });
 
 describe('rankPlayers', () => {
@@ -131,6 +113,16 @@ describe('party headline', () => {
 
     expect(headline.title).toBe('Good fight!');
     expect(headline.subtitle).toBe('You finished third of 3. Ask for a rematch!');
+  });
+
+  it('cheers for the loser of a two-player party too', () => {
+    const headline = resultHeadline(
+      party([player('fox', 4, true), player('hero', 2, false)]),
+      'hero',
+    );
+
+    expect(headline.title).toBe('Good fight!');
+    expect(headline.subtitle).toBe('You finished second of 2. Ask for a rematch!');
   });
 
   it('calls a shared first place a draw', () => {

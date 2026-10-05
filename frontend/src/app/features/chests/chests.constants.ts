@@ -17,7 +17,7 @@ interface EarnWay {
 export const HOW_TO_EARN: EarnWay[] = [
   {
     type: 'WOODEN',
-    ways: 'Your first game of the day with 60% or more, a duel or party win (two a day), and path steps 1 and 3.',
+    ways: 'Your first game of the day with 60% or more, a party win (two a day), and path steps 1 and 3.',
   },
   { type: 'SILVER', ways: 'Every new level, and path steps 2 and 4.' },
   { type: 'GOLDEN', ways: 'Every 7 days of your streak, and the last step of a path.' },

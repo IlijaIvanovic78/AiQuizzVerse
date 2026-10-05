@@ -18,13 +18,13 @@ import { AuthEffects } from './store/auth/auth.effects';
 import { authFeature } from './store/auth/auth.reducer';
 import { ChestsEffects } from './store/chests/chests.effects';
 import { chestsFeature } from './store/chests/chests.reducer';
-import { duelInviteFeature } from './store/duel-invite/duel-invite.reducer';
 import { FriendsEffects } from './store/friends/friends.effects';
 import { friendsFeature } from './store/friends/friends.reducer';
 import { LeaderboardEffects } from './store/leaderboard/leaderboard.effects';
 import { leaderboardFeature } from './store/leaderboard/leaderboard.reducer';
 import { MatchHistoryEffects } from './store/match-history/match-history.effects';
 import { matchHistoryFeature } from './store/match-history/match-history.reducer';
+import { matchInviteFeature } from './store/match-invite/match-invite.reducer';
 import { MatchEffects } from './store/match/match.effects';
 import { matchFeature } from './store/match/match.reducer';
 import { PathsEffects } from './store/paths/paths.effects';
@@ -48,7 +48,7 @@ export const appConfig: ApplicationConfig = {
     provideState(authFeature),
     provideState(quizzesFeature),
     provideState(matchFeature),
-    provideState(duelInviteFeature),
+    provideState(matchInviteFeature),
     provideState(pathsFeature),
     provideState(reviewFeature),
     provideState(shopFeature),

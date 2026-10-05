@@ -26,7 +26,7 @@ const BURST_COINS = [
 })
 export class BattleArenaComponent {
   readonly leftFighters = input.required<ArenaFighter[]>();
-  // A duel rival, or the other half of a party, faces the player from the right platform.
+  // The other half of a party faces the player from the right platform.
   readonly rightFighters = input<ArenaFighter[]>([]);
   readonly showChest = input(false);
   // Turning this on sends coins from the heroes into the chest once.

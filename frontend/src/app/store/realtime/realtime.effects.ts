@@ -34,7 +34,7 @@ export class RealtimeEffects {
     const friendOffline$ = this.socket.friendOffline$.pipe(
       map(({ userId }) => FriendsActions.presenceChanged({ userId, isOnline: false })),
     );
-    const duelInvite$ = this.socket.duelInvite$.pipe(
+    const matchInvite$ = this.socket.matchInvite$.pipe(
       map((invite) => MatchActions.inviteReceived({ invite })),
     );
     const coinsUpdated$ = this.socket.coinsUpdated$.pipe(
@@ -54,7 +54,7 @@ export class RealtimeEffects {
       friendRemoved$,
       friendOnline$,
       friendOffline$,
-      duelInvite$,
+      matchInvite$,
       coinsUpdated$,
       quizProgress$,
       chestEarned$,

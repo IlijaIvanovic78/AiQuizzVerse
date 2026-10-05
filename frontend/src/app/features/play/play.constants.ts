@@ -5,8 +5,8 @@ export const MS_PER_SECOND = 1000;
 export const TIMER_TICK_MS = 250;
 export const TIMER_WARNING_SECONDS = 5;
 
-// 3, 2, 1 and the final word take 750 ms each, so together they fill the server's 3 s countdown.
-export const COUNTDOWN_NUMBERS = ['3', '2', '1'];
+// 3, 2, 1 and GO! take 750 ms each, so together they fill the server's 3 s countdown.
+export const COUNTDOWN_LABELS = ['3', '2', '1', 'GO!'];
 export const COUNTDOWN_STEP_MS = 750;
 
 // How long the coins fly from the heroes into the chest; the chest opens when they land.

@@ -389,7 +389,7 @@ function isAcceptedAnswer(state: MatchState, optionIndex: number): boolean {
   return state.phase === 'question' && state.myAnswer === optionIndex;
 }
 
-// Duels and parties are fair fights, so the power-ups are off there.
+// Party matches are fair fights, so the power-ups are off there.
 function hasPowerUps(mode: MatchMode): boolean {
   return mode === 'SOLO' || mode === 'TEAM';
 }

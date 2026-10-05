@@ -12,12 +12,13 @@ function sideIds(mode: MatchMode, ids: string[]) {
 }
 
 describe('arenaSides', () => {
-  it('puts a duel rival on the right and a team together on the left', () => {
-    expect(sideIds('DUEL', ['hero', 'fox'])).toEqual({ left: ['hero'], right: ['fox'] });
+  it('keeps a solo player and a team together on the left', () => {
+    expect(sideIds('SOLO', ['hero'])).toEqual({ left: ['hero'], right: [] });
     expect(sideIds('TEAM', ['hero', 'fox'])).toEqual({ left: ['hero', 'fox'], right: [] });
   });
 
   it('splits a party into two halves, with the bigger half on the player side', () => {
+    expect(sideIds('PARTY', ['hero', 'fox'])).toEqual({ left: ['hero'], right: ['fox'] });
     expect(sideIds('PARTY', ['hero', 'fox', 'owl'])).toEqual({
       left: ['hero', 'fox'],
       right: ['owl'],

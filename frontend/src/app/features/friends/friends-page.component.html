@@ -1,6 +1,6 @@
 <app-page-header
   title="Friends"
-  subtitle="Add friends, answer requests and challenge them to a duel."
+  subtitle="Add friends, answer requests and invite them to a party."
 />
 
 <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12">
@@ -42,7 +42,7 @@
     } @else if (loaded()) {
       <app-empty-state
         title="No friends yet"
-        text="Ask your friend for their nickname and search for it. When they accept, you can duel or team up."
+        text="Ask your friend for their nickname and search for it. When they accept, you can team up or start a party."
         image="shield"
       />
     } @else if (error()) {

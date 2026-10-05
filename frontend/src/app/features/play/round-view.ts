@@ -3,7 +3,7 @@ import { MatchQuestionEvent, RoundResultEvent } from '../../core/models/realtime
 
 export type RoundOutcome = 'correct' | 'wrong' | 'missed' | 'beaten';
 
-// How a teammate, a duel rival or a party opponent did in the round.
+// How a teammate or a party rival did in the round.
 export interface OtherPlayerResult {
   name: string;
   answered: boolean;

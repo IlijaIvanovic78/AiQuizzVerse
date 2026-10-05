@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { MatchMode } from '../core/models/match.model';
-import { DuelInvite } from '../core/models/realtime-events.model';
+import { MatchInvite } from '../core/models/realtime-events.model';
 import { HeroSpriteComponent } from '../shared/components/hero-sprite.component';
 import { ModalComponent } from '../shared/components/modal.component';
-import { duelInviteFeature } from '../store/duel-invite/duel-invite.reducer';
+import { matchInviteFeature } from '../store/match-invite/match-invite.reducer';
 import { MatchActions } from '../store/match/match.actions';
 
 interface InviteWording {
@@ -15,7 +15,6 @@ interface InviteWording {
 
 const INVITE_WORDING: Record<MatchMode, InviteWording> = {
   SOLO: { title: 'Invite!', text: 'invites you to play', accept: 'Accept' },
-  DUEL: { title: 'Duel challenge!', text: 'challenges you to a duel on', accept: 'Accept' },
   TEAM: { title: 'Team-up invite!', text: 'wants to team up with you on', accept: 'Team up' },
   PARTY: {
     title: 'Party invite!',
@@ -25,18 +24,18 @@ const INVITE_WORDING: Record<MatchMode, InviteWording> = {
 };
 
 @Component({
-  selector: 'app-duel-invite-dialog',
+  selector: 'app-match-invite-dialog',
   imports: [HeroSpriteComponent, ModalComponent],
-  templateUrl: './duel-invite-dialog.component.html',
+  templateUrl: './match-invite-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DuelInviteDialogComponent {
+export class MatchInviteDialogComponent {
   private readonly store = inject(Store);
 
-  protected readonly invite = this.store.selectSignal(duelInviteFeature.selectInvite);
-  protected readonly wording = computed(() => INVITE_WORDING[this.invite()?.mode ?? 'DUEL']);
+  protected readonly invite = this.store.selectSignal(matchInviteFeature.selectInvite);
+  protected readonly wordings = INVITE_WORDING;
 
-  protected accept(invite: DuelInvite): void {
+  protected accept(invite: MatchInvite): void {
     this.store.dispatch(MatchActions.inviteAccepted({ invite }));
   }
 
