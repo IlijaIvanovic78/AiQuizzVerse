@@ -13,7 +13,8 @@ import { SabotageType } from '../../../core/models/match.model';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar.component';
 import { ArenaFighter } from '../arena-fighter';
-import { PARTY_MAX_CHARGES, SABOTAGE_LABELS } from '../play.constants';
+import { SABOTAGES } from '../play.constants';
+import { ChargeMeterComponent } from './charge-meter.component';
 import { SabotageIconComponent } from './sabotage-icon.component';
 
 interface SeatStatus {
@@ -27,7 +28,13 @@ interface SeatStatus {
 // While the player picks a sabotage target, the seats of the others turn into buttons.
 @Component({
   selector: 'app-party-scoreboard',
-  imports: [NgTemplateOutlet, PixelIconComponent, SabotageIconComponent, UserAvatarComponent],
+  imports: [
+    NgTemplateOutlet,
+    ChargeMeterComponent,
+    PixelIconComponent,
+    SabotageIconComponent,
+    UserAvatarComponent,
+  ],
   templateUrl: './party-scoreboard.component.html',
   styleUrl: './party-scoreboard.component.css',
   host: { class: 'block' },
@@ -42,7 +49,6 @@ export class PartyScoreboardComponent {
   readonly targetIds = input<string[]>([]);
   readonly target = output<string>();
 
-  protected readonly chargeSlots = Array.from({ length: PARTY_MAX_CHARGES }, (_, slot) => slot);
   protected readonly seats = computed(() =>
     this.fighters().map((fighter) => ({
       fighter,
@@ -53,7 +59,7 @@ export class PartyScoreboardComponent {
   );
   protected readonly command = computed(() => {
     const type = this.targetType();
-    return type ? SABOTAGE_LABELS[type] : '';
+    return type ? SABOTAGES[type].label : '';
   });
   private readonly targetButtons = viewChildren<ElementRef<HTMLButtonElement>>('targetButton');
 

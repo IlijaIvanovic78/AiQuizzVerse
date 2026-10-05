@@ -1,36 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { SabotageType } from '../../../core/models/match.model';
-import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
-import { FREEZE_SECONDS, PARTY_MAX_CHARGES, SABOTAGE_LABELS } from '../play.constants';
+import { SABOTAGES } from '../play.constants';
+import { ChargeMeterComponent } from './charge-meter.component';
 import { SabotageIconComponent } from './sabotage-icon.component';
 
-interface SabotageChoice {
-  type: SabotageType;
-  label: string;
-  description: string;
-}
-
-const CHOICES: SabotageChoice[] = [
-  { type: 'INK', label: SABOTAGE_LABELS.INK, description: 'Splash ink on their question' },
-  {
-    type: 'FREEZE',
-    label: SABOTAGE_LABELS.FREEZE,
-    description: `No answering for ${FREEZE_SECONDS} seconds`,
-  },
-  { type: 'SCRAMBLE', label: SABOTAGE_LABELS.SCRAMBLE, description: 'Mix up their answers' },
-];
-
-const PROMPT_VERBS: Record<SabotageType, string> = {
-  INK: 'splash with ink',
-  FREEZE: 'freeze',
-  SCRAMBLE: 'scramble',
-};
+const CHOICES: SabotageType[] = ['INK', 'FREEZE', 'SCRAMBLE'];
 
 // Party only: spend a charge to slow down another player. Picking a sabotage here lights up
 // the players who can be hit on the scoreboard.
 @Component({
   selector: 'app-sabotage-bar',
-  imports: [PixelIconComponent, SabotageIconComponent],
+  imports: [ChargeMeterComponent, SabotageIconComponent],
   templateUrl: './sabotage-bar.component.html',
   host: { class: 'block' },
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,10 +25,10 @@ export class SabotageBarComponent {
   readonly cancel = output<void>();
 
   protected readonly choices = CHOICES;
-  protected readonly chargeSlots = Array.from({ length: PARTY_MAX_CHARGES }, (_, slot) => slot);
+  protected readonly sabotages = SABOTAGES;
   protected readonly prompt = computed(() => {
     const type = this.chosen();
-    return type ? `Who do you want to ${PROMPT_VERBS[type]}?` : '';
+    return type ? `Who do you want to ${SABOTAGES[type].promptVerb}?` : '';
   });
   protected readonly hint = computed(() => {
     if (this.charges() === 0) {

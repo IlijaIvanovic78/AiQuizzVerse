@@ -62,7 +62,10 @@ export class JoinPageComponent {
   }
 
   protected normalizeCode(): void {
-    const value = this.codeControl.value.toUpperCase().replace(NOT_CODE_CHARACTERS, '');
+    const value = this.codeControl.value
+      .toUpperCase()
+      .replace(NOT_CODE_CHARACTERS, '')
+      .slice(0, INVITE_CODE_LENGTH);
     if (value !== this.codeControl.value) {
       this.codeControl.setValue(value);
     }

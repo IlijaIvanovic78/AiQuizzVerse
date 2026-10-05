@@ -51,10 +51,7 @@
       <span class="hidden rounded border-2 border-outline px-1.5 text-sm md:inline">Enter</span>
     </button>
     @if (pressed()) {
-      <p class="flex items-center gap-3 text-muted">
-        <app-spinner />
-        {{ waitingText() }}
-      </p>
+      <app-spinner class="text-muted" [label]="waitingText()" />
     }
   </div>
 </section>

@@ -4,7 +4,6 @@ import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import {
   Observable,
-  distinctUntilChanged,
   filter,
   from,
   map,
@@ -48,7 +47,6 @@ export class MatchClockService {
 
   readonly countdownLabel = toSignal(
     toObservable(this.phase).pipe(
-      distinctUntilChanged(),
       switchMap((phase) => (phase === 'countdown' ? this.countdownLabels() : of(null))),
     ),
     { initialValue: null },

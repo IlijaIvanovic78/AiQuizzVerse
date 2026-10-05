@@ -13,7 +13,7 @@
         [banner]="true"
         [leftFighters]="sides().left"
         [rightFighters]="sides().right"
-        [showChest]="result().mode === 'SOLO' || result().mode === 'TEAM'"
+        [showChest]="showChest()"
         [coinsFlying]="coinsFlying()"
       />
     }
@@ -30,8 +30,8 @@
       @if (result().mode === 'SOLO') {
         <app-star-rating [stars]="stars()" [scale]="3" [animated]="true" />
       }
-      @if (rivalLeft() && leftNote()) {
-        <p class="text-muted">{{ leftNote() }}</p>
+      @if (leftNote(); as note) {
+        <p class="text-muted">{{ note }}</p>
       }
     </div>
   </section>
@@ -65,12 +65,8 @@
     </section>
   }
 
-  @if (result().mode === 'SOLO' || result().mode === 'TEAM') {
-    <app-treasure-chest
-      [correct]="teamCorrect()"
-      [total]="result().players.length * result().questionCount"
-      [label]="result().mode === 'TEAM' ? 'Team chest' : 'Treasure chest'"
-    />
+  @if (showChest()) {
+    <app-treasure-chest [correct]="teamCorrect()" [total]="chestTotal()" [label]="chestLabel()" />
   }
 
   <div class="grid grid-cols-2 gap-3 md:grid-cols-4">

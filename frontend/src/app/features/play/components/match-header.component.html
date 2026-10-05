@@ -12,11 +12,7 @@
     <h1 class="mt-1 truncate text-xl text-parchment-100 md:text-3xl">{{ title() }}</h1>
   </div>
   <div class="flex shrink-0 items-center gap-2">
-    <button
-      type="button"
-      class="btn btn-ghost btn-sm hidden sm:inline-flex"
-      (click)="toggleSound.emit()"
-    >
+    <button type="button" class="btn btn-ghost btn-sm" (click)="toggleSound.emit()">
       Sound {{ muted() ? 'off' : 'on' }}
     </button>
     @if (quitLabel(); as quitLabel) {

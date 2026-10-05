@@ -1,0 +1,9 @@
+@if (active()) {
+  <app-pixel-art
+    class="splash"
+    [rows]="rows"
+    [colors]="colors"
+    animate.enter="splash-enter"
+    animate.leave="splash-leave"
+  />
+}

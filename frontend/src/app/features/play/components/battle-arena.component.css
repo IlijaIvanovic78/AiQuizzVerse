@@ -144,12 +144,13 @@
   left: 22%;
 }
 
+/* The duration is set in the template from COINS_LAND_MS, which also times the chest. */
 .flying-coin {
   position: absolute;
   width: calc(var(--pixel) * 5);
   max-width: none;
   height: auto;
-  animation: coin-travel 620ms ease-in both;
+  animation: coin-travel ease-in both;
 }
 
 @keyframes coin-travel {

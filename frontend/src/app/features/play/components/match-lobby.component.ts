@@ -5,7 +5,7 @@ import { MatchMode, MatchView } from '../../../core/models/match.model';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
-import { MAX_PLAYERS, PLAYERS_TO_START } from '../play.constants';
+import { MAX_PLAYERS, PLAYERS_TO_START } from '../../../shared/play-modes';
 
 interface LobbyStatus {
   title: string;

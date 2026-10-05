@@ -6,11 +6,19 @@ import { SabotageType } from '../../core/models/match.model';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { MatchActions } from '../../store/match/match.actions';
 import { matchFeature } from '../../store/match/match.reducer';
+import { BannerTone } from './components/arena-banner.component';
 import { effectEndsAt, sabotageNotice, sabotageTargets, secondsLeft } from './party-round';
 import { SABOTAGE_NOTICE_MS, SCRAMBLE_SHAKE_MS, TIMER_TICK_MS } from './play.constants';
+import { namesById } from './round-view';
 
-// The party part of the match page: sabotage charges, picking a target, and the sabotage
-// effects that wear off after a few seconds. Provided by the match page, like MatchClockService.
+interface ArenaNews {
+  text: string;
+  tone: BannerTone;
+}
+
+// The party part of the match page: who won the round, sabotage charges, picking a target,
+// and the sabotage effects that wear off after a few seconds. Provided by the match page,
+// like MatchClockService.
 @Injectable()
 export class PartyRoundService {
   private readonly store = inject(Store);
@@ -24,13 +32,14 @@ export class PartyRoundService {
   private readonly answeredUserIds = this.store.selectSignal(matchFeature.selectAnsweredUserIds);
   private readonly leftUserIds = this.store.selectSignal(matchFeature.selectLeftUserIds);
   private readonly lockedOutUserIds = this.store.selectSignal(matchFeature.selectLockedOutUserIds);
+  private readonly winnerId = this.store.selectSignal(matchFeature.selectRoundWinnerId);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly meId = computed(() => this.user()?.id ?? '');
+  private readonly playerNames = computed(() => namesById(this.match()?.players ?? []));
   private readonly questionIndex = computed(() => this.question()?.index ?? null);
 
-  private readonly questionOpen = computed(
-    () => this.mode() === 'PARTY' && this.phase() === 'question',
-  );
+  private readonly isParty = computed(() => this.mode() === 'PARTY');
+  private readonly questionOpen = computed(() => this.isParty() && this.phase() === 'question');
 
   // Ticks while a party question is open, so every effect wears off on time.
   private readonly now = toSignal(
@@ -44,6 +53,9 @@ export class PartyRoundService {
 
   private readonly chosen = signal<SabotageType | null>(null);
   readonly chosenType = this.chosen.asReadonly();
+
+  // Who answered the round first, shown while its answer is revealed.
+  readonly roundWinnerId = computed(() => (this.phase() === 'reveal' ? this.winnerId() : null));
 
   readonly myCharges = computed(() => this.charges()[this.meId()] ?? 0);
   readonly lockedOut = computed(() => this.lockedOutUserIds().includes(this.meId()));
@@ -79,7 +91,7 @@ export class PartyRoundService {
   readonly frozenUserIds = computed(() => this.playersUnder('FREEZE'));
   readonly inkedUserIds = computed(() => this.playersUnder('INK'));
 
-  readonly notice = computed(() => {
+  private readonly notice = computed(() => {
     const latest = this.sabotages().at(-1);
     if (!this.questionOpen() || !latest || latest.landedAt + SABOTAGE_NOTICE_MS < this.now()) {
       return null;
@@ -87,10 +99,17 @@ export class PartyRoundService {
     return sabotageNotice(latest, this.meId(), this.playerNames());
   });
 
-  private readonly playerNames = computed(() => {
-    const names: Record<string, string> = {};
-    this.match()?.players.forEach((player) => (names[player.user.id] = player.user.username));
-    return names;
+  // The line over the arena: who answered first after a round, or the latest sabotage while
+  // a question is open.
+  readonly arenaNews = computed<ArenaNews | null>(() => {
+    if (!this.isParty()) {
+      return null;
+    }
+    if (this.phase() === 'reveal') {
+      return { text: this.roundWinnerText(), tone: 'torch' };
+    }
+    const notice = this.notice();
+    return notice ? { text: notice, tone: 'night' } : null;
   });
 
   constructor() {
@@ -116,6 +135,17 @@ export class PartyRoundService {
       this.store.dispatch(MatchActions.sabotage({ targetUserId, sabotageType }));
     }
     this.chosen.set(null);
+  }
+
+  private roundWinnerText(): string {
+    const winnerId = this.winnerId();
+    if (!winnerId) {
+      return 'Nobody got it this time!';
+    }
+    if (winnerId === this.meId()) {
+      return 'You got it first!';
+    }
+    return `${this.playerNames()[winnerId] ?? 'Someone'} got it first!`;
   }
 
   private isUnder(userId: string, type: SabotageType): boolean {

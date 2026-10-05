@@ -1,4 +1,9 @@
-import { MatchResult, MatchResultPlayer, MatchResultQuestion } from '../../core/models/match.model';
+import {
+  MatchMode,
+  MatchResult,
+  MatchResultPlayer,
+  MatchResultQuestion,
+} from '../../core/models/match.model';
 import { starsForAccuracy } from '../../shared/stars';
 import { TEAM_WIN_ACCURACY } from './play.constants';
 
@@ -16,6 +21,20 @@ export interface RankedPlayer {
 }
 
 const PLACE_NAMES = ['first', 'second', 'third', 'fourth'];
+
+// Solo and team players fill a treasure chest; duels and parties are played for points.
+export function hasTreasureChest(mode: MatchMode): boolean {
+  return mode === 'SOLO' || mode === 'TEAM';
+}
+
+// The chest is full when every player got every question right.
+export function chestSize(playerCount: number, questionCount: number): number {
+  return playerCount * questionCount;
+}
+
+export function chestLabelFor(mode: MatchMode): string {
+  return mode === 'TEAM' ? 'Team chest' : 'Treasure chest';
+}
 
 export function accuracyPercent(correct: number, total: number): number {
   return total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -98,7 +117,7 @@ function partyHeadline(result: MatchResult, meId: string): ResultHeadline {
   if (mine?.rank === 1) {
     return { title: 'Draw!', subtitle: 'You share first place. What a close party!', tone: 'draw' };
   }
-  const place = PLACE_NAMES[(mine?.rank ?? ranked.length) - 1] ?? 'last';
+  const place = placeName(mine?.rank ?? ranked.length);
   return {
     title: 'Good fight!',
     subtitle: `You finished ${place} of ${ranked.length}. Ask for a rematch!`,
@@ -106,9 +125,13 @@ function partyHeadline(result: MatchResult, meId: string): ResultHeadline {
   };
 }
 
+function placeName(rank: number): string {
+  return PLACE_NAMES[rank - 1] ?? 'last';
+}
+
 function teamHeadline(result: MatchResult, meId: string): ResultHeadline {
   const teamCorrect = correctAnswers(result);
-  const teamTotal = result.players.length * result.questionCount;
+  const teamTotal = chestSize(result.players.length, result.questionCount);
   const score = `Your team got ${teamCorrect} of ${teamTotal} right.`;
   if (findPlayer(result, meId)?.isWinner) {
     return { title: 'Team victory!', subtitle: score, tone: 'victory' };

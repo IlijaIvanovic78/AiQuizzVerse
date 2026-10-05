@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DOCUMENT,
   DestroyRef,
   computed,
   effect,
@@ -10,19 +9,13 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, Subject, take, timer } from 'rxjs';
+import { Observable, Subject, take } from 'rxjs';
 import { MatchMode, MatchResult } from '../../core/models/match.model';
-import { QuizKind } from '../../core/models/quiz.model';
-import { RoundResultEvent } from '../../core/models/realtime-events.model';
 import { MatchBoostType } from '../../core/models/shop.model';
-import { ToastService } from '../../core/notifications/toast.service';
-import { ReadAloudService } from '../../core/sound/read-aloud.service';
-import { SoundService } from '../../core/sound/sound.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
-import { ModalComponent } from '../../shared/components/modal.component';
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { TreasureChestComponent } from '../../shared/components/treasure-chest.component';
 import { authFeature } from '../../store/auth/auth.reducer';
@@ -33,11 +26,12 @@ import { MatchPhase, matchFeature } from '../../store/match/match.reducer';
 import { ReviewActions } from '../../store/review/review.actions';
 import { ArenaFighter, arenaSides, toFighter } from './arena-fighter';
 import { AnswerGridComponent } from './components/answer-grid.component';
-import { ArenaBannerComponent, BannerTone } from './components/arena-banner.component';
+import { ArenaBannerComponent } from './components/arena-banner.component';
 import { BattleArenaComponent } from './components/battle-arena.component';
 import { BoostsBarComponent } from './components/boosts-bar.component';
 import { CountdownOverlayComponent } from './components/countdown-overlay.component';
 import { FrostFrameComponent } from './components/frost-frame.component';
+import { GetReadyComponent } from './components/get-ready.component';
 import { InkSplashComponent } from './components/ink-splash.component';
 import { MatchHeaderComponent } from './components/match-header.component';
 import { MatchLobbyComponent } from './components/match-lobby.component';
@@ -48,39 +42,19 @@ import { RevealPanelComponent } from './components/reveal-panel.component';
 import { SabotageBarComponent } from './components/sabotage-bar.component';
 import { ScoreboardComponent } from './components/scoreboard.component';
 import { TimerBarComponent } from './components/timer-bar.component';
+import { LobbyInviteService } from './lobby-invite.service';
 import { MatchClockService } from './match-clock.service';
-import { findPlayer } from './match-result';
+import { hasModifier, isControl, isTypingOrInDialog } from './match-keys';
+import { MatchReadAloudService } from './match-read-aloud.service';
+import { chestLabelFor, chestSize, hasTreasureChest } from './match-result';
+import { MatchSoundsService } from './match-sounds.service';
 import { PartyRoundService } from './party-round.service';
-import {
-  ANSWER_KEYS,
-  COINS_LAND_MS,
-  LEVEL_UP_SOUND_DELAY_MS,
-  NEXT_KEYS,
-  PARTY_WRONG_PENALTY,
-  TIMER_WARNING_SECONDS,
-} from './play.constants';
-import { toRoundView } from './round-view';
+import { ANSWER_KEYS, NEXT_KEYS } from './play.constants';
+import { namesById, toRoundView } from './round-view';
 
 type MatchStage = 'loading' | 'lobby' | 'battle' | 'finished' | 'interrupted';
 
-interface ArenaNews {
-  text: string;
-  tone: BannerTone;
-}
-
 const RUNNING_PHASES: MatchPhase[] = ['countdown', 'question', 'reveal'];
-
-const MODE_LABELS: Record<MatchMode, string> = {
-  SOLO: 'Solo',
-  DUEL: 'Duel',
-  TEAM: 'Team up',
-  PARTY: 'Party',
-};
-const KIND_LABELS: Record<QuizKind, string | null> = {
-  STANDARD: null,
-  PATH_STEP: 'Path step',
-  REVIEW: 'Mistakes review',
-};
 
 const LEAVE_WARNINGS: Record<MatchMode, string> = {
   SOLO: 'If you leave now, this quiz stops and you get no rewards for it.',
@@ -89,6 +63,8 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
   PARTY: 'Leaving counts as giving up. The party goes on without you.',
 };
 
+// The whole match on one page, from the lobby to the results. Each side job lives in its own
+// service provided here, so it starts and stops together with the page.
 @Component({
   selector: 'app-match-page',
   imports: [
@@ -97,14 +73,15 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
     ArenaBannerComponent,
     BattleArenaComponent,
     BoostsBarComponent,
+    ConfirmDialogComponent,
     CountdownOverlayComponent,
     EmptyStateComponent,
     FrostFrameComponent,
+    GetReadyComponent,
     InkSplashComponent,
     MatchHeaderComponent,
     MatchLobbyComponent,
     MatchResultsComponent,
-    ModalComponent,
     PartyScoreboardComponent,
     QuestionCardComponent,
     RevealPanelComponent,
@@ -115,7 +92,13 @@ const LEAVE_WARNINGS: Record<MatchMode, string> = {
     TreasureChestComponent,
   ],
   templateUrl: './match-page.component.html',
-  providers: [MatchClockService, PartyRoundService],
+  providers: [
+    MatchClockService,
+    PartyRoundService,
+    MatchSoundsService,
+    MatchReadAloudService,
+    LobbyInviteService,
+  ],
   host: { '(document:keydown)': 'handleKey($event)' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -124,13 +107,11 @@ export class MatchPageComponent {
 
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  private readonly sound = inject(SoundService);
-  private readonly speech = inject(ReadAloudService);
-  private readonly toast = inject(ToastService);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly origin = inject(DOCUMENT).location.origin;
   protected readonly clock = inject(MatchClockService);
   protected readonly party = inject(PartyRoundService);
+  protected readonly sounds = inject(MatchSoundsService);
+  protected readonly reader = inject(MatchReadAloudService);
+  protected readonly lobby = inject(LobbyInviteService);
 
   protected readonly phase = this.store.selectSignal(matchFeature.selectPhase);
   protected readonly match = this.store.selectSignal(matchFeature.selectMatch);
@@ -155,17 +136,10 @@ export class MatchPageComponent {
   private readonly leftUserIds = this.store.selectSignal(matchFeature.selectLeftUserIds);
   private readonly lockedOutUserIds = this.store.selectSignal(matchFeature.selectLockedOutUserIds);
   private readonly charges = this.store.selectSignal(matchFeature.selectCharges);
-  protected readonly winnerId = this.store.selectSignal(matchFeature.selectRoundWinnerId);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly signedIn = this.store.selectSignal(authFeature.selectIsAuthenticated);
   protected readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
 
-  protected readonly muted = this.sound.muted;
-  protected readonly speaking = this.speech.speaking;
-  protected readonly canReadAloud = this.speech.isSupported;
-  protected readonly canShare = 'share' in navigator;
-  protected readonly wrongPenalty = PARTY_WRONG_PENALTY;
-  protected readonly invitedIds = signal<string[]>([]);
   protected readonly leaveDialogOpen = signal(false);
   private readonly leaveDecision$ = new Subject<boolean>();
 
@@ -175,7 +149,10 @@ export class MatchPageComponent {
   protected readonly stage = computed(() => stageFor(this.phase(), this.mode()));
   protected readonly isParty = computed(() => this.mode() === 'PARTY');
   private readonly isRunning = computed(() => RUNNING_PHASES.includes(this.phase()));
-  private readonly isHost = computed(() => this.match()?.hostId === this.meId());
+  private readonly hostInLobby = computed(
+    () => this.stage() === 'lobby' && this.match()?.hostId === this.meId(),
+  );
+  private readonly playerNames = computed(() => namesById(this.match()?.players ?? []));
 
   private readonly fighters = computed(() => this.buildFighters());
   private readonly me = computed(() => this.fighters().find((fighter) => fighter.isMe) ?? null);
@@ -187,35 +164,26 @@ export class MatchPageComponent {
   protected readonly sides = computed(() => arenaSides(this.mode(), this.meFirst()));
   // Three or four party heroes stand two on each platform.
   protected readonly crowded = computed(() => this.isParty() && this.meFirst().length > 2);
-  protected readonly showChest = computed(
-    () => this.match() !== null && (this.mode() === 'SOLO' || this.mode() === 'TEAM'),
-  );
-  protected readonly chestTotal = computed(() => {
-    const match = this.match();
-    return match ? match.players.length * match.quiz.questionCount : 0;
-  });
-  // Coins fly into the chest after every round where someone was right. The next question
-  // turns this off again, so the following strike starts the animations anew.
-  protected readonly coinsFlying = computed(() => {
-    const someoneCorrect = this.round()?.players.some((player) => player.correct) ?? false;
-    return this.phase() === 'reveal' && someoneCorrect;
-  });
   protected readonly emptySide = computed(() => {
     if (this.stage() !== 'lobby' || (this.match()?.players.length ?? 0) > 1) {
       return null;
     }
     return this.mode() === 'TEAM' ? 'left' : 'right';
   });
-  // A party shows who answered first after a round, and every sabotage while a question is open.
-  protected readonly arenaNews = computed<ArenaNews | null>(() => {
-    if (!this.isParty()) {
-      return null;
-    }
-    if (this.phase() === 'reveal') {
-      return { text: this.roundWinnerText(), tone: 'torch' };
-    }
-    const notice = this.party.notice();
-    return notice ? { text: notice, tone: 'night' } : null;
+
+  protected readonly showChest = computed(
+    () => this.match() !== null && hasTreasureChest(this.mode()),
+  );
+  protected readonly chestTotal = computed(() => {
+    const match = this.match();
+    return match ? chestSize(match.players.length, match.quiz.questionCount) : 0;
+  });
+  protected readonly chestLabel = computed(() => chestLabelFor(this.mode()));
+  // Coins fly into the chest after every round where someone was right. The next question
+  // turns this off again, so the following strike starts the animations anew.
+  protected readonly coinsFlying = computed(() => {
+    const someoneCorrect = this.round()?.players.some((player) => player.correct) ?? false;
+    return this.phase() === 'reveal' && someoneCorrect;
   });
 
   protected readonly roundView = computed(() => {
@@ -255,11 +223,6 @@ export class MatchPageComponent {
     return round !== null && match !== null && round.index + 1 >= match.quiz.questionCount;
   });
 
-  protected readonly modeLabel = computed(() => {
-    const kind = this.match()?.quiz.kind;
-    const kindLabel = kind ? KIND_LABELS[kind] : null;
-    return kindLabel ?? MODE_LABELS[this.mode()];
-  });
   protected readonly progressLabel = computed(() => {
     const total = this.match()?.quiz.questionCount ?? 0;
     const index = this.question()?.index ?? this.round()?.index;
@@ -281,9 +244,6 @@ export class MatchPageComponent {
       ? 'Rejoining your match...'
       : 'Entering the arena...';
   });
-  protected readonly shareUrl = computed(
-    () => `${this.origin}/join/${this.match()?.inviteCode ?? ''}`,
-  );
   protected readonly leaveWarning = computed(() => LEAVE_WARNINGS[this.mode()]);
   // A duel or party that ended because everyone else left.
   protected readonly rivalLeft = computed(
@@ -295,12 +255,6 @@ export class MatchPageComponent {
   protected readonly interruptedText = computed(
     () => this.error() ?? 'This match stopped before it was finished.',
   );
-  private readonly hostInLobby = computed(() => this.stage() === 'lobby' && this.isHost());
-  private readonly playerNames = computed(() => {
-    const names: Record<string, string> = {};
-    this.match()?.players.forEach((player) => (names[player.user.id] = player.user.username));
-    return names;
-  });
 
   constructor() {
     // /play/A to /play/B reuses this page, so every new id enters its own match.
@@ -309,30 +263,11 @@ export class MatchPageComponent {
       untracked(() => this.store.dispatch(MatchActions.entered({ matchId })));
     });
     effect(() => {
-      const round = this.round();
-      untracked(() => this.playRoundSound(round));
-    });
-    effect(() => {
-      const seconds = this.clock.secondsLeft();
-      untracked(() => this.playTimerTick(seconds));
-    });
-    effect(() => {
-      const result = this.result();
-      untracked(() => this.celebrate(result));
-    });
-    effect(() => {
-      this.question();
-      untracked(() => this.speech.stop());
-    });
-    effect(() => {
       if (this.hostInLobby()) {
         untracked(() => this.store.dispatch(FriendsActions.load()));
       }
     });
-    this.destroyRef.onDestroy(() => {
-      this.speech.stop();
-      this.store.dispatch(MatchActions.left());
-    });
+    inject(DestroyRef).onDestroy(() => this.store.dispatch(MatchActions.left()));
   }
 
   // Used by the leave guard: leaving a running match counts as quitting, so the player confirms.
@@ -366,7 +301,6 @@ export class MatchPageComponent {
       this.answer(optionIndex);
       return;
     }
-    // A focused button already reacts to Enter and Space by itself.
     if (NEXT_KEYS.includes(event.key) && this.phase() === 'reveal' && !isControl(event.target)) {
       event.preventDefault();
       this.next();
@@ -401,11 +335,6 @@ export class MatchPageComponent {
     this.store.dispatch(MatchActions.start());
   }
 
-  protected inviteFriend(friendId: string): void {
-    this.invitedIds.update((ids) => [...ids, friendId]);
-    this.store.dispatch(MatchActions.inviteFriend({ matchId: this.matchId(), friendId }));
-  }
-
   protected playAgain(result: MatchResult): void {
     this.store.dispatch(MatchActions.create({ request: { quizId: result.quizId, mode: 'SOLO' } }));
   }
@@ -416,44 +345,6 @@ export class MatchPageComponent {
 
   protected rematch(): void {
     this.store.dispatch(MatchActions.rematch({ matchId: this.matchId() }));
-  }
-
-  protected toggleSound(): void {
-    this.sound.toggleMuted();
-  }
-
-  protected readQuestion(): void {
-    const question = this.question();
-    if (question) {
-      const options = question.options.map((option, index) => `${index + 1}: ${option}.`);
-      this.toggleSpeech(`${question.text} ${options.join(' ')}`);
-    }
-  }
-
-  protected readExplanation(): void {
-    const round = this.round();
-    if (round) {
-      this.toggleSpeech(round.explanation);
-    }
-  }
-
-  protected copyCode(): void {
-    this.copyText(this.match()?.inviteCode ?? '', 'Code copied!');
-  }
-
-  protected copyLink(): void {
-    this.copyText(this.shareUrl(), 'Link copied!');
-  }
-
-  protected shareLink(): void {
-    const code = this.match()?.inviteCode ?? '';
-    const shared = navigator.share({
-      title: 'AI QuizVerse',
-      text: `Join my match with the code ${code}`,
-      url: this.shareUrl(),
-    });
-    // Closing the share sheet rejects the promise, which is not an error for the player.
-    shared.catch(() => undefined);
   }
 
   private buildFighters(): ArenaFighter[] {
@@ -474,75 +365,6 @@ export class MatchPageComponent {
     };
     return match.players.map((player) => toFighter(player, moment));
   }
-
-  private roundWinnerText(): string {
-    const winnerId = this.winnerId();
-    if (!winnerId) {
-      return 'Nobody got it this time!';
-    }
-    if (winnerId === this.meId()) {
-      return 'You got it first!';
-    }
-    return `${this.playerNames()[winnerId] ?? 'Someone'} got it first!`;
-  }
-
-  private toggleSpeech(text: string): void {
-    if (this.speaking()) {
-      this.speech.stop();
-      return;
-    }
-    this.speech.speak(text, this.match()?.quiz.language ?? 'EN');
-  }
-
-  private copyText(text: string, doneMessage: string): void {
-    // The clipboard API exists only on https or localhost, not on a LAN address.
-    if (!navigator.clipboard) {
-      this.toast.error("Copying isn't available here. Select the text and copy it yourself.");
-      return;
-    }
-    navigator.clipboard.writeText(text).then(
-      () => this.toast.success(doneMessage),
-      () => this.toast.error("Copying didn't work. Select the text and copy it yourself."),
-    );
-  }
-
-  private playRoundSound(round: RoundResultEvent | null): void {
-    const mine = round?.players.find((player) => player.userId === this.meId());
-    if (!mine) {
-      return;
-    }
-    if (!mine.correct) {
-      this.sound.playWrong();
-      return;
-    }
-    this.sound.playCorrect();
-    if (this.showChest()) {
-      this.after(COINS_LAND_MS, () => this.sound.playCoin());
-    }
-  }
-
-  private playTimerTick(seconds: number | null): void {
-    if (seconds !== null && seconds > 0 && seconds <= TIMER_WARNING_SECONDS) {
-      this.sound.playTick();
-    }
-  }
-
-  private celebrate(result: MatchResult | null): void {
-    const me = result ? findPlayer(result, this.meId()) : null;
-    if (!result || !me) {
-      return;
-    }
-    if (me.coinsEarned > 0) {
-      this.sound.playCoin();
-    }
-    if (result.leveledUp) {
-      this.after(LEVEL_UP_SOUND_DELAY_MS, () => this.sound.playLevelUp());
-    }
-  }
-
-  private after(ms: number, action: () => void): void {
-    timer(ms).pipe(takeUntilDestroyed(this.destroyRef)).subscribe(action);
-  }
 }
 
 function stageFor(phase: MatchPhase, mode: MatchMode): MatchStage {
@@ -554,18 +376,4 @@ function stageFor(phase: MatchPhase, mode: MatchMode): MatchStage {
   }
   // A solo match starts by itself right after joining, so it skips the lobby.
   return phase === 'lobby' && mode !== 'SOLO' ? 'lobby' : 'loading';
-}
-
-function hasModifier(event: KeyboardEvent): boolean {
-  return event.ctrlKey || event.altKey || event.metaKey;
-}
-
-function isTypingOrInDialog(target: EventTarget | null): boolean {
-  return (
-    target instanceof Element && target.closest('input, textarea, select, [role="dialog"]') !== null
-  );
-}
-
-function isControl(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest('button, a') !== null;
 }

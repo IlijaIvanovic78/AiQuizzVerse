@@ -53,15 +53,7 @@
       </span>
       <span class="flex flex-wrap items-center gap-x-2">
         <span class="font-display text-sm text-gold">{{ seat.fighter.score }}</span>
-        <span class="flex items-center" aria-hidden="true">
-          @for (slot of chargeSlots; track slot) {
-            <app-pixel-icon
-              name="bolt"
-              [scale]="1"
-              [class.opacity-25]="slot >= seat.fighter.charges"
-            />
-          }
-        </span>
+        <app-charge-meter [charges]="seat.fighter.charges" />
         <span class="sr-only">
           points, {{ seat.fighter.charges }} sabotage
           {{ seat.fighter.charges === 1 ? 'charge' : 'charges' }}

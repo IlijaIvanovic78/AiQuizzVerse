@@ -26,10 +26,11 @@
       <app-match-header
         [title]="match.quiz.title"
         [theme]="match.quiz.theme"
-        [modeLabel]="modeLabel()"
-        [muted]="muted()"
+        [mode]="mode()"
+        [kind]="match.quiz.kind"
+        [muted]="sounds.muted()"
         [quitLabel]="quitLabel()"
-        (toggleSound)="toggleSound()"
+        (toggleSound)="sounds.toggleMuted()"
         (quit)="quit()"
       />
       <div class="flex flex-col gap-4">
@@ -44,14 +45,14 @@
         <app-match-lobby
           [match]="match"
           [meId]="meId()"
-          [shareUrl]="shareUrl()"
-          [canShare]="canShare"
+          [shareUrl]="lobby.shareUrl()"
+          [canShare]="lobby.canShare"
           [friends]="onlineFriends()"
-          [invitedIds]="invitedIds()"
-          (copyCode)="copyCode()"
-          (copyLink)="copyLink()"
-          (share)="shareLink()"
-          (invite)="inviteFriend($event)"
+          [invitedIds]="lobby.invitedIds()"
+          (copyCode)="lobby.copyCode()"
+          (copyLink)="lobby.copyLink()"
+          (share)="lobby.share()"
+          (invite)="lobby.invite($event)"
           (start)="start()"
         />
       </div>
@@ -62,11 +63,12 @@
     <app-match-header
       [title]="match()?.quiz?.title ?? 'Quiz match'"
       [theme]="match()?.quiz?.theme ?? null"
-      [modeLabel]="modeLabel()"
+      [mode]="mode()"
+      [kind]="match()?.quiz?.kind ?? null"
       [progressLabel]="progressLabel()"
-      [muted]="muted()"
+      [muted]="sounds.muted()"
       [quitLabel]="quitLabel()"
-      (toggleSound)="toggleSound()"
+      (toggleSound)="sounds.toggleMuted()"
       (quit)="quit()"
     />
 
@@ -87,13 +89,13 @@
         >
           @if (stage() === 'loading') {
             <div class="panel px-4 py-3">
-              <app-spinner [label]="loadingText()" [showLabel]="true" />
+              <app-spinner [label]="loadingText()" />
             </div>
           }
           @if (clock.countdownLabel(); as label) {
             <app-countdown-overlay [label]="label" />
           }
-          @if (arenaNews(); as news) {
+          @if (party.arenaNews(); as news) {
             <app-arena-banner [text]="news.text" [tone]="news.tone" />
           }
         </app-battle-arena>
@@ -103,14 +105,14 @@
             class="order-last lg:order-none"
             [correct]="teamCorrect()"
             [total]="chestTotal()"
-            [label]="mode() === 'TEAM' ? 'Team chest' : 'Treasure chest'"
+            [label]="chestLabel()"
           />
         }
         @if (isParty()) {
           <app-party-scoreboard
             class="order-last lg:order-none"
             [fighters]="meFirst()"
-            [winnerId]="phase() === 'reveal' ? winnerId() : null"
+            [winnerId]="party.roundWinnerId()"
             [targetType]="party.chosenType()"
             [targetIds]="party.targetIds()"
             (target)="party.hit($event)"
@@ -147,9 +149,9 @@
               [total]="question.total"
               [text]="question.text"
               [hint]="phase() === 'question' ? hint() : null"
-              [canReadAloud]="canReadAloud"
-              [speaking]="speaking()"
-              (readAloud)="readQuestion()"
+              [canReadAloud]="reader.isSupported"
+              [speaking]="reader.speaking()"
+              (readAloud)="reader.readQuestion()"
             />
             <div class="relative">
               <app-answer-grid
@@ -173,22 +175,11 @@
           </div>
         } @else if (match(); as match) {
           @if (phase() !== 'reveal') {
-            <section class="panel-parchment p-5 text-center">
-              <h2 class="text-2xl">Get ready!</h2>
-              <p class="read-text mt-2">
-                {{ match.quiz.questionCount }} questions, {{ match.quiz.timePerQuestion }} seconds
-                each.
-              </p>
-              @if (isParty()) {
-                <p class="read-text mt-2">
-                  The first right answer wins the round. A wrong answer locks you out and costs
-                  {{ wrongPenalty }} points. Win rounds to earn sabotage charges!
-                </p>
-              }
-              <p class="mt-3 text-muted">
-                Tip: press 1, 2, 3 or 4 to answer, and Enter for the next question.
-              </p>
-            </section>
+            <app-get-ready
+              [questionCount]="match.quiz.questionCount"
+              [secondsEach]="match.quiz.timePerQuestion"
+              [party]="isParty()"
+            />
           }
         }
 
@@ -227,10 +218,10 @@
             [pressed]="nextPressed()"
             [waitingFor]="waitingForNames()"
             [lastRound]="isLastRound()"
-            [canReadAloud]="canReadAloud"
-            [speaking]="speaking()"
+            [canReadAloud]="reader.isSupported"
+            [speaking]="reader.speaking()"
             (next)="next()"
-            (readAloud)="readExplanation()"
+            (readAloud)="reader.readExplanation()"
           />
         }
       </div>
@@ -239,13 +230,12 @@
 }
 
 @if (leaveDialogOpen()) {
-  <app-modal title="Leave the match?" size="sm" (closed)="decideLeave(false)">
-    <p>{{ leaveWarning() }}</p>
-    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-      <button type="button" class="btn btn-secondary" (click)="decideLeave(false)">
-        Keep playing
-      </button>
-      <button type="button" class="btn btn-danger" (click)="decideLeave(true)">Quit match</button>
-    </div>
-  </app-modal>
+  <app-confirm-dialog
+    title="Leave the match?"
+    confirmLabel="Quit match"
+    cancelLabel="Keep playing"
+    [message]="leaveWarning()"
+    (confirmed)="decideLeave(true)"
+    (closed)="decideLeave(false)"
+  />
 }

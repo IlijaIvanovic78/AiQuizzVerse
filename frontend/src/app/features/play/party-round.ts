@@ -1,12 +1,6 @@
 import { MatchPlayerView, SabotageType } from '../../core/models/match.model';
 import { SabotageHit } from '../../store/match/match.reducer';
-import { MS_PER_SECOND } from './play.constants';
-
-const SABOTAGE_VERBS: Record<SabotageType, string> = {
-  INK: 'inked',
-  FREEZE: 'froze',
-  SCRAMBLE: 'scrambled',
-};
+import { MS_PER_SECOND, SABOTAGES } from './play.constants';
 
 // When an effect on this player wears off, or 0 when it never hit them this round.
 // A player can be hit by the same sabotage twice, so the later end wins.
@@ -27,7 +21,7 @@ export function sabotageNotice(
   meId: string,
   names: Record<string, string>,
 ): string {
-  const verb = SABOTAGE_VERBS[hit.type];
+  const verb = SABOTAGES[hit.type].pastVerb;
   const from = hit.fromUserId === meId ? 'You' : (names[hit.fromUserId] ?? 'Someone');
   if (hit.targetUserId !== meId) {
     return `${from} ${verb} ${names[hit.targetUserId] ?? 'a player'}!`;

@@ -29,7 +29,6 @@
           id="invite-code"
           class="input join-code-input"
           formControlName="code"
-          [maxlength]="codeLength"
           autocomplete="off"
           autocapitalize="characters"
           spellcheck="false"
@@ -50,8 +49,7 @@
 
       <button type="submit" class="btn btn-primary btn-lg" [disabled]="busy()">
         @if (busy()) {
-          <app-spinner label="Joining" />
-          Joining...
+          <app-spinner label="Joining..." />
         } @else {
           Join the match
         }

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { MatchBoostType } from '../../../core/models/shop.model';
 import { BoostIconComponent } from '../../../shared/components/boost-icon.component';
+import { EXTRA_TIME_SECONDS } from '../play.constants';
 
 interface BoostLook {
   type: MatchBoostType;
@@ -11,7 +12,11 @@ interface BoostLook {
 const BOOSTS: BoostLook[] = [
   { type: 'HINT', label: 'Hint', description: 'Shows a clue that helps you think' },
   { type: 'FIFTY_FIFTY', label: '50/50', description: 'Removes two wrong answers' },
-  { type: 'EXTRA_TIME', label: '+15 s', description: 'Adds 15 seconds to the timer' },
+  {
+    type: 'EXTRA_TIME',
+    label: `+${EXTRA_TIME_SECONDS} s`,
+    description: `Adds ${EXTRA_TIME_SECONDS} seconds to the timer`,
+  },
 ];
 
 @Component({

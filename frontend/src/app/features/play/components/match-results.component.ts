@@ -5,33 +5,39 @@ import { switchMap } from 'rxjs';
 import { MatchMode, MatchResult, MatchResultPlayer } from '../../../core/models/match.model';
 import { BOOST_LABELS } from '../../../shared/components/boost-icon.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
-import { PodiumComponent, PodiumPlace } from '../../../shared/components/podium.component';
+import {
+  PODIUM_SIZE,
+  PodiumComponent,
+  PodiumPlace,
+} from '../../../shared/components/podium.component';
 import { RankBadgeComponent } from '../../../shared/components/rank-badge.component';
 import { StarRatingComponent } from '../../../shared/components/star-rating.component';
 import { StatTileComponent } from '../../../shared/components/stat-tile.component';
 import { TreasureChestComponent } from '../../../shared/components/treasure-chest.component';
 import { starsForAccuracy } from '../../../shared/stars';
-import { ArenaFighter, arenaSides } from '../arena-fighter';
+import { arenaSides, restingFighter } from '../arena-fighter';
 import { countUp } from '../count-up';
 import {
+  ResultTone,
   accuracyPercent,
+  chestLabelFor,
+  chestSize,
   correctAnswers,
   findPlayer,
+  hasTreasureChest,
   missedQuestions,
   rankPlayers,
   resultHeadline,
 } from '../match-result';
-import { LEVEL_UP_SOUND_DELAY_MS } from '../play.constants';
+import { LEVEL_UP_DELAY_MS } from '../play.constants';
 import { BattleArenaComponent } from './battle-arena.component';
 import { MistakeListComponent } from './mistake-list.component';
 
-const HEADLINE_COLORS = {
+const HEADLINE_COLORS: Record<ResultTone, string> = {
   victory: 'text-torch-300',
   almost: 'text-mana-400',
   draw: 'text-parchment-100',
 };
-
-const PODIUM_SIZE = 3;
 
 const SCORES_TITLES: Record<MatchMode, string> = {
   SOLO: 'Score',
@@ -86,6 +92,11 @@ export class MatchResultsComponent {
   protected readonly stars = computed(() => starsForAccuracy(this.accuracy()));
   protected readonly missed = computed(() => missedQuestions(this.result()));
   protected readonly teamCorrect = computed(() => correctAnswers(this.result()));
+  protected readonly showChest = computed(() => hasTreasureChest(this.result().mode));
+  protected readonly chestTotal = computed(() =>
+    chestSize(this.result().players.length, this.result().questionCount),
+  );
+  protected readonly chestLabel = computed(() => chestLabelFor(this.result().mode));
   protected readonly nextStep = computed(() => {
     const path = this.result().path;
     return path?.cleared && path.nextStepId ? path : null;
@@ -101,10 +112,15 @@ export class MatchResultsComponent {
 
   protected readonly sides = computed(() => {
     const meFirst = [this.me(), ...this.others()].filter((player) => player !== null);
-    return arenaSides(
-      this.result().mode,
-      meFirst.map((player) => this.toFighter(player)),
+    const fighters = meFirst.map((player) =>
+      restingFighter(
+        player.user,
+        player.score,
+        this.meId(),
+        this.celebrates(player) ? 'attack' : 'idle',
+      ),
     );
+    return arenaSides(this.result().mode, fighters);
   });
   protected readonly ranking = computed(() => rankPlayers(this.result().players));
   protected readonly podium = computed(() =>
@@ -113,7 +129,11 @@ export class MatchResultsComponent {
       .map(({ rank, player }): PodiumPlace => ({ rank, user: player.user, value: player.score })),
   );
   protected readonly scoresTitle = computed(() => SCORES_TITLES[this.result().mode]);
-  protected readonly leftNote = computed(() => LEFT_NOTES[this.result().mode]);
+  // The match page only knows that the others are gone. If the player lost before they left,
+  // the win is not theirs, so the note stays hidden.
+  protected readonly leftNote = computed(() =>
+    this.rivalLeft() && this.me()?.isWinner ? LEFT_NOTES[this.result().mode] : '',
+  );
   // Coins fly into the chest once when the player earned some treasure.
   protected readonly coinsFlying = computed(() => this.teamCorrect() > 0);
 
@@ -121,29 +141,10 @@ export class MatchResultsComponent {
   protected readonly shownAccuracy = this.countTo(() => this.accuracy());
   protected readonly shownXp = this.countTo(() => this.me()?.xpEarned ?? 0);
   protected readonly shownCoins = this.countTo(() => this.me()?.coinsEarned ?? 0);
-  protected readonly levelUpDelayMs = LEVEL_UP_SOUND_DELAY_MS;
+  protected readonly levelUpDelayMs = LEVEL_UP_DELAY_MS;
 
   protected practiceMistakes(): void {
     this.practice.emit(this.missed().map((question) => question.questionId));
-  }
-
-  private toFighter(player: MatchResultPlayer): ArenaFighter {
-    return {
-      id: player.user.id,
-      name: player.user.username,
-      heroKey: player.user.avatarKey,
-      petKey: player.user.petKey,
-      isMe: player.user.id === this.meId(),
-      score: player.score,
-      action: this.celebrates(player) ? 'attack' : 'idle',
-      points: null,
-      answered: false,
-      away: false,
-      charges: 0,
-      lockedOut: false,
-      frozen: false,
-      inked: false,
-    };
   }
 
   private celebrates(player: MatchResultPlayer): boolean {

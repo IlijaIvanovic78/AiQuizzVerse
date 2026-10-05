@@ -10,15 +10,7 @@ import {
 } from '@angular/core';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
-
-export type RoundOutcome = 'correct' | 'wrong' | 'missed' | 'beaten';
-
-export interface TeammateResult {
-  name: string;
-  answered: boolean;
-  correct: boolean;
-  points: number;
-}
+import { OtherPlayerResult, RoundOutcome } from '../round-view';
 
 interface OutcomeLook {
   title: string;
@@ -67,7 +59,7 @@ export class RevealPanelComponent {
   // Unknown after a page refresh during the reveal, because the server does not resend the question.
   readonly correctAnswer = input<string | null>(null);
   readonly explanation = input.required<string>();
-  readonly others = input<TeammateResult[]>([]);
+  readonly others = input<OtherPlayerResult[]>([]);
   // Party rounds are a race: a wrong answer locks the player out and costs points.
   readonly party = input(false);
   readonly pressed = input(false);
@@ -107,7 +99,7 @@ export class RevealPanelComponent {
     afterNextRender(() => this.nextButton().nativeElement.focus());
   }
 
-  private describe(other: TeammateResult): string {
+  private describe(other: OtherPlayerResult): string {
     if (other.correct) {
       return `${this.party() ? 'got it first' : 'got it right'} (+${other.points})`;
     }

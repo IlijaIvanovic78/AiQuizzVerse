@@ -1,0 +1,12 @@
+@if (secondsLeft() > 0) {
+  <div class="frost" animate.enter="frost-enter" animate.leave="frost-leave">
+    @for (corner of corners; track corner) {
+      <app-sabotage-icon class="corner" [class]="corner" type="FREEZE" [scale]="2" />
+    }
+    <p class="frost-badge">
+      <app-sabotage-icon type="FREEZE" [scale]="2" />
+      <span>Frozen!</span>
+      <span class="font-display">{{ secondsLeft() }}</span>
+    </p>
+  </div>
+}

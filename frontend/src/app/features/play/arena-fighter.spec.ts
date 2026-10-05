@@ -1,23 +1,9 @@
 import { MatchMode } from '../../core/models/match.model';
-import { ArenaFighter, arenaSides } from './arena-fighter';
+import { ArenaFighter, arenaSides, restingFighter } from './arena-fighter';
 
 function fighter(id: string): ArenaFighter {
-  return {
-    id,
-    name: id,
-    heroKey: null,
-    petKey: null,
-    isMe: id === 'hero',
-    score: 0,
-    action: 'idle',
-    points: null,
-    answered: false,
-    away: false,
-    charges: 0,
-    lockedOut: false,
-    frozen: false,
-    inked: false,
-  };
+  const user = { id, username: id, avatarKey: null, petKey: null, level: 1 };
+  return restingFighter(user, 0, 'hero', 'idle');
 }
 
 function sideIds(mode: MatchMode, ids: string[]) {

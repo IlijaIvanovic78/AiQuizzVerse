@@ -7,15 +7,16 @@
       </p>
     }
   </div>
-  <!-- Each power-up is an inventory slot with its count in the corner. -->
   <ul class="grid grid-cols-3 gap-2">
     @for (boost of boosts(); track boost.type) {
+      @let noteId = 'boost-note-' + boost.type;
       <li>
         <button
           type="button"
           class="btn btn-secondary btn-sm relative w-full flex-col gap-0.5 px-1 py-1.5"
           [disabled]="boost.disabled"
           [title]="boost.description"
+          [attr.aria-describedby]="noteId"
           (click)="used.emit(boost.type)"
         >
           <app-boost-icon [type]="boost.type" size="sm" />
@@ -27,13 +28,13 @@
           >
             {{ boost.count }}
           </span>
-          <span class="sr-only">
-            , {{ boost.count }} left. {{ boost.description }}.
-            @if (boost.usedNow) {
-              Used on this question.
-            }
-          </span>
         </button>
+        <p class="sr-only" [id]="noteId">
+          {{ boost.count }} left. {{ boost.description }}.
+          @if (boost.usedNow) {
+            Used on this question.
+          }
+        </p>
       </li>
     }
   </ul>

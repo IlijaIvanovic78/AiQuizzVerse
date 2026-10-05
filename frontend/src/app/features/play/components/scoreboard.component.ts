@@ -18,6 +18,7 @@ export class ScoreboardComponent {
   readonly fighters = input.required<ArenaFighter[]>();
   readonly showAnswered = input(false);
 
+  protected readonly isDuel = computed(() => this.mode() === 'DUEL');
   // In a duel the bar is a tug of war: the player's share of both scores.
   protected readonly myShare = computed(() => {
     const [me, rival] = this.fighters();

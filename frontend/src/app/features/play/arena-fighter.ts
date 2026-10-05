@@ -1,5 +1,6 @@
 import { MatchMode, MatchPlayerView } from '../../core/models/match.model';
 import { RoundPlayerResult, RoundResultEvent } from '../../core/models/realtime-events.model';
+import { PublicUser } from '../../core/models/user.model';
 import { HeroAction } from '../../shared/components/hero-sprite.component';
 
 export interface ArenaFighter {
@@ -52,18 +53,39 @@ export function arenaSides(mode: MatchMode, fighters: ArenaFighter[]): ArenaSide
   return { left: fighters.slice(0, 1), right: fighters.slice(1, 2) };
 }
 
-export function toFighter(player: MatchPlayerView, moment: FighterMoment): ArenaFighter {
-  const { user } = player;
-  const roundResult = moment.round?.players.find((result) => result.userId === user.id) ?? null;
-  const lockedOut = moment.lockedOutUserIds.includes(user.id);
+// A hero who only stands in the arena, like on the results screen: nothing happens to them.
+export function restingFighter(
+  user: PublicUser,
+  score: number,
+  meId: string,
+  action: HeroAction,
+): ArenaFighter {
   return {
     id: user.id,
     name: user.username,
     heroKey: user.avatarKey,
     petKey: user.petKey,
-    isMe: user.id === moment.meId,
-    score: moment.scores[user.id] ?? player.score,
-    action: actionFor(roundResult, lockedOut),
+    isMe: user.id === meId,
+    score,
+    action,
+    points: null,
+    answered: false,
+    away: false,
+    charges: 0,
+    lockedOut: false,
+    frozen: false,
+    inked: false,
+  };
+}
+
+// A hero in a running match, with everything that happens to them at this moment.
+export function toFighter(player: MatchPlayerView, moment: FighterMoment): ArenaFighter {
+  const { user } = player;
+  const roundResult = moment.round?.players.find((result) => result.userId === user.id) ?? null;
+  const lockedOut = moment.lockedOutUserIds.includes(user.id);
+  const score = moment.scores[user.id] ?? player.score;
+  return {
+    ...restingFighter(user, score, moment.meId, actionFor(roundResult, lockedOut)),
     points: roundResult?.correct ? roundResult.points : null,
     answered: moment.answeredUserIds.includes(user.id),
     away: user.id !== moment.meId && moment.leftUserIds.includes(user.id),
