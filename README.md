@@ -1,7 +1,8 @@
 # AI QuizVerse
 
 A pixel-art study game. Type a topic or upload a lesson (PDF) and the app turns it into a quiz or a
-five-step learning path with short study cards. Play alone, duel a friend or team up, and every
+five-step learning path with short study cards. Play alone, team up, or throw a party for up to
+four friends where the first right answer wins the round, and every
 question you miss goes into your mistakes notebook so it comes back for review until you know it.
 
 Built for the RWA course: **Angular 21 + NgRx**, **NestJS 11 + Prisma + PostgreSQL**, **RxJS** and
@@ -30,7 +31,8 @@ are always playable.
 | `demo@quizverse.dev`   | `demo1234` | has coins, items and quizzes  |
 | `friend@quizverse.dev` | `demo1234` | already friends with the demo |
 
-Open the second account in a private window to try duels and team matches.
+Open the second account on http://127.0.0.1:4200 (a separate session) to try party and team
+matches together.
 
 ### Coin purchases
 

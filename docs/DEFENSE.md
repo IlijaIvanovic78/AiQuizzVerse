@@ -13,26 +13,35 @@ Opšti pregled arhitekture je u [ARCHITECTURE.md](ARCHITECTURE.md).
 
 AI QuizVerse je pixel-art igra za učenje. Korisnik upiše temu ili otpremi PDF lekciju, a AI
 (OpenAI preko LangChain-a) napravi kviz sa pitanjima, hintovima i objašnjenjima. Kviz može da se
-napiše i ručno. Postoje četiri načina igre: **SOLO** (sam protiv sanduka sa blagom), **DUEL**
-(dvoje igrača jedan protiv drugog, bez pojačanja), **TEAM** (dvoje igrača u timu, pobeđuju ako
-zajedno imaju bar 60% tačnih) i **PARTY** "Ko zna zna" (2-4 igrača, prvi tačan odgovor nosi
-rundu, pogrešan odgovor izbacuje iz runde i oduzima 25 poena, a igrači mogu da sabotiraju jedni
-druge mastilom, zamrzavanjem, mešanjem odgovora, maglom, zemljotresom ili ogledalom, ili da
-podignu štit). **Learning path** je putanja od 5 koraka, od lakog do teškog: svaki korak ima
+napiše i ručno. Postoje tri načina igre: **SOLO** (sam protiv sanduka sa blagom), **TEAM**
+(dvoje igrača u timu, pobeđuju ako zajedno imaju bar 60% tačnih) i **PARTY** "Ko zna zna" (2-4
+igrača; dvoje prijatelja koji hoće da igraju jedan protiv drugog igraju partiju za dvoje). U
+partiji prvi tačan odgovor nosi rundu, pogrešan odgovor izbacuje iz runde i oduzima 25 poena, a
+igrači mogu da sabotiraju jedni druge mastilom, zamrzavanjem, mešanjem odgovora, maglom,
+zemljotresom ili ogledalom, ili da podignu štit. Pojačanja rade samo u SOLO i TEAM; partija je
+fer borba. **Learning path** je putanja od 5 koraka, od lakog do teškog: svaki korak ima
 kratku karticu za učenje i kviz, zvezdice se dobijaju za 60/80/100% tačnih, nagrada stiže pri
 prvom prelasku, a sledeći korak se otključava tek kad se pređe prethodni. Svako pogrešno pitanje
 ide u **Mistakes notebook** i vraća se na ponavljanje posle 1, 3 i 7 dana, dok se ne odgovori
 tačno tri puta zaredom (spaced repetition). Igrač skuplja XP, nivoe, dnevni niz (streak) i
-novčiće, kojima u **prodavnici** kupuje heroje, ljubimce i pojačanja (hint, 50/50, dodatno
-vreme, druga šansa).
+novčiće, kojima u **prodavnici** kupuje heroje, ljubimce, sabotaže i pojačanja (hint, 50/50,
+dodatno vreme, druga šansa).
+
+**Sabotaže se otključavaju u prodavnici.** Mastilo (INK) je besplatno za sve i nije predmet.
+Ostalih šest (FREEZE, SCRAMBLE, FOG, MIRROR, QUAKE, SHIELD) su predmeti od 80 do 150 novčića,
+od nivoa 2 do 4: kupe se jednom i ostaju zauvek, a mogu i da ispadnu iz kovčega. Kupljena
+sabotaža ne daje ništa sama: i dalje troši naboj, a naboji se dobijaju samo igrom (1 na početku,
++1 za svaku dobijenu rundu, najviše 2, jedna sabotaža po pitanju). Pravilo je **novac kupuje
+raznovrsnost, ne snagu** ("money buys variety, not power"). Server pri startu meča pročita koje
+sabotaže svaki igrač ima i odbije onu koju nema, pre nego što potroši naboj.
 
 **Kovčezi** (drveni, srebrni, zlatni) se ne mogu kupiti ni novčićima ni pravim novcem, nego se
-zarađuju igrom i učenjem: prvi dobar meč u danu, pobeda u duelu ili partiji, prelazak koraka
-putanje, novi nivo i svakih 7 dana niza. Otvaraju se u "Treasure room" i daju novčiće,
-pojačanja ili, retko, heroja ili ljubimca; neki heroji i ljubimci postoje samo u kovčezima, a
-predmet koji igrač već ima pretvara se u novčiće. Šanse za svaki kovčeg su javne i prikazane na
-istoj stranici. (Kovčeg nije isto što i "sanduk sa blagom" u SOLO, TEAM i meču na putanji; to
-je samo traka koja se puni tačnim odgovorima.)
+zarađuju igrom i učenjem: prvi dobar meč u danu, pobeda u partiji, prelazak koraka putanje, novi
+nivo i svakih 7 dana niza. Otvaraju se u "Treasure room" i daju novčiće, pojačanja ili, retko,
+"običan predmet" (heroja, ljubimca ili sabotažu iz prodavnice do 150 novčića); neki heroji i
+ljubimci postoje samo u kovčezima, a predmet koji igrač već ima pretvara se u novčiće. Šanse
+za svaki kovčeg su javne i prikazane na istoj stranici. (Kovčeg nije isto što i "sanduk sa
+blagom" u SOLO, TEAM i meču na putanji; to je samo traka koja se puni tačnim odgovorima.)
 
 Novčići mogu i da se kupe, ali samo iza "grown-ups only" pitanja i sa mesečnim limitom od 10 EUR,
 preko demo checkout-a ili Stripe-a u test modu (pravi novac se nikad ne naplaćuje). Mečevi rade
@@ -71,11 +80,13 @@ Demo kvizovi iz seed-a su uvek igrivi.
 
 | Email                  | Lozinka    | Napomena                                                                          |
 | ---------------------- | ---------- | --------------------------------------------------------------------------------- |
-| `demo@quizverse.dev`   | `demo1234` | ima novčiće, pojačanja, heroja, ljubimca, kvizove i tri neotvorena kovčega (drveni, srebrni, zlatni) |
-| `friend@quizverse.dev` | `demo1234` | već je prijatelj sa demo nalogom, ima jedan drveni kovčeg                        |
+| `demo@quizverse.dev`   | `demo1234` | nivo 5, ima novčiće, pojačanja, heroja, ljubimca, kvizove, sabotaže FREEZE, FOG i SHIELD i tri neotvorena kovčega (drveni, srebrni, zlatni) |
+| `friend@quizverse.dev` | `demo1234` | nivo 4, već je prijatelj sa demo nalogom, ima sabotažu SCRAMBLE i jedan drveni kovčeg |
 
+Oba imaju i besplatno mastilo (INK). Sabotaže demo naloga su u seed-u
+([seed.ts:69](../backend/prisma/seed.ts#L69), [seed.ts:81](../backend/prisma/seed.ts#L81)).
 Kovčezi iz seed-a se dodaju samo dok nalog nema nijedan, pa ih restart ne vraća posle otvaranja
-([seed.ts:117-124](../backend/prisma/seed.ts#L117-L124)).
+([seed.ts:123-130](../backend/prisma/seed.ts#L123-L130)).
 
 ### Trik: dva igrača u istom browseru
 
@@ -87,11 +98,12 @@ gađaju isti Angular dev server i isti backend.
 
 1. Prozor A: `http://localhost:4200` → login kao `demo@quizverse.dev`.
 2. Prozor B: `http://127.0.0.1:4200` → login kao `friend@quizverse.dev`.
-3. U A: Library → neki kviz → Play → "Duel a friend" (ili Team/Party).
-4. U lobiju A klikne Invite pored prijatelja. B dobije `duel:invite` dijalog i prihvati ga
-   (dugme Accept, za Team "Team up", za Party "Join the party").
+3. U A: Library → neki kviz → Play → "Party with friends (2-4)" (ili "Team up").
+4. U lobiju A klikne Invite pored prijatelja. B dobije `match:invite` dijalog i prihvati ga
+   (dugme "Join the party", za Team "Team up").
    Druga mogućnost: B otvori `/join` i ukuca kod sa ekrana A.
-5. Kad su oba povezana, host (A) klikne dugme za start u lobiju.
+5. Kad su oba povezana, host (A) klikne dugme za start u lobiju. Partija kreće već sa dva
+   igrača, pa je ovo i meč jedan na jedan.
 
 Dva taba na istom originu su isti korisnik (deli se `localStorage`), zato je trik potreban.
 Može i privatni prozor. Napomena: Stripe se posle plaćanja vraća na `FRONTEND_URL`
@@ -125,28 +137,28 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | Zahtev | Gde | Zašto baš tu |
 | --- | --- | --- |
 | `map` | [realtime.effects.ts:19-21](../frontend/src/app/store/realtime/realtime.effects.ts#L19-L21), [quizzes.effects.ts:47-50](../frontend/src/app/store/quizzes/quizzes.effects.ts#L47-L50) | Socket događaj ili HTTP odgovor pretvara u NgRx akciju, jer reducer razume samo akcije. |
-| `reduce` | [path-page.component.ts:76-78](../frontend/src/app/features/paths/path-page.component.ts#L76-L78), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:46-49](../backend/src/modules/matches/scoring.ts#L46-L49) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:24](../frontend/src/app/features/play/components/mistake-list.component.ts#L24). |
-| `filter` | backend [match-session.ts:288](../backend/src/modules/matches/match-session.ts#L288), [match.effects.ts:401-404](../frontend/src/app/store/match/match.effects.ts#L401-L404), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. |
+| `reduce` | [path-page.component.ts:76-78](../frontend/src/app/features/paths/path-page.component.ts#L76-L78), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:35-38](../backend/src/modules/matches/scoring.ts#L35-L38) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:24](../frontend/src/app/features/play/components/mistake-list.component.ts#L24). |
+| `filter` | backend [match-session.ts:290](../backend/src/modules/matches/match-session.ts#L290), [match.effects.ts:401-404](../frontend/src/app/store/match/match.effects.ts#L401-L404), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. |
 | `forEach` | [sound.service.ts:59-63](../frontend/src/app/core/sound/sound.service.ts#L59-L63), backend [matches.service.ts:143-145](../backend/src/modules/matches/matches.service.ts#L143-L145) | Svaku notu melodije zakaže sa malim razmakom (level-up džingl). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
 | fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:46](../frontend/src/app/app.config.ts#L46) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
 | Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:75-83](../backend/src/modules/learning-paths/path-generation.service.ts#L75-L83) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:74](../frontend/src/app/app.config.ts#L74)). Backend paralelno piše 5 koraka putanje. |
 | `switchMap` | [register-page.component.ts:111-118](../frontend/src/app/features/auth/register-page.component.ts#L111-L118), [friends.effects.ts:41-48](../frontend/src/app/store/friends/friends.effects.ts#L41-L48), [match-clock.service.ts:61-67](../frontend/src/app/features/play/match-clock.service.ts#L61-L67), backend [match-session.ts:112-114](../backend/src/modules/matches/match-session.ts#L112-L114) | Nova vrednost otkazuje prethodni posao: staru proveru imena, staru pretragu, stari tajmer, stari rok runde (posle EXTRA_TIME). |
-| `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:85](../frontend/src/app/features/play/match-clock.service.ts#L85), backend [match-session.ts:291](../backend/src/modules/matches/match-session.ts#L291) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
-| `takeUntil` | backend [match-session.ts:292](../backend/src/modules/matches/match-session.ts#L292), [match-session.ts:742-744](../backend/src/modules/matches/match-session.ts#L742-L744), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
-| `zip` | [match-clock.service.ts:74-79](../frontend/src/app/features/play/match-clock.service.ts#L74-L79), [mistake-list.component.ts:18-29](../frontend/src/app/features/play/components/mistake-list.component.ts#L18-L29) | Upari svaku labelu `3, 2, 1, GO!` sa tikom tajmera, pa izlaze jedna po jedna na 750 ms. Isto za redove "pogrešnih" pitanja na rezultatima. |
-| `merge` | [realtime.effects.ts:50-61](../frontend/src/app/store/realtime/realtime.effects.ts#L50-L61), [match.effects.ts:286-292](../frontend/src/app/store/match/match.effects.ts#L286-L292), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87) | Više socket tokova spaja u jedan tok akcija (jedan efekat umesto deset). Tajmer staje na prvi od dva događaja (odgovor ili kraj runde). |
+| `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:82](../frontend/src/app/features/play/match-clock.service.ts#L82), backend [match-session.ts:293](../backend/src/modules/matches/match-session.ts#L293) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
+| `takeUntil` | backend [match-session.ts:294](../backend/src/modules/matches/match-session.ts#L294), [match-session.ts:741-743](../backend/src/modules/matches/match-session.ts#L741-L743), [match-clock.service.ts:84](../frontend/src/app/features/play/match-clock.service.ts#L84), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
+| `zip` | [match-clock.service.ts:74-76](../frontend/src/app/features/play/match-clock.service.ts#L74-L76), [mistake-list.component.ts:18-29](../frontend/src/app/features/play/components/mistake-list.component.ts#L18-L29) | Upari svaku labelu `3, 2, 1, GO!` sa tikom tajmera, pa izlaze jedna po jedna na 750 ms. Isto za redove "pogrešnih" pitanja na rezultatima. |
+| `merge` | [realtime.effects.ts:50-61](../frontend/src/app/store/realtime/realtime.effects.ts#L50-L61), [match.effects.ts:286-292](../frontend/src/app/store/match/match.effects.ts#L286-L292), [match-clock.service.ts:84](../frontend/src/app/features/play/match-clock.service.ts#L84) | Više socket tokova spaja u jedan tok akcija (jedan efekat umesto deset). Tajmer staje na prvi od dva događaja (odgovor ili kraj runde). |
 
 ### Angular
 
 | Zahtev | Gde | Zašto baš tu |
 | --- | --- | --- |
-| Komponente i servisi | [answer-grid.component.ts:32-40](../frontend/src/app/features/play/components/answer-grid.component.ts#L32-L40), [match-page.component.ts:70-109](../frontend/src/app/features/play/match-page.component.ts#L70-L109), [quizzes-api.service.ts:15-18](../frontend/src/app/core/api/quizzes-api.service.ts#L15-L18), [token-storage.service.ts:6-7](../frontend/src/app/core/auth/token-storage.service.ts#L6-L7) | Prezentaciona komponenta (AnswerGrid) samo crta i javlja klik. Stranica (MatchPage) čita store i šalje akcije. Servis drži ono što nije prikaz: HTTP pozive, tokene. |
-| Ulazni i izlazni parametri | [answer-grid.component.ts:41-57](../frontend/src/app/features/play/components/answer-grid.component.ts#L41-L57), [match-page.component.html:169-182](../frontend/src/app/features/play/match-page.component.html#L169-L182), [quiz-card.component.ts:42-46](../frontend/src/app/shared/components/quiz-card.component.ts#L42-L46), [library-page.component.html:56](../frontend/src/app/features/library/library-page.component.html#L56) | `input()` donosi podatke od roditelja, `output()` šalje događaj nazad. AnswerGrid ne zna ništa o socketima, samo emituje indeks kliknutog odgovora. |
-| Dependency injection | [match-page.component.ts:99-105](../frontend/src/app/features/play/match-page.component.ts#L99-L105), [match-page.component.ts:112-118](../frontend/src/app/features/play/match-page.component.ts#L112-L118), [token-refresh.service.ts:9-13](../frontend/src/app/core/auth/token-refresh.service.ts#L9-L13) | `inject()` uzima zavisnost. `providers` na komponenti pravi novi `MatchClockService` za svaku stranicu meča, pa tajmeri nestaju sa stranicom. `providedIn: 'root'` je jedan primerak za celu aplikaciju. |
-| NgRx store | [app.config.ts:47-58](../frontend/src/app/app.config.ts#L47-L58), [auth.reducer.ts:28-92](../frontend/src/app/store/auth/auth.reducer.ts#L28-L92), [path-page.component.ts:60](../frontend/src/app/features/paths/path-page.component.ts#L60) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
+| Komponente i servisi | [answer-grid.component.ts:32-40](../frontend/src/app/features/play/components/answer-grid.component.ts#L32-L40), [match-page.component.ts:69-108](../frontend/src/app/features/play/match-page.component.ts#L69-L108), [quizzes-api.service.ts:15-18](../frontend/src/app/core/api/quizzes-api.service.ts#L15-L18), [token-storage.service.ts:6-7](../frontend/src/app/core/auth/token-storage.service.ts#L6-L7) | Prezentaciona komponenta (AnswerGrid) samo crta i javlja klik. Stranica (MatchPage) čita store i šalje akcije. Servis drži ono što nije prikaz: HTTP pozive, tokene. |
+| Ulazni i izlazni parametri | [answer-grid.component.ts:41-57](../frontend/src/app/features/play/components/answer-grid.component.ts#L41-L57), [match-page.component.html:168-181](../frontend/src/app/features/play/match-page.component.html#L168-L181), [quiz-card.component.ts:42-46](../frontend/src/app/shared/components/quiz-card.component.ts#L42-L46), [library-page.component.html:56](../frontend/src/app/features/library/library-page.component.html#L56) | `input()` donosi podatke od roditelja, `output()` šalje događaj nazad. AnswerGrid ne zna ništa o socketima, samo emituje indeks kliknutog odgovora. |
+| Dependency injection | [match-page.component.ts:98-104](../frontend/src/app/features/play/match-page.component.ts#L98-L104), [match-page.component.ts:111-117](../frontend/src/app/features/play/match-page.component.ts#L111-L117), [token-refresh.service.ts:9-13](../frontend/src/app/core/auth/token-refresh.service.ts#L9-L13) | `inject()` uzima zavisnost. `providers` na komponenti pravi novi `MatchClockService` za svaku stranicu meča, pa tajmeri nestaju sa stranicom. `providedIn: 'root'` je jedan primerak za celu aplikaciju. |
+| NgRx store | [app.config.ts:47-58](../frontend/src/app/app.config.ts#L47-L58), [auth.reducer.ts:28-101](../frontend/src/app/store/auth/auth.reducer.ts#L28-L101), [path-page.component.ts:60](../frontend/src/app/features/paths/path-page.component.ts#L60) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
 | NgRx entity | [quizzes.reducer.ts:23-26](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L23-L26), [quizzes.reducer.ts:139-147](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L139-L147), [friends.reducer.ts:23-24](../frontend/src/app/store/friends/friends.reducer.ts#L23-L24), [friends.reducer.ts:104](../frontend/src/app/store/friends/friends.reducer.ts#L104), [shop.reducer.ts:21-23](../frontend/src/app/store/shop/shop.reducer.ts#L21-L23), kovčezi [chests.reducer.ts:20-23](../frontend/src/app/store/chests/chests.reducer.ts#L20-L23), [chests.reducer.ts:60](../frontend/src/app/store/chests/chests.reducer.ts#L60), [chests.reducer.ts:80](../frontend/src/app/store/chests/chests.reducer.ts#L80), [chests.reducer.ts:67-70](../frontend/src/app/store/chests/chests.reducer.ts#L67-L70) | Liste koje se menjaju element po element: obrisan kviz (`removeOne`), promenjen online status prijatelja (`updateOne`), kupljen predmet. Prijatelji imaju `selectId`, jer im je ključ `friendshipId`. Neotvoreni kovčezi su najbolji primer: `chest:earned` doda jedan (`addOne`), otvaranje ga skine (`removeOne`), a `selectTotal` daje broj na ikonici u gornjoj traci bez ručnog brojanja. |
 | NgRx effects | [quizzes.effects.ts:44-54](../frontend/src/app/store/quizzes/quizzes.effects.ts#L44-L54), [match.effects.ts:139-147](../frontend/src/app/store/match/match.effects.ts#L139-L147), [realtime.effects.ts:18-62](../frontend/src/app/store/realtime/realtime.effects.ts#L18-L62) | Sve što izlazi napolje (HTTP, socket, navigacija, toast) je u efektima, pa reducer ostaje čista funkcija. Registracija: [app.config.ts:59-72](../frontend/src/app/app.config.ts#L59-L72). |
-| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:44](../frontend/src/app/app.config.ts#L44), [match-page.component.ts:110](../frontend/src/app/features/play/match-page.component.ts#L110) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
+| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:44](../frontend/src/app/app.config.ts#L44), [match-page.component.ts:109](../frontend/src/app/features/play/match-page.component.ts#L109) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
 
 ### NestJS, Docker, baza
 
@@ -318,12 +330,12 @@ preko `Subject`-a, a rok runde je `BehaviorSubject`
 
 `deadline$` emituje kad istekne vreme. Kad neko iskoristi EXTRA_TIME, u `deadlineAt$` se upiše
 novo, kasnije vreme, a `switchMap` **otkaže stari tajmer** i pokrene novi
-([match-session.ts:481-486](../backend/src/modules/matches/match-session.ts#L481-L486)).
+([match-session.ts:483-488](../backend/src/modules/matches/match-session.ts#L483-L488)).
 
 Gateway primi `match:answer` i preda ga sesiji
 ([match.gateway.ts:131-135](../backend/src/modules/matches/match.gateway.ts#L131-L135)). Sesija
 sama izračuna koliko je vremena ostalo, ne veruje klijentu
-([match-session.ts:160-170](../backend/src/modules/matches/match-session.ts#L160-L170)):
+([match-session.ts:162-172](../backend/src/modules/matches/match-session.ts#L162-L172)):
 
 ```ts
   submitAnswer(userId: string, questionIndex: number, optionIndex: number): void {
@@ -344,7 +356,7 @@ Ako je igrač uključio drugu šansu, prvi pogrešan odgovor ne ulazi u `answers
 
 Runda počinje u `playRound`. Bitan redosled: **prvo se pretplati** na odgovore, pa tek onda
 pošalje pitanje, da nijedan brzi odgovor ne promakne
-([match-session.ts:270-282](../backend/src/modules/matches/match-session.ts#L270-L282)):
+([match-session.ts:272-284](../backend/src/modules/matches/match-session.ts#L272-L284)):
 
 ```ts
   private playRound(index: number): void {
@@ -362,7 +374,7 @@ pošalje pitanje, da nijedan brzi odgovor ne promakne
   }
 ```
 
-Srce runde ([match-session.ts:284-295](../backend/src/modules/matches/match-session.ts#L284-L295)):
+Srce runde ([match-session.ts:286-297](../backend/src/modules/matches/match-session.ts#L286-L297)):
 
 ```ts
   // take() ends the round once everyone has answered and takeUntil() when the time is up.
@@ -383,7 +395,7 @@ Srce runde ([match-session.ts:284-295](../backend/src/modules/matches/match-sess
 
 - `filter` pušta samo odgovore na **ovo** pitanje, od igrača koji su u rundi i još nisu odgovorili.
   Zato dupli klik ili zakasneli odgovor ne mogu da "potroše" mesto u `take`.
-- `tap` zabeleži odgovor i javi sobi `match:answered` (drugi vide "Opponent answered").
+- `tap` zabeleži odgovor i javi sobi `match:answered` (drugi vide oznaku "Answered" na tom igraču).
 - `takeWhile(..., true)` važi samo za PARTY: prvi tačan odgovor završava rundu, a `true` znači da i
   taj odgovor ulazi u rezultat.
 - `take(n)`: kad stigne onoliko odgovora koliko ima igrača, runda je gotova odmah.
@@ -395,14 +407,14 @@ Srce runde ([match-session.ts:284-295](../backend/src/modules/matches/match-sess
 [scoring.ts:22-28](../backend/src/modules/matches/scoring.ts#L22-L28)), pošalje svakom igraču
 `match:round-result` i čeka da svi pritisnu Next, istim RxJS oblikom: `filter`, `distinct`, `tap`,
 `take`, `takeUntil(timer(...))`, `toArray`
-([match-session.ts:415-424](../backend/src/modules/matches/match-session.ts#L415-L424)). Posle
+([match-session.ts:417-426](../backend/src/modules/matches/match-session.ts#L417-L426)). Posle
 poslednjeg pitanja `finish` u jednoj transakciji snimi rezultate, nagrade, Mistakes notebook i
 korak putanje ([match-results.service.ts:79-102](../backend/src/modules/matches/match-results.service.ts#L79-L102)).
 Odložene akcije sesije idu kroz `after()` sa `takeUntil(this.destroy$)`
-([match-session.ts:742-744](../backend/src/modules/matches/match-session.ts#L742-L744)), a
+([match-session.ts:741-743](../backend/src/modules/matches/match-session.ts#L741-L743)), a
 pretplate na odgovore i na Next takođe imaju `takeUntil(this.destroy$)`, pa `stop()` gasi sve
 odjednom
-([match-session.ts:265-268](../backend/src/modules/matches/match-session.ts#L265-L268)).
+([match-session.ts:267-270](../backend/src/modules/matches/match-session.ts#L267-L270)).
 
 ### d) Kako socket događaji ulaze u NgRx (merge u efektu)
 
@@ -433,7 +445,7 @@ odjednom
       friendRemoved$,
       friendOnline$,
       friendOffline$,
-      duelInvite$,
+      matchInvite$,
       coinsUpdated$,
       quizProgress$,
       chestEarned$,
@@ -460,7 +472,7 @@ odjednom
 ```
 
    `entered` se šalje kad se stranica otvori, `left` kad se uništi
-   ([match-page.component.ts:267-279](../frontend/src/app/features/play/match-page.component.ts#L267-L279)).
+   ([match-page.component.ts:264-276](../frontend/src/app/features/play/match-page.component.ts#L264-L276)).
    `switchMap` za novi meč otkaže tokove starog, `takeUntil(left)` ih gasi pri izlasku. Unutra,
    `forMatch(matchId)` filtrira događaje drugog meča
    ([match.effects.ts:401-404](../frontend/src/app/store/match/match.effects.ts#L401-L404)), a
@@ -471,14 +483,11 @@ odjednom
 ### e) Odbrojavanje sa zip i tajmer sa takeUntil (frontend)
 
 Sve je u `MatchClockService`, koji je provider stranice meča, pa živi koliko i stranica
-([match-clock.service.ts:74-89](../frontend/src/app/features/play/match-clock.service.ts#L74-L89)):
+([match-clock.service.ts:74-86](../frontend/src/app/features/play/match-clock.service.ts#L74-L86)):
 
 ```ts
   private countdownLabels(): Observable<string> {
-    const finalWord = this.mode() === 'DUEL' ? 'FIGHT!' : 'GO!';
-    return zip(from([...COUNTDOWN_NUMBERS, finalWord]), timer(0, COUNTDOWN_STEP_MS)).pipe(
-      map(([label]) => label),
-    );
+    return zip(from(COUNTDOWN_LABELS), timer(0, COUNTDOWN_STEP_MS)).pipe(map(([label]) => label));
   }
 
   // The bar freezes when the player answers, which shows how fast they were.
@@ -492,8 +501,10 @@ Sve je u `MatchClockService`, koji je provider stranice meča, pa živi koliko i
   }
 ```
 
-- **zip**: `from([...])` bi odmah izbacio sve četiri labele. `timer(0, 750)` kuca na 750 ms.
-  `zip` čeka po jednu vrednost iz oba toka i pravi par, pa labele izlaze tempom tajmera:
+- **zip**: `from(COUNTDOWN_LABELS)` bi odmah izbacio sve četiri labele `['3', '2', '1', 'GO!']`
+  ([play.constants.ts:8-10](../frontend/src/app/features/play/play.constants.ts#L8-L10)), a
+  `timer(0, 750)` kuca na 750 ms. `zip` čeka po jednu vrednost iz oba toka i pravi par, pa
+  labele izlaze tempom tajmera:
   `3` (0 ms), `2` (750), `1` (1500), `GO!` (2250). Kad se `from` isprazni, `zip` se završi i
   tajmer staje sam. Ukupno 3 s, isto koliko server čeka pre prvog pitanja.
 - **take**: unapred se zna koliko tikova od 250 ms ima do roka, pa se tok sam završi na nuli.
@@ -677,8 +688,8 @@ Tok kupovine:
    - `findOwnChest` traži kovčeg po id-ju **i** vlasniku, pa tuđi kovčeg daje 404
      ([chests.service.ts:143-149](../backend/src/modules/chests/chests.service.ts#L143-L149)).
      Već otvoren kovčeg odmah daje 409.
-   - `rollReward` učita predmete i šta igrač već ima, pa pozove čistu funkciju
-     `rollChest(..., Math.random)`
+   - `rollReward` učita predmete i šta igrač već ima, `itemPools` od predmeta napravi dva
+     skupa, pa pozove čistu funkciju `rollChest(..., Math.random)`
      ([chests.service.ts:101-108](../backend/src/modules/chests/chests.service.ts#L101-L108)).
      Izvlačenje samo čita, zato je pre transakcije, koja ostaje kratka.
    - **Idempotentnost**: `updateMany` sa `openedAt: null` u `where` je provera i upis u jednom
@@ -691,9 +702,13 @@ Tok kupovine:
      Ili prođe sve (kovčeg otvoren i nagrada isplaćena), ili ništa.
    - Posle commit-a, ako je nagrada donela novčiće (i duplikat ih donosi), ide `coins:updated`,
      isto kao kod plaćanja.
-5. Izvlačenje je čista funkcija `rollChest`
+5. Skupovi predmeta ([chests.rules.ts:62-69](../backend/src/modules/chests/chests.rules.ts#L62-L69)):
+   "običan predmet" (`BASIC`) je svaki heroj, ljubimac **ili sabotaža** iz prodavnice koji nije
+   početni ni samo-iz-kovčega i košta najviše 150 (`BASIC_ITEM_MAX_PRICE`), pa su u njemu svih
+   šest sabotaža; `CHEST_ONLY` su heroji i ljubimci koji postoje samo u kovčezima. Izvlačenje je
+   čista funkcija `rollChest`
    ([chests.rules.ts:71-91](../backend/src/modules/chests/chests.rules.ts#L71-L91)): prvo izbaci
-   red za skin ako nema nijednog takvog predmeta, pa bira red iz tabele po težini
+   red za predmet ako je njegov skup prazan, pa bira red iz tabele po težini
    ([chests.rules.ts:125-135](../backend/src/modules/chests/chests.rules.ts#L125-L135)):
 
 ```ts
@@ -712,18 +727,19 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
 
    Primer za drveni kovčeg (težine 70, 27, 3, ukupno 100): `random()` = 0.5 daje 50, što je
    manje od 70, pa ispadaju novčići. 0.8 daje 80: nije manje od 70, ostaje 10, što je manje od
-   27, pa ispada pojačanje. 0.98 daje 98, posle oduzimanja 70 i 27 ostaje 1, pa ispada skin.
+   27, pa ispada pojačanje. 0.98 daje 98, posle oduzimanja 70 i 27 ostaje 1, pa ispada običan
+   predmet (heroj, ljubimac ili sabotaža).
    Predmet koji igrač već ima postaje novčići (njegova cena, ili 150 za predmet koji postoji samo
    u kovčezima)
    ([chests.rules.ts:93-96](../backend/src/modules/chests/chests.rules.ts#L93-L96),
    [chests.rules.ts:161-165](../backend/src/modules/chests/chests.rules.ts#L161-L165)).
 6. **Ubačena random funkcija zbog testova.** `rollChest` ne zove `Math.random` sam, nego ga dobija
    kao parametar tipa `RandomFn`
-   ([chests.rules.ts:26-27](../backend/src/modules/chests/chests.rules.ts#L26-L27)). Servis
+   ([chests.rules.ts:25-26](../backend/src/modules/chests/chests.rules.ts#L25-L26)). Servis
    prosledi `Math.random`, a test funkciju koja vraća zadate brojeve redom
-   ([chests.rules.spec.ts:25-34](../backend/src/modules/chests/chests.rules.spec.ts#L25-L34)),
+   ([chests.rules.spec.ts:26-35](../backend/src/modules/chests/chests.rules.spec.ts#L26-L35)),
    pa je rezultat uvek isti
-   ([chests.rules.spec.ts:57-61](../backend/src/modules/chests/chests.rules.spec.ts#L57-L61)):
+   ([chests.rules.spec.ts:59-63](../backend/src/modules/chests/chests.rules.spec.ts#L59-L63)):
 
 ```ts
   it('gives one power-up from a wooden chest', () => {
@@ -740,10 +756,85 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
 7. Frontend posle odgovora: `opened` skida kovčeg iz entity adaptera sa `removeOne` i stavlja ga
    na početak liste nedavnih
    ([chests.reducer.ts:74-85](../frontend/src/app/store/chests/chests.reducer.ts#L74-L85)), a
-   `auth` reducer upiše nove novčiće
-   ([auth.reducer.ts:79-86](../frontend/src/app/store/auth/auth.reducer.ts#L79-L86)). Dijalog
-   pusti animaciju (trese se, poklopac se otvara, nagrada iskoči). Ako zahtev padne (npr. 409 jer
-   je drugi tab bio brži), efekat pokaže grešku i ponovo učita listu.
+   `auth` reducer upiše nove novčiće i, ako je ispala sabotaža, doda je u `user.sabotages`
+   ([auth.reducer.ts:92-95](../frontend/src/app/store/auth/auth.reducer.ts#L92-L95)). Dijalog
+   pusti animaciju (trese se, poklopac se otvara, nagrada iskoči; za sabotažu "New sabotage:
+   Fog!" sa ikonicom). Ako zahtev padne (npr. 409 jer je drugi tab bio brži), efekat pokaže
+   grešku i ponovo učita listu.
+
+### i) Sabotaža: kupovina u prodavnici i provera vlasništva u meču
+
+1. Prodavnica, tab "Sabotages": prvo ide INK kao "Free for everyone". Njega server ne prodaje,
+   pa ga frontend sam napravi kao predmet koji svi već imaju (`FREE_INK`,
+   [shop.constants.ts:25-38](../frontend/src/app/features/shop/shop.constants.ts#L25-L38)) i
+   stavi ispred šest sabotaža sa servera
+   ([shop-page.component.ts:83-84](../frontend/src/app/features/shop/shop-page.component.ts#L83-L84)).
+   Kupovina ide istim putem kao za heroje: dijalog za potvrdu, pa `POST /shop/items/:id/buy`
+   ([shop.controller.ts:32-35](../backend/src/modules/shop/shop.controller.ts#L32-L35)).
+2. Server, `buyItem` ([shop.service.ts:26-37](../backend/src/modules/shop/shop.service.ts#L26-L37)):
+   `assertCanBuy` odbije početni predmet, predmet samo iz kovčega, već kupljen predmet i premali
+   nivo ([shop.service.ts:158-171](../backend/src/modules/shop/shop.service.ts#L158-L171)), pa u
+   jednoj transakciji `spendCoins` skine novčiće uslovnim `updateMany` (`coins: { gte: price }`)
+   i napravi `UserItem` red. Sabotaža se kupuje jednom i ostaje zauvek, ne troši se. Ako dva
+   klika stignu istovremeno, `@@unique([userId, itemId])`
+   ([schema.prisma:336](../backend/prisma/schema.prisma#L336)) pusti samo jedan red, a drugi
+   zahtev dobije 409 i njegova transakcija vrati novčiće. Sabotaža se ne "oblači": equip vraća
+   400 ([shop.service.ts:41-43](../backend/src/modules/shop/shop.service.ts#L41-L43)).
+3. Koje sabotaže igrač ima računa jedna mala čista funkcija
+   ([sabotage-items.ts:12-22](../backend/src/modules/shop/sabotage-items.ts#L12-L22)):
+
+```ts
+export function sabotageItemId(type: SabotageType): string {
+  return SABOTAGE_ITEM_PREFIX + type.toLowerCase();
+}
+
+/** The free sabotages plus the ones bought in the shop or found in a chest. */
+export function ownedSabotages(items: { itemId: string }[]): SabotageType[] {
+  const ownedItemIds = items.map((item) => item.itemId);
+  return SABOTAGE_TYPES.filter(
+    (type) => FREE_SABOTAGES.includes(type) || ownedItemIds.includes(sabotageItemId(type)),
+  );
+}
+```
+
+   Id predmeta je `sabotage-` + tip malim slovima (`sabotage-fog` je FOG), a `FREE_SABOTAGES`
+   je `['INK']` ([matches.constants.ts:57-58](../backend/src/modules/matches/matches.constants.ts#L57-L58)).
+   `CurrentUser.sabotages` se pravi ovom funkcijom
+   ([user.mapper.ts:57](../backend/src/modules/users/user.mapper.ts#L57)), pa frontend zna koja
+   dugmad da pokaže. Posle kupovine `auth` reducer odmah doda novu sabotažu korisniku
+   ([auth.reducer.ts:88-91](../frontend/src/app/store/auth/auth.reducer.ts#L88-L91)).
+4. Meč: vlasništvo se čita **jednom**, kad sesija nastaje. `SESSION_SETUP_INCLUDE` uz meč
+   učita i sabotaže svakog igrača
+   ([match.mapper.ts:53-59](../backend/src/modules/matches/match.mapper.ts#L53-L59)),
+   `toSessionSetup` ih pretvori u listu tipova
+   ([match.mapper.ts:177-180](../backend/src/modules/matches/match.mapper.ts#L177-L180)), a
+   `newPlayer` ih sačuva u igraču sesije
+   ([session-player.ts:33-53](../backend/src/modules/matches/session-player.ts#L33-L53)). Zato
+   runda ostaje sinhrona: nema čekanja na bazu usred pitanja.
+5. Kad stigne `match:sabotage`, `sabotageAttempt` upiše `owned`
+   ([match-session.ts:517](../backend/src/modules/matches/match-session.ts#L517)), a čista
+   funkcija `sabotageError` to proveri odmah posle moda, **pre** naboja
+   ([party-rules.ts:32-49](../backend/src/modules/matches/party-rules.ts#L32-L49)):
+
+```ts
+export function sabotageError(attempt: SabotageAttempt): string | null {
+  if (attempt.mode !== 'PARTY') {
+    return 'Sabotage is only for party matches.';
+  }
+  if (!attempt.owned) {
+    return "You don't own this sabotage yet. You can get it in the shop.";
+  }
+```
+
+   Greška ide igraču kao `match:error`, a naboj se ne troši, jer `sabotage()` skida naboj tek
+   kad provera prođe ([match-session.ts:201-219](../backend/src/modules/matches/match-session.ts#L201-L219)).
+   Test: [match-session.spec.ts:751-761](../backend/src/modules/matches/match-session.spec.ts#L751-L761).
+6. Frontend u partiji pokazuje samo ono što igrač ima: `ownedAttacks` izbaci napade koje nema
+   ([party-round.ts:80-82](../frontend/src/app/features/play/party-round.ts#L80-L82)), dugme za
+   štit postoji samo ako ga ima, a dok mu nešto fali piše "More sabotages in the shop", samo
+   tekst bez linka, jer izlazak iz meča znači predaju
+   ([sabotage-bar.component.ts:31-33](../frontend/src/app/features/play/components/sabotage-bar.component.ts#L31-L33)).
+   To je udobnost; pravo pravilo je na serveru (korak 5).
 
 ---
 
@@ -766,15 +857,16 @@ docker compose restart backend      # start ponovo radi prisma generate
 1. [progression.constants.ts:5](../backend/src/modules/progression/progression.constants.ts#L5):
    `export const XP_PER_CORRECT = 15;`
 2. Koristi se u `answerReward`
-   ([progression.rules.ts:117-123](../backend/src/modules/progression/progression.rules.ts#L117-L123));
+   ([progression.rules.ts:115-121](../backend/src/modules/progression/progression.rules.ts#L115-L121));
    HARD kvizovi množe sa 1.5.
 3. Testovi očekuju stare brojeve
    ([progression.rules.spec.ts:147](../backend/src/modules/progression/progression.rules.spec.ts#L147)
    i dalje): `docker compose exec backend npx jest progression`, pa ispravi očekivane vrednosti.
 
 Frontend ne treba menjati: XP stiže sa servera u rezultatu meča. Slično: novčići po tačnom
-(`COINS_PER_CORRECT`, linija 6), bonus za pobedu u duelu (`DUEL_WIN_BONUS`, linija 11), dnevni
-limit novčića (`DAILY_MATCH_COIN_CAP`, linija 23).
+(`COINS_PER_CORRECT`, linija 6), bonus za pobedu tima (`TEAM_WIN_BONUS`, linija 11), za pobedu
+i nerešeno u partiji (`PARTY_WIN_BONUS` i `PARTY_DRAW_BONUS`, linije 12-13), dnevni limit
+novčića (`DAILY_MATCH_COIN_CAP`, linija 20).
 
 ### 2. Dodaj novo polje u kviz (npr. `description`)
 
@@ -1003,11 +1095,11 @@ Backend:
 
 1. Enum `BoostType` ([schema.prisma:77-83](../backend/prisma/schema.prisma#L77-L83)) dodaj
    `REMOVE_ONE`, pa migracija i restart.
-2. [matches.constants.ts:32-37](../backend/src/modules/matches/matches.constants.ts#L32-L37):
+2. [matches.constants.ts:30-35](../backend/src/modules/matches/matches.constants.ts#L30-L35):
    dodaj `'REMOVE_ONE'` u `MATCH_BOOST_TYPES` (posle `'SECOND_CHANCE'`). Tip `MatchBoostType` je
    `Exclude<BoostType, 'STREAK_FREEZE'>`, pa ga ne diraš; `UseBoostDto` validira preko ove liste.
 3. Efekat u `applyBoost`
-   ([match-session.ts:464-479](../backend/src/modules/matches/match-session.ts#L464-L479)), pre
+   ([match-session.ts:466-481](../backend/src/modules/matches/match-session.ts#L466-L481)), pre
    poslednjeg `return`:
 
 ```ts
@@ -1043,13 +1135,13 @@ prikaz ne treba ništa više.
 Odbrojavanje je zadato na dva mesta, koja moraju da se slažu:
 
 1. Server čeka pre prvog pitanja: `COUNTDOWN_SECONDS`
-   ([matches.constants.ts:26](../backend/src/modules/matches/matches.constants.ts#L26)), koristi se u
-   [match-session.ts:144](../backend/src/modules/matches/match-session.ts#L144).
+   ([matches.constants.ts:24](../backend/src/modules/matches/matches.constants.ts#L24)), koristi se u
+   [match-session.ts:146](../backend/src/modules/matches/match-session.ts#L146).
 2. Animacija na frontendu ([play.constants.ts:8-10](../frontend/src/app/features/play/play.constants.ts#L8-L10)):
-   labele + završna reč, svaka po `COUNTDOWN_STEP_MS`.
+   labele `COUNTDOWN_LABELS` (brojevi i "GO!" na kraju), svaka po `COUNTDOWN_STEP_MS`.
 
 Primer za 5 sekundi: server `COUNTDOWN_SECONDS = 5`; frontend
-`COUNTDOWN_NUMBERS = ['4', '3', '2', '1']` i `COUNTDOWN_STEP_MS = 1000` (4 broja + GO = 5 × 1000 ms).
+`COUNTDOWN_LABELS = ['4', '3', '2', '1', 'GO!']` i `COUNTDOWN_STEP_MS = 1000` (5 labela × 1000 ms).
 
 Vreme po pitanju:
 
@@ -1059,7 +1151,7 @@ Vreme po pitanju:
   [quizzes.constants.ts:11-12](../backend/src/modules/quizzes/quizzes.constants.ts#L11-L12);
 - koraci putanje: [learning-paths.constants.ts:48-52](../backend/src/modules/learning-paths/learning-paths.constants.ts#L48-L52);
 - Mistakes review: [review.constants.ts:8](../backend/src/modules/review/review.constants.ts#L8);
-- dodatno vreme (+15 s): [matches.constants.ts:40](../backend/src/modules/matches/matches.constants.ts#L40)
+- dodatno vreme (+15 s): [matches.constants.ts:38](../backend/src/modules/matches/matches.constants.ts#L38)
   i tekst na dugmetu [play.constants.ts:22](../frontend/src/app/features/play/play.constants.ts#L22).
 
 ### 10. Dodaj novu temu kviza (enum)
@@ -1143,7 +1235,7 @@ Primer: drveni kovčeg češće daje pojačanje, a ređe novčiće.
   WOODEN: [
     { kind: 'COINS', weight: 60, minCoins: 20, maxCoins: 40 },
     { kind: 'BOOSTS', weight: 35, boostCount: 1, streakFreezes: 0 },
-    { kind: 'SKIN', weight: 5, pool: 'BASIC' },
+    { kind: 'ITEM', weight: 5, pool: 'BASIC' },
   ],
 ```
 
@@ -1152,14 +1244,15 @@ Primer: drveni kovčeg češće daje pojačanje, a ređe novčiće.
    zbir na 100, pa su težine isto što i procenti. U istom redu menjaš i opseg novčića
    (`minCoins`, `maxCoins`), broj pojačanja (`boostCount`) i zamrzavanja niza (`streakFreezes`).
 2. Isto mesto, ako treba: koja pojačanja mogu da ispadnu (`CHEST_BOOSTS`, linija 26), najveća
-   cena "običnog" skina (`BASIC_SKIN_MAX_PRICE`, linija 29), koliko novčića vredi duplikat
-   predmeta koji postoji samo u kovčezima (linija 31), i kada se kovčezi dobijaju (linije 33-42).
+   cena "običnog" predmeta, tj. heroja, ljubimca ili sabotaže (`BASIC_ITEM_MAX_PRICE`, linija
+   29), koliko novčića vredi duplikat predmeta koji postoji samo u kovčezima (linija 31), i kada
+   se kovčezi dobijaju (linije 33-41).
    Kovčezi za korake putanje su u `STEP_REWARDS`
    ([learning-paths.constants.ts:55-61](../backend/src/modules/learning-paths/learning-paths.constants.ts#L55-L61)).
 3. Testovi: `docker compose exec backend npx jest chests`. Pašće provera procenata
-   ([chests.rules.spec.ts:117-121](../backend/src/modules/chests/chests.rules.spec.ts#L117-L121),
+   ([chests.rules.spec.ts:125-129](../backend/src/modules/chests/chests.rules.spec.ts#L125-L129),
    sada 60 / 35 / 5) i test koji sa `randomSequence(0.69, ...)` očekuje novčiće
-   ([chests.rules.spec.ts:47-50](../backend/src/modules/chests/chests.rules.spec.ts#L47-L50)):
+   ([chests.rules.spec.ts:49-52](../backend/src/modules/chests/chests.rules.spec.ts#L49-L52)):
    69 više nije manje od 60, pa sada ispada pojačanje. Stavi 0.59. Testovi znaju tačan ishod
    baš zato što se random funkcija ubacuje spolja (odeljak 4h).
 4. Frontend ne treba menjati: panel "Chances" crta ono što vrati `GET /chests/odds`, a to se
@@ -1169,33 +1262,55 @@ Primer: drveni kovčeg češće daje pojačanje, a ređe novčiće.
 
 ### 14. Dodaj novu sabotažu (npr. `SHRINK`: sitna slova odgovora 4 s)
 
-Sabotaža koju samo klijent crta (kao FOG, QUAKE, MIRROR) ne treba nikakvu logiku na serveru:
-server je proveri, skine naboj i javi sobi `match:sabotaged` sa trajanjem.
+Sabotaža koju samo klijent crta (kao FOG, QUAKE, MIRROR) ne treba nikakvu logiku u rundi:
+server je proveri (i to da je igrač ima), skine naboj i javi sobi `match:sabotaged` sa
+trajanjem. Pošto se sabotaže kupuju, nova sabotaža je i **predmet u prodavnici**: treba joj red
+u seed-u, a prodavnica je onda sama prikaže.
 
 Backend:
 
 1. Tip: `| 'SHRINK'` u `SabotageType`
    ([matches.types.ts:25](../backend/src/modules/matches/matches.types.ts#L25)).
-2. Konstante ([matches.constants.ts:50-73](../backend/src/modules/matches/matches.constants.ts#L50-L73)):
+2. Konstante ([matches.constants.ts:48-73](../backend/src/modules/matches/matches.constants.ts#L48-L73)):
    `'SHRINK'` u `SABOTAGE_TYPES`, nova `export const SHRINK_DURATION_MS = 4_000;` i
    `SHRINK: SHRINK_DURATION_MS,` u `SABOTAGE_DURATION_MS`. Ovo poslednje kompajler sam traži, jer
    je to `Record<SabotageType, number>`. DTO već pušta novi tip, jer proverava listu
    `SABOTAGE_TYPES` ([sabotage.dto.ts:12-13](../backend/src/modules/matches/dto/sabotage.dto.ts#L12-L13)).
-3. Ništa više: `sabotage()`
-   ([match-session.ts:198-217](../backend/src/modules/matches/match-session.ts#L198-L217))
+3. Predmet u prodavnici: red na kraju `SEED_ITEMS`, posle ostalih sabotaža
+   ([seed-data/items.ts:105-110](../backend/prisma/seed-data/items.ts#L105-L110)), preko
+   pomoćne funkcije `sabotage`
+   ([seed-data/items.ts:32-50](../backend/prisma/seed-data/items.ts#L32-L50)):
+
+```ts
+  sabotage('sabotage-shrink', 'Shrink', "Shrink a rival's answers for 4 seconds.", 100, 3),
+```
+
+   (cena 100, od nivoa 3). Id mora biti `sabotage-` + tip malim slovima, jer tako
+   `sabotageItemId` povezuje predmet i tip
+   ([sabotage-items.ts:12-14](../backend/src/modules/shop/sabotage-items.ts#L12-L14)); zato
+   `ownedSabotages` sam prepozna kupljen Shrink, i u `CurrentUser.sabotages` i u meču. Pa
+   `docker compose restart backend`: seed uradi `upsert` za svaki predmet
+   ([seed.ts:90-94](../backend/prisma/seed.ts#L90-L94)). Migracija ne treba, jer je to novi red,
+   a ne izmena šeme. Sa cenom do 150 nova sabotaža sama ulazi i u "običan predmet" kovčega.
+4. Ništa više: `sabotage()`
+   ([match-session.ts:201-219](../backend/src/modules/matches/match-session.ts#L201-L219))
    proveri pravila preko `sabotageError`
-   ([party-rules.ts:30-44](../backend/src/modules/matches/party-rules.ts#L30-L44)), štit radi
-   sam, a `applySabotage` ([match-session.ts:544-555](../backend/src/modules/matches/match-session.ts#L544-L555))
+   ([party-rules.ts:32-49](../backend/src/modules/matches/party-rules.ts#L32-L49)), uključujući
+   vlasništvo; štit radi sam, a `applySabotage`
+   ([match-session.ts:547-558](../backend/src/modules/matches/match-session.ts#L547-L558))
    menjaš samo ako server mora nešto da sprovede (kao FREEZE i SCRAMBLE). Za test dodaj
    `SHRINK` u postojeći test
-   ([match-session.spec.ts:606-626](../backend/src/modules/matches/match-session.spec.ts#L606-L626)).
+   ([match-session.spec.ts:612-632](../backend/src/modules/matches/match-session.spec.ts#L612-L632));
+   `setUp` u testu daje igračima sve sabotaže iz `SABOTAGE_TYPES`
+   ([match-session.spec.ts:60-66](../backend/src/modules/matches/match-session.spec.ts#L60-L66)),
+   pa u testu ne treba ništa kupovati.
 
 Frontend:
 
-4. Tip: `| 'SHRINK'` u `SabotageType`
+5. Tip: `| 'SHRINK'` u `SabotageType`
    ([match.model.ts:12-15](../frontend/src/app/core/models/match.model.ts#L12-L15)); `AttackType`
    ga dobije sam.
-5. Tekstovi u `SABOTAGES` (kompajler traži, jer je `Record<AttackType, ...>`)
+6. Tekstovi u `SABOTAGES` (kompajler traži, jer je `Record<AttackType, ...>`)
    ([play.constants.ts:48-103](../frontend/src/app/features/play/play.constants.ts#L48-L103)):
 
 ```ts
@@ -1210,27 +1325,34 @@ Frontend:
   },
 ```
 
-6. Ikonica: `SHRINK: 'mirror'` u `ICON_FILES`
-   ([sabotage-icon.component.ts:17-22](../frontend/src/app/features/play/components/sabotage-icon.component.ts#L17-L22)),
+7. Ikonica (ista komponenta je u prodavnici, u meču i u kovčegu): `SHRINK: 'mirror'` u
+   `ICON_FILES`
+   ([sabotage-icon.component.ts:17-22](../frontend/src/app/shared/components/sabotage-icon.component.ts#L17-L22)),
    ili nova slika 16x16 `assets/images/icons/shrink.png` i `| 'shrink'` u `PixelIconName`
    ([pixel-icon.component.ts:4-22](../frontend/src/app/shared/components/pixel-icon.component.ts#L4-L22)).
-7. Dugme: `'SHRINK'` na kraj liste `ATTACKS`
-   ([sabotage-bar.component.ts:7](../frontend/src/app/features/play/components/sabotage-bar.component.ts#L7)).
-8. Da li sam pogođen, kao signal, pored ostalih
-   ([party-round.service.ts:111-114](../frontend/src/app/features/play/party-round.service.ts#L111-L114)):
+8. Dugme i prodavnica: `'SHRINK'` na kraj liste `ATTACKS`
+   ([sabotages.ts:5-7](../frontend/src/app/shared/sabotages.ts#L5-L7)). Iz nje se pravi i
+   `SABOTAGE_TYPES`, pa `sabotageOfItem` prepozna predmet `sabotage-shrink`, a traka sabotaža ga
+   pokaže kad ga igrač ima (`ownedAttacks`). Tab "Sabotages" ga sam doda, jer lista sve predmete
+   tipa `SABOTAGE` sa servera
+   ([shop.reducer.ts:122-124](../frontend/src/app/store/shop/shop.reducer.ts#L122-L124)).
+9. Da li sam pogođen, kao signal, pored ostalih
+   ([party-round.service.ts:114-117](../frontend/src/app/features/play/party-round.service.ts#L114-L117)):
    `readonly shrunk = computed(() => this.isUnder(this.meId(), 'SHRINK'));`
-9. Efekat na ekranu, isto kao MIRROR: u `AnswerGridComponent`
+10. Efekat na ekranu, isto kao MIRROR: u `AnswerGridComponent`
    ([answer-grid.component.ts:54-56](../frontend/src/app/features/play/components/answer-grid.component.ts#L54-L56))
    `readonly shrunk = input(false);`, u šablonu
    ([answer-grid.component.html:4-5](../frontend/src/app/features/play/components/answer-grid.component.html#L4-L5))
    `[class.answers-shrunk]="shrunk()"`, u CSS-u
    ([answer-grid.component.css:146-150](../frontend/src/app/features/play/components/answer-grid.component.css#L146-L150))
    `.answers-shrunk .answer-text { font-size: 0.6rem; }`, i na stranici meča
-   ([match-page.component.html:179-180](../frontend/src/app/features/play/match-page.component.html#L179-L180))
+   ([match-page.component.html:178-179](../frontend/src/app/features/play/match-page.component.html#L178-L179))
    `[shrunk]="party.shrunk()"`.
 
-Proba: party sa dva prozora (trik iz odeljka 2). Svaki igrač počinje sa jednim nabojem, pa
-odmah na prvom pitanju izaberi Shrink i klikni na heroja drugog igrača.
+Proba: u prozoru A (demo nalog je nivo 5 i ima novčiće) otvori Shop → Sabotages i kupi Shrink.
+Onda party sa dva prozora (trik iz odeljka 2). Svaki igrač počinje sa jednim nabojem, pa odmah
+na prvom pitanju izaberi Shrink i klikni na heroja drugog igrača. Igrač B ga nema, pa kod njega
+dugme Shrink ne postoji, a server bi ga i odbio.
 
 ### 15. Dodaj novog heroja ili ljubimca
 
@@ -1258,16 +1380,17 @@ dogovoru se i slika zove isto.
 ```
 
 3. Seed: red u `SEED_ITEMS`
-   ([seed-data/items.ts:30-83](../backend/prisma/seed-data/items.ts#L30-L83)), preko pomoćnih
-   funkcija sa linija 13-28:
+   ([seed-data/items.ts:52-111](../backend/prisma/seed-data/items.ts#L52-L111)), preko pomoćnih
+   funkcija sa linija 15-30:
    `hero('hero-ice-queen', 'Ice Queen', 210, 4),` (cena 210, od nivoa 4), za ljubimca
    `pet('pet-...', 'Ime', 60, 2),`, a za predmet koji postoji samo u kovčezima
    `chestOnly('hero-ice-queen', 'Ice Queen', 'AVATAR'),`.
 4. `docker compose restart backend`. Migracija ne treba, jer je to red u tabeli, a ne izmena
    šeme; seed pri startu radi `upsert` za svaki predmet
-   ([seed.ts:85-89](../backend/prisma/seed.ts#L85-L89)).
-5. Proba: Shop → Heroes. Predmet do 150 novčića sam ulazi u "običan" skin iz kovčega, a
-   `chestOnly` u ređi red srebrnog i zlatnog kovčega
+   ([seed.ts:90-94](../backend/prisma/seed.ts#L90-L94)).
+5. Proba: Shop → Heroes. Predmet do 150 novčića sam ulazi u "običan predmet" iz kovčega
+   (zajedno sa jeftinijim herojima, ljubimcima i sabotažama), a `chestOnly` u ređi red srebrnog
+   i zlatnog kovčega
    ([chests.rules.ts:62-69](../backend/src/modules/chests/chests.rules.ts#L62-L69)); u
    prodavnici umesto cene piše "Found in chests".
 
@@ -1275,21 +1398,24 @@ dogovoru se i slika zove isto.
 
 | Šta | Gde |
 | --- | --- |
-| Besplatni hintovi po meču | [matches.constants.ts:38](../backend/src/modules/matches/matches.constants.ts#L38) i [store/match/match.constants.ts:3](../frontend/src/app/store/match/match.constants.ts#L3) |
-| Poeni za tačan / bonus za brzinu | [matches.constants.ts:28-29](../backend/src/modules/matches/matches.constants.ts#L28-L29) |
-| Procenat za pobedu tima | [matches.constants.ts:30](../backend/src/modules/matches/matches.constants.ts#L30) i [play.constants.ts:21](../frontend/src/app/features/play/play.constants.ts#L21) |
-| Koliko najduže čeka da svi kliknu Next | [matches.constants.ts:75-81](../backend/src/modules/matches/matches.constants.ts#L75-L81) |
-| Koliko čeka igrača koji je otišao | [matches.constants.ts:83-90](../backend/src/modules/matches/matches.constants.ts#L83-L90) |
+| Besplatni hintovi po meču | [matches.constants.ts:36](../backend/src/modules/matches/matches.constants.ts#L36) i [store/match/match.constants.ts:3](../frontend/src/app/store/match/match.constants.ts#L3) |
+| Poeni za tačan / bonus za brzinu | [matches.constants.ts:26-27](../backend/src/modules/matches/matches.constants.ts#L26-L27) |
+| Procenat za pobedu tima | [matches.constants.ts:28](../backend/src/modules/matches/matches.constants.ts#L28) i [play.constants.ts:21](../frontend/src/app/features/play/play.constants.ts#L21) |
+| Koliko najduže čeka da svi kliknu Next | [matches.constants.ts:75-80](../backend/src/modules/matches/matches.constants.ts#L75-L80) |
+| Koliko čeka igrača koji je otišao | [matches.constants.ts:82-88](../backend/src/modules/matches/matches.constants.ts#L82-L88) |
 | Mesečni limit kupovine | [payments.constants.ts:1-3](../backend/src/modules/payments/payments.constants.ts#L1-L3) |
 | Paketi novčića | [coin-packages.ts:3-7](../backend/src/modules/payments/coin-packages.ts#L3-L7) |
 | Dnevni limit AI generisanja | [quizzes.constants.ts:26](../backend/src/modules/quizzes/quizzes.constants.ts#L26) i [create.constants.ts:28](../frontend/src/app/features/create/create.constants.ts#L28) |
 | Intervali ponavljanja grešaka | [review.constants.ts:4](../backend/src/modules/review/review.constants.ts#L4) |
-| Zvezdice 60/80/100% | [progression.constants.ts:25-27](../backend/src/modules/progression/progression.constants.ts#L25-L27) |
-| Kriva nivoa | [progression.rules.ts:31-37](../backend/src/modules/progression/progression.rules.ts#L31-L37) |
+| Zvezdice 60/80/100% | [progression.constants.ts:22-24](../backend/src/modules/progression/progression.constants.ts#L22-L24) |
+| Kriva nivoa | [progression.rules.ts:29-35](../backend/src/modules/progression/progression.rules.ts#L29-L35) |
 | Šanse u kovčezima | [chests.constants.ts:5-23](../backend/src/modules/chests/chests.constants.ts#L5-L23) |
-| Kada se dobija kovčeg (60%, dve pobede dnevno, svakih 7 dana) | [chests.constants.ts:33-42](../backend/src/modules/chests/chests.constants.ts#L33-L42) |
-| Poeni za tačan odgovor iz druge šanse | [matches.constants.ts:41-42](../backend/src/modules/matches/matches.constants.ts#L41-L42) |
+| Kada se dobija kovčeg (60%, dve pobede dnevno, svakih 7 dana) | [chests.constants.ts:33-41](../backend/src/modules/chests/chests.constants.ts#L33-L41) |
+| Poeni za tačan odgovor iz druge šanse | [matches.constants.ts:39-40](../backend/src/modules/matches/matches.constants.ts#L39-L40) |
 | Cene pojačanja (druga šansa 20) | [shop.constants.ts:3-34](../backend/src/modules/shop/shop.constants.ts#L3-L34) |
+| Cene i nivoi sabotaža (80-150 novčića, nivo 2-4) | [seed-data/items.ts:105-110](../backend/prisma/seed-data/items.ts#L105-L110) |
+| Besplatne sabotaže (INK) | [matches.constants.ts:57-58](../backend/src/modules/matches/matches.constants.ts#L57-L58) |
+| Naboji za sabotaže (1 na početku, najviše 2) | [matches.constants.ts:44-45](../backend/src/modules/matches/matches.constants.ts#L44-L45) |
 | Trajanje sabotaža | [matches.constants.ts:59-73](../backend/src/modules/matches/matches.constants.ts#L59-L73) |
 
 ---
@@ -1299,7 +1425,7 @@ dogovoru se i slika zove isto.
 **1. Zašto server meri vreme, a ne klijent?**
 Klijentu se ne veruje: sat može da se namesti, a poruka putuje mrežom. Server sam upiše
 `remainingMs` kad odgovor stigne
-([match-session.ts:160-170](../backend/src/modules/matches/match-session.ts#L160-L170)) i iz toga
+([match-session.ts:162-172](../backend/src/modules/matches/match-session.ts#L162-L172)) i iz toga
 računa bonus za brzinu ([scoring.ts:22-28](../backend/src/modules/matches/scoring.ts#L22-L28)).
 Rok je na serveru (`deadlineAt$`), a klijent dobija samo "koliko je ostalo" i crta traku.
 
@@ -1354,33 +1480,36 @@ migracije i seed se rade sami, a baza čuva podatke u volumenu. Nema "kod mene r
 **8. Kako se sprečava varanje?**
 
 - Tačan odgovor ne ide klijentu dok runda traje: pitanje nosi samo tekst i opcije
-  ([match-session.ts:701-712](../backend/src/modules/matches/match-session.ts#L701-L712)).
+  ([match-session.ts:700-711](../backend/src/modules/matches/match-session.ts#L700-L711)).
 - Opcije se mešaju po meču, a server ih vraća u originalni redosled pre bodovanja
   ([option-order.ts:10-32](../backend/src/modules/matches/option-order.ts#L10-L32)).
 - Vreme meri server; jedan odgovor po rundi (`canAnswer`,
-  [match-session.ts:297-303](../backend/src/modules/matches/match-session.ts#L297-L303)).
+  [match-session.ts:299-305](../backend/src/modules/matches/match-session.ts#L299-L305)).
 - Socket poruke prolaze DTO validaciju ([match.gateway.ts:36](../backend/src/modules/matches/match.gateway.ts#L36),
   [answer.dto.ts:5-14](../backend/src/modules/matches/dto/answer.dto.ts#L5-L14)).
 - Novčići i pojačanja se troše jednim uslovnim upitom (`updateMany ... gte`), pa ne mogu u minus
-  ([shop.service.ts:130-144](../backend/src/modules/shop/shop.service.ts#L130-L144),
+  ([shop.service.ts:133-147](../backend/src/modules/shop/shop.service.ts#L133-L147),
   [match-play.service.ts:58-64](../backend/src/modules/matches/match-play.service.ts#L58-L64)).
-- U duelu i partiji pojačanja su isključena
-  ([match-session.ts:439-449](../backend/src/modules/matches/match-session.ts#L439-L449)).
-- Nagrada iz kovčega se izvlači na serveru, a sabotaže proverava server
-  ([party-rules.ts:30-44](../backend/src/modules/matches/party-rules.ts#L30-L44)); klijent samo
-  javi nameru i nacrta rezultat.
+- U partiji pojačanja su isključena
+  ([match-session.ts:441-451](../backend/src/modules/matches/match-session.ts#L441-L451)).
+- Nagrada iz kovčega se izvlači na serveru, a sabotaže proverava server, uključujući i to da li
+  ih igrač ima ([party-rules.ts:32-49](../backend/src/modules/matches/party-rules.ts#L32-L49));
+  klijent samo javi nameru i nacrta rezultat. Sakriveno dugme u traci nije zaštita: ručno
+  poslat `match:sabotage` za nekupljenu sabotažu dobije `match:error`.
 
 **9. Šta se dešava ako se igrač diskonektuje?**
 Gateway proverava da li je igraču ostao ijedan socket u sobi meča (više tabova, reconnect)
 ([match.gateway.ts:207-223](../backend/src/modules/matches/match.gateway.ts#L207-L223)). Ako ne,
-`playerDisconnected` ([match-session.ts:233-249](../backend/src/modules/matches/match-session.ts#L233-L249)):
+`playerDisconnected` ([match-session.ts:235-251](../backend/src/modules/matches/match-session.ts#L235-L251)):
 SOLO ide dalje (propuštena pitanja 0 poena) i posle 60 s bez povratka postaje ABANDONED; u
-DUEL/TEAM ostali dobiju `match:player-left`, runde čekaju samo povezane, a posle 30 s duel se
-završava pobedom onoga ko je ostao, a tim postaje ABANDONED; PARTY ide dalje dok su bar dvojica.
+TEAM i PARTY ostali dobiju `match:player-left` i runde čekaju samo povezane. Tim posle 30 s
+postaje ABANDONED. Partija ide dalje dok su bar dvojica; ako ostane samo jedan duže od 30 s, on
+pobeđuje, pa u partiji za dvoje pobedi onaj ko je ostao
+([match-session.ts:613-622](../backend/src/modules/matches/match-session.ts#L613-L622)).
 Kad se vrati, klijent sam pošalje `match:join` na reconnect
 ([match-socket.service.ts:55-58](../frontend/src/app/core/realtime/match-socket.service.ts#L55-L58)),
 a server mu pošalje trenutno pitanje sa preostalim vremenom
-([match-session.ts:672-686](../backend/src/modules/matches/match-session.ts#L672-L686)).
+([match-session.ts:671-685](../backend/src/modules/matches/match-session.ts#L671-L685)).
 
 **10. Kako radi grown-up provera i limit potrošnje?**
 Frontend: modal sa množenjem dvocifrenog i jednocifrenog broja
@@ -1388,7 +1517,7 @@ Frontend: modal sa množenjem dvocifrenog i jednocifrenog broja
 pogrešnog odgovora novo pitanje
 ([grown-up-gate.component.ts:33-43](../frontend/src/app/features/shop/components/grown-up-gate.component.ts#L33-L43));
 tek tačan odgovor šalje checkout
-([shop-page.component.html:169-175](../frontend/src/app/features/shop/shop-page.component.html#L169-L175)).
+([shop-page.component.html:177-183](../frontend/src/app/features/shop/shop-page.component.html#L177-L183)).
 Backend: zbir PAID i otvorenih PENDING kupovina u poslednjih 30 dana + novi paket ne sme preći
 1000 centi ([payments.service.ts:159-179](../backend/src/modules/payments/payments.service.ts#L159-L179),
 [payments.rules.ts:8-10](../backend/src/modules/payments/payments.rules.ts#L8-L10)). Red korisnika
@@ -1484,10 +1613,10 @@ slučajnost postoji samo u kovčezima koji se zarađuju. U kodu:
   ([learning-paths.service.ts:169-184](../backend/src/modules/learning-paths/learning-paths.service.ts#L169-L184)),
   plus seed za demo naloge.
 - Predmet koji postoji samo u kovčezima ne može da se kupi: 400
-  ([shop.service.ts:159-161](../backend/src/modules/shop/shop.service.ts#L159-L161)). Zamrzavanje
+  ([shop.service.ts:162-164](../backend/src/modules/shop/shop.service.ts#L162-L164)). Zamrzavanje
   niza nema cenu (`price: null`), pa i ono vraća 400
   ([shop.constants.ts:28-33](../backend/src/modules/shop/shop.constants.ts#L28-L33),
-  [shop.service.ts:87-91](../backend/src/modules/shop/shop.service.ts#L87-L91)).
+  [shop.service.ts:90-94](../backend/src/modules/shop/shop.service.ts#L90-L94)).
 - Šanse su javne: `GET /chests/odds` ih računa iz iste tabele po kojoj se izvlači
   ([chests.rules.ts:98-112](../backend/src/modules/chests/chests.rules.ts#L98-L112)), a stranica
   ih prikazuje u panelu "Chances".
@@ -1511,25 +1640,25 @@ vreme ne dobiju oba poslednji dnevni kovčeg
 ([chests.service.ts:78-91](../backend/src/modules/chests/chests.service.ts#L78-L91)).
 
 **26. Kako radi Second chance?**
-Pojačanje za SOLO i TEAM (u duelu i partiji su pojačanja isključena), košta 20 novčića ili
-ispadne iz kovčega.
+Pojačanje za SOLO i TEAM (u partiji su pojačanja isključena), košta 20 novčića ili ispadne iz
+kovčega.
 
 1. Igrač klikne dugme pre odgovora. Server proveri da sme (`assertCanUseBoost`), skine jedno
    pojačanje atomičnim `updateMany ... gte: 1` i postavi `secondChance = 'armed'`
-   ([match-session.ts:474-477](../backend/src/modules/matches/match-session.ts#L474-L477)).
+   ([match-session.ts:476-479](../backend/src/modules/matches/match-session.ts#L476-L479)).
 2. Kad stigne odgovor, `submitAnswer` pre slanja u `answers$` pita `secondChanceCovers`
-   ([match-session.ts:488-496](../backend/src/modules/matches/match-session.ts#L488-L496)):
+   ([match-session.ts:490-498](../backend/src/modules/matches/match-session.ts#L490-L498)):
    uključena, ovo pitanje, igrač još sme da odgovori i odgovor je **pogrešan**. Tada odgovor
    uopšte ne ulazi u rundu (pa ga `take(n)` ne broji i runda ne staje), stanje postaje
    `'spent'`, a igrač dobije `match:second-chance { wrongOption }`
-   ([match-session.ts:498-505](../backend/src/modules/matches/match-session.ts#L498-L505)).
+   ([match-session.ts:500-507](../backend/src/modules/matches/match-session.ts#L500-L507)).
 3. Drugi odgovor ide normalnim putem kroz `answers$`. `pointsFor` vidi `'spent'` i daje
    `secondTryPoints`: 50 za tačan (pola osnovnih poena, bez bonusa za brzinu), 0 za pogrešan
-   ([match-session.ts:380-394](../backend/src/modules/matches/match-session.ts#L380-L394),
+   ([match-session.ts:382-396](../backend/src/modules/matches/match-session.ts#L382-L396),
    [scoring.ts:30-33](../backend/src/modules/matches/scoring.ts#L30-L33)). Ako je prvi odgovor
    tačan, boduje se normalno, a pojačanje je potrošeno.
 4. Stanje važi samo za jedno pitanje; `resetRoundState` ga vraća na `'unused'`
-   ([session-player.ts:45-52](../backend/src/modules/matches/session-player.ts#L45-L52)).
+   ([session-player.ts:55-62](../backend/src/modules/matches/session-player.ts#L55-L62)).
 5. Frontend: reducer obriše moj odgovor i zapamti pogrešnu opciju
    ([match.reducer.ts:354-360](../frontend/src/app/store/match/match.reducer.ts#L354-L360)),
    `AnswerGrid` je precrta, pojavi se "Second chance! Try again", a tajmer, koji je stao na prvom
@@ -1537,6 +1666,37 @@ ispadne iz kovčega.
 
 Server je i ovde sudija: klijent nikad ne kaže "ovo je druga šansa", server sam zna stanje
 igrača i sam računa poene.
+
+**27. Zašto se sabotaže kupuju, a da igra ostane fer?**
+Pravilo je **novac kupuje raznovrsnost, ne snagu**. Kupljena sabotaža ne donosi ni poen ni
+dodatni potez; donosi samo još jednu vrstu poteza (ceo tok je u odeljku 4i):
+
+- Naboj se ne kupuje. Svaka sabotaža, i kupljena, troši naboj, a naboji se dobijaju samo igrom:
+  1 na početku, +1 za svaku dobijenu rundu, najviše 2, i najviše jedna sabotaža po pitanju
+  ([matches.constants.ts:44-45](../backend/src/modules/matches/matches.constants.ts#L44-L45),
+  [party-rules.ts:22-24](../backend/src/modules/matches/party-rules.ts#L22-L24)). Igrač sa svih
+  šest sabotaža ne može da napadne češće od igrača koji ima samo mastilo.
+- Mastilo (INK) je besplatno za sve (`FREE_SABOTAGES`), pa svako od prvog meča ima čime da
+  uzvrati. Štit je odbrana koja se kupuje isto kao napadi, i blokira bilo koju sabotažu.
+- Poeni se dobijaju samo tačnim odgovorom; sabotaža samo smeta (zamrzne, zamagli, promeša) i
+  traje nekoliko sekundi ili do kraja pitanja.
+- Sabotaže se kupuju novčićima, a novčići se zarađuju igrom; mogu i da ispadnu iz kovčega kao
+  "običan predmet", pa niko ne mora da plati pravim novcem. Pravi novac kupuje samo tačan broj
+  novčića, iza grown-up pitanja i mesečnog limita, i nikad slučajnu nagradu.
+- Kupuje se jednom i ostaje zauvek, kao heroj, bez pretplate i bez trošenja.
+- Pravilo važi na serveru: vlasništvo se proverava u `sabotageError` pre naboja
+  ([party-rules.ts:36-38](../backend/src/modules/matches/party-rules.ts#L36-L38)), a ne samo
+  sakrivanjem dugmeta na frontendu.
+
+**28. Kako dvoje prijatelja igra jedan protiv drugog?**
+Kao partija za dvoje. PARTY kreće čim su dva igrača povezana
+([matches.constants.ts:14-18](../backend/src/modules/matches/matches.constants.ts#L14-L18)), a
+pobednik je onaj sa više poena. Ranije je za to postojao poseban mod, ali je radio skoro isto, pa
+je izbačen: manje koda, jedna pravila i jedno mesto za nagrade (`PARTY_WIN_BONUS`). Migracija je
+prvo prebacila stare mečeve tog moda u PARTY (`UPDATE "matches" SET "mode" = 'PARTY' ...`), pa
+tek onda napravila enum `MatchMode` bez njega
+([schema.prisma:58-62](../backend/prisma/schema.prisma#L58-L62)), da istorija mečeva ostane
+čitljiva.
 
 ---
 
@@ -1582,6 +1742,8 @@ igrača i sam računa poene.
 | Transakcija | Više upita koji uspeju svi ili nijedan (`$transaction`). |
 | Idempotentno | Ponovljen zahtev ne menja ništa više od prvog: dupli klik ne otvori kovčeg dvaput i ne isplati kupovinu dvaput (uslovni `updateMany`). |
 | Težinsko izvlačenje | Svaki red tabele ima težinu, a šansa reda je težina podeljena zbirom svih težina (`DROP_TABLES`). |
+| Naboj (charge) | Potez za sabotažu u partiji: 1 na početku, +1 za dobijenu rundu, najviše 2. Ne kupuje se, dobija se samo igrom. |
+| Otključavanje (unlock) | Predmet koji se kupi jednom i ostaje zauvek, kao sabotaža u prodavnici; ne troši se i ne "oblači" se. |
 | Ubačena zavisnost (random) | Funkcija ne zove `Math.random` sama, nego ga dobija kao parametar, pa test može da pošalje zadate brojeve. |
 | Soft delete | Umesto brisanja upiše se `deletedAt`, a upiti preskaču takve redove. |
 | Swagger | Automatska dokumentacija REST API-ja na `/api/docs`, iz dekoratora kontrolera i DTO-a. |

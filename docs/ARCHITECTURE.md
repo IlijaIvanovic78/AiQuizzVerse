@@ -11,13 +11,14 @@ hero with a pet and level up by learning:
 1. **Create**: type a topic, upload a lesson PDF or write a quiz by hand. The AI writes a quiz
    (four options, a hint and an explanation per question) or a five-step learning path.
 2. **Learn and play**: solo practice, learning path steps (study card, then the step quiz), a
-   duel or a team match with a friend, or a party match for 2-4 players.
+   team match with a friend, or a party match for 2-4 players (two friends play a party for two).
 3. **Remember**: every missed question becomes a card in the mistakes notebook and comes back
    after 1, 3 and 7 days until it is answered right three times.
-4. **Earn and spend**: XP and levels, a daily streak, coins for heroes, pets and power-ups.
-   Chests are earned by playing and learning (never bought) and hold coins, power-ups or, rarely,
-   a hero or pet. Coin packs can be bought behind a grown-up gate (demo checkout or Stripe test
-   mode only).
+4. **Earn and spend**: XP and levels, a daily streak, coins for heroes, pets, power-ups and
+   party sabotages (ink is free, the other six are bought once and kept). Chests are earned by
+   playing and learning (never bought) and hold coins, power-ups or, rarely, a hero, pet or
+   sabotage. Coin packs can be bought behind a grown-up gate (demo checkout or Stripe test mode
+   only).
 
 ## Running it
 
@@ -66,7 +67,7 @@ A backend module holds its controller, service, `constants`, `types`, `dto/`, a 
 | LearningPaths | `modules/learning-paths` | Path generation and step progress (stars, unlocks, rewards) |
 | Review | `modules/review` | Mistakes notebook and practice quizzes |
 | Matches | `modules/matches` | Match REST API, `/game` gateway, the in-memory `MatchSession`, saving results |
-| Shop | `modules/shop` | Heroes, pets and power-ups: buy, equip, claim a starter hero |
+| Shop | `modules/shop` | Heroes, pets, sabotages and power-ups: buy, equip, claim a starter hero |
 | Chests | `modules/chests` | Earned chests, drop tables and odds, opening; pure rules in `chests.rules.ts` |
 | Payments | `modules/payments` | Coin packs, payment provider factory, checkout / confirm / cancel |
 | Leaderboard | `modules/leaderboard` | Weekly XP ranking for friends or everyone |
@@ -94,8 +95,9 @@ PrismaService, ConfigService and JwtService are global.
 ```
 
 Pure files (mappers, rules, constants) may be imported across folders: the realtime gateway uses
-`friends/friend.mapper.ts`, because FriendsModule already imports RealtimeModule. Config goes
-through `ConfigService`. `src/main.ts` imports `dotenv/config` first, because the gateway
+`friends/friend.mapper.ts`, because FriendsModule already imports RealtimeModule, and the user
+and match mappers use `shop/sabotage-items.ts` to turn owned items into sabotage types. Config
+goes through `ConfigService`. `src/main.ts` imports `dotenv/config` first, because the gateway
 decorators read `process.env.FRONTEND_URL` for CORS as soon as their files are imported, and it
 trusts one proxy hop (the Angular dev proxy), so `req.ip` for the login rate limit is real.
 
@@ -104,7 +106,8 @@ trusts one proxy hop (the Angular dev proxy), so `req.ip` for the login rate lim
 `backend/prisma/schema.prisma`: snake_case names through `@map` / `@@map`, uuid ids except
 `Item`, child relations cascade on delete unless noted. Migrations start with `init`; later ones
 add quiz soft delete, quiz source, PARTY mode, an `ended_at` index, `coin_cap_reached` and
-chests.
+chests. The last two drop the old two-player mode (its SQL first turns those matches into
+PARTY rows, then rebuilds the enum) and add sabotage items.
 
 - **User**: unique email and username, `passwordHash`, `twoFaSecret`, `twoFaEnabled`,
   `refreshTokenHash`, `avatarKey`, `petKey`, `xp`, `coins`, `streak`, `longestStreak`,
@@ -120,15 +123,18 @@ chests.
 - **LearningPath** (User 1:N; Document 1:N with `onDelete: SetNull`) and **PathStep**: `position` 1-5, `title`, `keyPoints String[]`,
   `difficulty`, `stars`, `bestAccuracy`, `completedAt`. LearningPath 1:N PathStep, and PathStep
   1:1 Quiz through the unique `quizId`.
-- **Match**: `mode` (SOLO / DUEL / TEAM / PARTY), `status` (WAITING / IN_PROGRESS / FINISHED /
+- **Match**: `mode` (SOLO / TEAM / PARTY), `status` (WAITING / IN_PROGRESS / FINISHED /
   ABANDONED), quiz, host, unique `inviteCode`, `stepReward` (Json), timestamps.
 - **MatchPlayer**: M:N User-Match join table with data: `score`, `correctCount`, `isWinner`,
   `xpEarned`, `coinsEarned`, `coinCapReached`, `leveledUp`, `answers` (Json list of
   `{ questionId, optionIndex, correct, points }`, option index in the stored order).
 - **ReviewCard**: unique User-Question pair with `timesWrong`, `correctStreak`, `dueOn` (date).
-- **Item** (id = sprite key, e.g. `mini-mage`; `isChestOnly` items are never sold) and
-  **UserItem**: M:N User-Item. **UserBoost**: power-up stock per user and type (HINT,
-  FIFTY_FIFTY, EXTRA_TIME, SECOND_CHANCE, STREAK_FREEZE), `@@unique([userId, type])`.
+- **Item**: `type` AVATAR / PET / SABOTAGE, `price`, `minLevel`, `isStarter`, `isChestOnly`
+  (never sold) and `description` (filled only for sabotages). The id is the sprite key for
+  heroes and pets (`mini-mage`) and `sabotage-<type>` for sabotages (`sabotage-fog`).
+  **UserItem**: M:N User-Item, `@@unique([userId, itemId])`, so an item is owned at most once.
+  **UserBoost**: power-up stock per user and type (HINT, FIFTY_FIFTY, EXTRA_TIME, SECOND_CHANCE,
+  STREAK_FREEZE), `@@unique([userId, type])`.
 - **UserChest**: `type` (WOODEN / SILVER / GOLDEN), `source` (DAILY_MATCH / VICTORY / PATH_STEP /
   LEVEL_UP / STREAK), `earnedAt`, `openedAt`, `reward` (Json, set when opened) and `matchId`
   (the match that earned it, `onDelete: SetNull`). User 1:N, `@@index([userId, openedAt])`.
@@ -136,10 +142,11 @@ chests.
   CANCELLED, `provider`, `providerRef`, `paidAt`). User 1:N.
 
 `backend/prisma/seed.ts` upserts the shop items (`seed-data/items.ts`: 27 heroes and 25 pets,
-six of them chest-only), two demo users (friends, with items, boosts and a few unopened chests)
-and four featured quizzes (`seed-quiz-*` ids), and adds some match history only while the demo
-user has no finished match. User data is upserted with `update: {}` and chests are added only
-while the user has none, so a restart never resets progress.
+six of them chest-only, and six sabotages), two demo users (friends, with items, boosts,
+sabotages and a few unopened chests: `demo_hero` owns FREEZE, FOG and SHIELD, `demo_friend`
+owns SCRAMBLE) and four featured quizzes (`seed-quiz-*` ids), and adds some match history only
+while the demo user has no finished match. User data is upserted with `update: {}` and chests
+are added only while the user has none, so a restart never resets progress.
 
 ### Auth
 
@@ -171,7 +178,7 @@ Socket.IO with two namespaces behind the same handshake middleware
 (`WsAuthService.middleware` checks `handshake.auth.token` and sets `socket.data.userId`). The
 default namespace `/` (`realtime/realtime.gateway.ts`) only sends: `friend:online`,
 `friend:offline`, `friend:request`, `friend:accepted`, `friend:request-removed`,
-`friend:removed`, `duel:invite`, `quiz:progress`, `coins:updated`, `chest:earned`. The `/game`
+`friend:removed`, `match:invite`, `quiz:progress`, `coins:updated`, `chest:earned`. The `/game`
 namespace (`matches/match.gateway.ts`) carries everything inside a match. Every socket joins the
 room `user:<userId>` in its namespace, so all tabs of a user get their events. Services never touch
 sockets; they call `NotificationsService.emitToUser(userId, event, payload)`, typed against
@@ -234,12 +241,14 @@ every connected player pressed Next, at most 60 s in SOLO and 15 s otherwise. Se
 `runSafely`, which logs errors. Points (`scoring.ts`): a correct answer gives
 `100 + round(50 * timeLeft / timeLimit)`, a wrong or missing one 0.
 
-**Modes.** SOLO: one player, starts on the first `match:join`. DUEL: two players; more correct
-answers wins, then the higher score, else a draw. TEAM: two players answer every question; the
-team wins at 60% combined accuracy and both are winners. PARTY: 2-4 players; the first correct
+**Modes.** SOLO: one player, starts on the first `match:join`. TEAM: two players answer every
+question; the team wins at 60% combined accuracy and both are winners. PARTY: 2-4 players, so
+two friends who want to play against each other start a party for two; the first correct
 answer wins and closes the round, a wrong answer locks the player out of that question and costs
 25 points (never below 0), the highest score wins and a shared top score is a draw. Power-ups
-work only in SOLO and TEAM.
+work only in SOLO and TEAM ("Power-ups are off in party matches. Fair fight!"). History shows
+WIN / LOSS / DRAW for a party, WIN for a team that reached its goal and DONE otherwise
+(`playerOutcome` in `scoring.ts`).
 
 **Power-ups**: the session checks that the question is open and the player has not answered or
 used this type on it yet, reserves it, then spends it with `userBoost.updateMany({ where: {
@@ -258,27 +267,33 @@ answer goes through the normal pipeline; `pointsFor` gives it `secondTryPoints` 
 0 when wrong. A correct first answer simply scores as usual and the power-up is spent.
 
 **Sabotage** (PARTY): 1 charge at the start, +1 per round won (max 2), one sabotage action per
-question. `SABOTAGE_TYPES` and the durations are in `matches.constants.ts`; `SabotageDto`
-validates the type with `@IsIn` and needs `targetUserId` for everything except SHIELD.
-`party-rules.ts` decides if an attempt is allowed (party, question open, not used this question,
-a charge left, and a target that is another connected player who has not answered; a shield only
-before you answer). The server enforces only what it must: FREEZE makes it refuse the target's
-answers for 3 s and SCRAMBLE gives the target a new private option order and sends them
-`match:options`. INK (4 s), FOG (4 s, blurred question and answers), QUAKE (4 s, shaking
-buttons) and MIRROR (5 s, mirrored answer texts) are only validated and broadcast; the clients
-draw them from `match:sabotaged { type, durationMs }`. SHIELD takes no target, costs a charge
+question. `SABOTAGE_TYPES`, `FREE_SABOTAGES` (INK) and the durations are in
+`matches.constants.ts`; `SabotageDto` validates the type with `@IsIn` and needs `targetUserId`
+for everything except SHIELD. Which sabotages a player owns is read once, when the session is
+created: `SESSION_SETUP_INCLUDE` loads each player's sabotage items with the match,
+`toSessionSetup` turns them into `sabotages` with `ownedSabotages` (INK plus the bought ones) and
+`newPlayer` keeps them on the session player, so the round logic stays synchronous.
+`party-rules.ts` decides if an attempt is allowed (party, the sabotage is owned, question open,
+not used this question, a charge left, and a target that is another connected player who has
+not answered; a shield only before you answer). Ownership is checked before the charge, so
+"You don't own this sabotage yet. You can get it in the shop." never costs one. The server
+enforces only what it must: FREEZE makes it refuse the target's answers for 3 s and SCRAMBLE
+gives the target a new private option order and sends them `match:options`. INK (4 s), FOG
+(4 s, blurred question and answers), QUAKE (4 s, shaking buttons) and MIRROR (5 s, mirrored
+answer texts) are only validated and broadcast; the clients draw them from
+`match:sabotaged { type, durationMs }`. SHIELD takes no target, costs a charge
 and protects the player who raises it until the question ends: the room sees it through
 `match:sabotaged`, and the next sabotage aimed at that player is stopped, the room gets
 `match:sabotage-blocked` and the attacker still loses the charge.
 
 **Leaving and coming back.** A player is gone only when none of their sockets is left in the
 `match:<id>` room (`fetchSockets()`). Outside SOLO a gone player gives up the open question and
-the Next press, so nobody waits for them. After a grace time (SOLO 60 s, others 30 s) SOLO and
-TEAM end ABANDONED and a DUEL ends with the other player as winner; a party goes on while two
-players are connected and ends after 30 s with fewer (the last one wins). `match:leave` during
-play quits at once with the same rules; in the lobby it removes a guest, or abandons the match
-when the host leaves. `match:join` on a running match resends the current question with the time
-left, or the last round result.
+the Next press, so nobody waits for them. After a grace time (SOLO 60 s, TEAM 30 s) SOLO and
+TEAM end ABANDONED; a party goes on while two players are connected and ends after 30 s with
+fewer (the last one wins, so in a party for two the player who stayed wins). `match:leave`
+during play quits at once with the same rules; in the lobby it removes a guest, or abandons the
+match when the host leaves. `match:join` on a running match resends the current question with
+the time left, or the last round result.
 
 **Finishing.** `finish()` sets the phase to `finished` before the first `await`. Then
 `MatchResultsService.save` runs one transaction (15 s timeout) that starts with
@@ -293,7 +308,7 @@ when saving failed. An abandoned match rewards only the players still connected,
 answers only.
 
 **Rewards** (`progression/progression.rules.ts`): +10 XP and +2 coins per correct answer (1.5x
-XP on HARD), +10 XP / +5 coins for finishing with a correct answer, duel or party win +30 / +15,
+XP on HARD), +10 XP / +5 coins for finishing with a correct answer, party win +30 / +15, party
 draw +10 / +5, team win +20 / +10. Level is `floor(sqrt(xp / 50)) + 1`. The streak updates when
 a match ends with a correct answer; one missed day uses a STREAK_FREEZE (atomic `updateMany`).
 Match coins, including the streak bonus `min(streak * 5, 30)`, are capped at 150 per UTC day.
@@ -345,7 +360,7 @@ result. `MatchResultsService` calls `ChestsService.grantForMatch` for every rewa
 | Source | Chest | Rule |
 | --- | --- | --- |
 | DAILY_MATCH | WOODEN | first FINISHED match of the UTC day with at least 60% |
-| VICTORY | WOODEN | a DUEL or PARTY win, at most two a UTC day |
+| VICTORY | WOODEN | a PARTY win, at most two a UTC day (a team win is shared, so it gives none) |
 | LEVEL_UP | SILVER | one per level gained |
 | STREAK | GOLDEN | the streak reaches a multiple of 7 |
 | PATH_STEP | from `STEP_REWARDS` | first clear: steps 1 and 3 WOODEN, 2 and 4 SILVER, 5 GOLDEN |
@@ -358,17 +373,20 @@ chest of the day. `UserChest.matchId` remembers the match, so the result screen
 **Drop tables.** `DROP_TABLES` gives every chest type a few weighted rows, and one roll picks a
 row:
 
-| Chest | Coins | Power-ups | Shop hero or pet (price up to 150) | Chest-only hero or pet |
+| Chest | Coins | Power-ups | Basic item: shop hero, pet or sabotage (price up to 150) | Chest-only hero or pet |
 | --- | --- | --- | --- | --- |
 | WOODEN | 20-40 (70) | 1 (27) | 3 | - |
 | SILVER | 50-90 (50) | 2 (35) | 12 | 3 |
 | GOLDEN | 120-200 (35) | 3 + 1 streak freeze (35) | 20 | 10 |
 
 Power-ups are drawn from HINT, FIFTY_FIFTY, EXTRA_TIME and SECOND_CHANCE; the streak freeze only
-comes from golden chests (it has no shop price). Starter heroes are never in a chest. A skin row
-whose pool is empty is left out, so the other rows share its chance. A skin the player already
-owns becomes coins (its shop price, or 150 for a chest-only one) and the reward says
-`duplicate: true`. `GET /chests/odds` turns the weights into percentages, and the treasure room
+comes from golden chests (it has no shop price). `itemPools` builds the two item pools: BASIC is
+every non-starter, non-chest-only hero, pet or sabotage that costs at most 150
+(`BASIC_ITEM_MAX_PRICE`, so all six sabotages are in it), CHEST_ONLY the chest-only heroes and
+pets. Starter heroes are never in a chest. An item row whose pool is empty is left out, so the
+other rows share its chance. An item the player already owns becomes coins (its shop price, or
+150 for a chest-only one) and the reward says `duplicate: true`. `GET /chests/odds` turns the
+weights into percentages ("Hero, pet or sabotage" for the basic row), and the treasure room
 shows them, so the chances are public.
 
 **Opening** (`POST /chests/:id/open`). `open` finds the chest by id and owner (404 for someone
@@ -391,6 +409,27 @@ that creates a chest: `ChestsController` only lists chests, shows the odds and o
 `grant` / `grantForMatch` are called only from saving a match and clearing a path step. A
 chest-only item answers 400 in `POST /shop/items/:id/buy` (`assertCanBuy`), and the streak freeze
 has `price: null` in `BOOST_CATALOG`, so buying it answers 400 too.
+
+### Sabotages in the shop
+
+Party sabotages are shop unlocks. INK is free for everyone and is not an item. The other six
+are `SABOTAGE` items in the seed: FREEZE and SCRAMBLE (80 coins, level 2), FOG and MIRROR (100,
+level 3), QUAKE (120, level 4) and SHIELD (150, level 4), each with a short `description`.
+
+- **Buying** goes through the same `ShopService.buyItem` as heroes and pets: `assertCanBuy`
+  (not a starter, not chest-only, not owned yet, level reached), then one transaction spends the
+  coins with `user.updateMany({ where: { coins: { gte: price } } })` and creates the `UserItem`.
+  A sabotage is bought once and kept for good; it is never used up.
+- **Not worn.** `POST /shop/items/:id/equip` answers 400 for a sabotage, and
+  `ShopItem.equipped` is always false for one.
+- **Who owns what.** `shop/sabotage-items.ts` maps an item id to its type (`sabotageItemId`:
+  FOG is `sabotage-fog`) and `ownedSabotages` turns a list of owned items into `['INK', ...]`.
+  `CurrentUser.sabotages` uses it, so the client knows which buttons to show; the match engine
+  uses it again when the session starts and refuses a sabotage the player does not own.
+- **Fair play.** Money buys variety, not power. A bought sabotage still needs a charge, and
+  charges come only from playing: 1 at the start, +1 per round won, at most 2, one sabotage per
+  question. Everyone has INK, the shield is a counter that is bought the same way, and a chest
+  can unlock a sabotage too (the basic item pool), so coins are not the only way to get one.
 
 ### Mistakes notebook
 
@@ -430,8 +469,9 @@ token refresh, interceptor, guards, bootstrap), `realtime/` (sockets), `sprites/
 (WebAudio effects, read aloud), `notifications/` (toasts) and `models/` (types mirroring the
 backend). `store/` has one folder per NgRx slice. `features/<area>/` has the routed
 `*-page.component.ts` files, presentational `components/` (inputs and outputs only) and pure
-helpers with specs. `shared/` has reusable components, pipes and form helpers, and `layout/` the
-shell, top bar, mobile bottom tab bar and duel invite dialog.
+helpers with specs. `shared/` has reusable components, pipes and form helpers (among them the
+sabotage icons and `sabotages.ts`, used by both the shop and the match), and `layout/` the
+shell, top bar, mobile bottom tab bar and match invite dialog.
 
 ### State management
 
@@ -447,10 +487,10 @@ registered in `app.config.ts`:
 
 | Slice | Holds |
 | --- | --- |
-| `auth` | current user, status `unknown` / `authenticated` / `anonymous`, 2FA token |
+| `auth` | current user (with the owned `sabotages`, extended right after a sabotage is bought or comes out of a chest), status `unknown` / `authenticated` / `anonymous`, 2FA token |
 | `quizzes` | entity adapter of quiz summaries (newest first), featured, detail, generation progress |
 | `match` | the open match as a phase machine (`lobby`, `countdown`, `question`, `reveal`, `finished`, ...) |
-| `duelInvite` | the invite shown in the dialog |
+| `matchInvite` | the team or party invite shown in the dialog |
 | `paths` | path list, open path, path generation |
 | `review` | the mistakes deck |
 | `shop` | entity adapter of items (by price, chest-only last), boosts, coin packs, purchases |
@@ -493,7 +533,7 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
 `authGuard` keeps the attempted URL as `returnUrl`, so a `/join/CODE` link survives the login.
 `/play/:matchId` has a `canDeactivate` guard that asks before quitting a running match.
 
-### Chests, second chance and sabotage on screen
+### Chests, sabotages, second chance on screen
 
 - **Treasure room** (`/chests`, `features/chests/`): a grid of unopened chests (closed frame,
   type, why it was earned, date), Open and "Open all" (one by one, each with its own reveal), the
@@ -510,8 +550,19 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   reducer clears my answer and keeps the wrong option, which the answer grid crosses out, a
   "Second chance! Try again" banner shows, and `MatchClockService` restarts the timer bar,
   which had stopped at the first answer.
-- **Sabotage**: the party sabotage bar has INK, FREEZE, SCRAMBLE, FOG, QUAKE and MIRROR (pick
-  one, then tap a hero) and a SHIELD button without a target. `PartyRoundService` turns the
+- **Sabotages in the shop**: a Sabotages tab lists INK first as "Free for everyone"
+  (`FREE_INK` in `features/shop/shop.constants.ts`, made on the client because the server does
+  not sell it) and then the six sabotage items with icon, description, price, level lock and an
+  Owned badge, with the note "Sabotages work in Party matches. You still need charges — win
+  rounds to earn them." Buying uses the same confirm dialog as heroes. `sabotageOfItem`
+  (`shared/sabotages.ts`) reads the type from the item id, and the `auth` reducer adds a bought
+  sabotage, or one found in a chest, to `user.sabotages` (`withUnlockedSabotage`). The chest
+  dialog and the recent rewards show it with its icon ("New sabotage: Fog!").
+- **Sabotage in a party**: the sabotage bar shows only the attacks the player owns
+  (`ownedAttacks(user.sabotages)`: INK, FREEZE, SCRAMBLE, FOG, QUAKE, MIRROR in that order; pick
+  one, then tap a hero), a SHIELD button without a target only when it is owned, and the muted
+  line "More sabotages in the shop" while one is missing (plain text, not a link, because
+  leaving a running match counts as quitting). `PartyRoundService` turns the
   sabotages of the question into signals (`fogged`, `quaking`, `mirrored`, ...) from each event's
   arrival time and `durationMs`. FOG is a blur overlay (`fog-cloud.component`), QUAKE and MIRROR
   are CSS classes on the answer grid (shaking buttons, `scaleX(-1)` on the answer texts), a
@@ -559,21 +610,24 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
 - Backend (Jest, `docker compose exec backend npx jest`): `*.spec.ts` next to the code for the
   pure parts (scoring, option order, party rules, levels, stars, streak, coin cap, review
   intervals, AI question checks, payment limits, dates, shuffle, mappers, generation limits,
-  chest earning and drop rolls).
+  chest earning and drop rolls, sabotage item ids and ownership).
   `match-session.spec.ts` drives the real `MatchSession` with a fake server that records emitted
   events and Jest fake timers: rounds, deadlines, reveals, disconnects, power-ups (second chance
-  included), sabotage and shields without a database or sockets. `chests.rules.spec.ts` passes a
-  `randomSequence(...)` function instead of `Math.random`, so every roll has a known result.
+  included), sabotage, shields and the "not owned yet" refusal without a database or sockets.
+  `chests.rules.spec.ts` passes a `randomSequence(...)` function instead of `Math.random`, so
+  every roll has a known result.
   `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
-- Frontend (Vitest, `npx ng test --watch=false`): reducers (quizzes, match, paths, leaderboard,
-  duel invite, chests) and pure helpers (filters, path map, round view, match result, party
-  round, chest reward, shop item state, gate question, pipes, sprite style, quiz form).
+- Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match, paths,
+  leaderboard, match invite, chests) and pure helpers (filters, path map, round view, match
+  result, party round, sabotages, chest reward, shop item state, gate question, pipes, sprite
+  style, quiz form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev
-  dependency) and plays real solo, duel, team and party matches, checking responses and events
-  for friends, power-ups, the notebook, path steps, payments, concurrent joins, reconnects and
-  the rate limit. OpenAI can be skipped; a few SQL statements move due dates and streak days.
+  dependency) and plays real solo, team and party matches (with two and with more players),
+  checking responses and events for friends, power-ups, sabotage purchases, the notebook, path
+  steps, payments, concurrent joins, reconnects and the rate limit. OpenAI can be skipped; a few
+  SQL statements move due dates and streak days.
 
 ## Docker
 
