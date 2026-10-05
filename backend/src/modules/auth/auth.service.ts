@@ -4,13 +4,12 @@ import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { createHash, randomUUID, timingSafeEqual } from 'crypto';
 import { QuizzesService } from '../quizzes/quizzes.service';
+import { USERNAME_PATTERN, USERNAME_TAKEN_MESSAGE } from '../users/users.constants';
 import { UsersService } from '../users/users.service';
 import {
   BCRYPT_ROUNDS,
   SESSION_EXPIRED_MESSAGE,
   TWO_FACTOR_TOKEN_EXPIRATION,
-  USERNAME_PATTERN,
-  USERNAME_TAKEN_MESSAGE,
   WRONG_CODE_MESSAGE,
   WRONG_CREDENTIALS_MESSAGE,
 } from './auth.constants';

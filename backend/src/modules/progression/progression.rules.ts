@@ -107,10 +107,11 @@ export function matchReward(input: MatchRewardInput): Reward {
   if (!input.abandoned) {
     rewards.push(finishBonus(input.correctCount), outcomeBonus(input.mode, input.outcome));
   }
-  return rewards.reduce((total, reward) => ({
-    xp: total.xp + reward.xp,
-    coins: total.coins + reward.coins,
-  }));
+  return rewards.reduce(addRewards, NO_REWARD);
+}
+
+function addRewards(first: Reward, second: Reward): Reward {
+  return { xp: first.xp + second.xp, coins: first.coins + second.coins };
 }
 
 function answerReward(correctCount: number, difficulty: Difficulty): Reward {

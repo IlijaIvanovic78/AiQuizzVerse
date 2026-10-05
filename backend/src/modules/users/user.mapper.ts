@@ -13,6 +13,18 @@ export const PUBLIC_USER_SELECT = {
 
 export type PublicUserRow = Prisma.UserGetPayload<{ select: typeof PUBLIC_USER_SELECT }>;
 
+/** The user's streak freeze boost, loaded together with the user as `boosts`. */
+export const STREAK_FREEZES_SELECT = {
+  where: { type: 'STREAK_FREEZE' },
+  select: { quantity: true },
+} satisfies Prisma.User$boostsArgs;
+
+interface WithStreakFreezes {
+  boosts: { quantity: number }[];
+}
+
+type StreakRow = Pick<User, 'streak' | 'lastPlayedOn'> & WithStreakFreezes;
+
 export function toPublicUser(user: PublicUserRow): PublicUser {
   return {
     id: user.id,
@@ -23,19 +35,32 @@ export function toPublicUser(user: PublicUserRow): PublicUser {
   };
 }
 
-export function toCurrentUser(user: User, streakFreezes: number): CurrentUser {
+export function toCurrentUser(user: User & WithStreakFreezes): CurrentUser {
   const { xpIntoLevel, xpForNextLevel } = levelProgress(user.xp);
-  const streakState = { streak: user.streak, lastPlayedOn: user.lastPlayedOn, streakFreezes };
   return {
     ...toPublicUser(user),
     email: user.email,
     xp: user.xp,
     coins: user.coins,
-    streak: displayedStreak(streakState, utcToday()),
+    streak: shownStreak(user),
     longestStreak: user.longestStreak,
-    streakFreezes,
+    streakFreezes: streakFreezesOf(user),
     twoFaEnabled: user.twoFaEnabled,
     xpIntoLevel,
     xpForNextLevel,
   };
+}
+
+/** displayedStreak for a user row loaded with STREAK_FREEZES_SELECT. */
+export function shownStreak(user: StreakRow): number {
+  const streakState = {
+    streak: user.streak,
+    lastPlayedOn: user.lastPlayedOn,
+    streakFreezes: streakFreezesOf(user),
+  };
+  return displayedStreak(streakState, utcToday());
+}
+
+function streakFreezesOf(user: WithStreakFreezes): number {
+  return user.boosts[0]?.quantity ?? 0;
 }

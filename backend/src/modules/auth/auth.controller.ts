@@ -14,7 +14,7 @@ import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
 import { AuthService } from './auth.service';
 import { AuthResponse, LoginResult, TwoFactorSetup } from './auth.types';
-import { CurrentUserId } from './decorators/current-user.decorator';
+import { CurrentUserId } from './decorators/current-user-id.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { TwoFactorCodeDto } from './dto/two-factor-code.dto';
@@ -94,7 +94,7 @@ export class AuthController {
 
   @Post('2fa/enable')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
   @ApiBearerAuth('access-token')
   enableTwoFactor(
     @CurrentUserId() userId: string,
@@ -105,7 +105,7 @@ export class AuthController {
 
   @Post('2fa/disable')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
   @ApiBearerAuth('access-token')
   disableTwoFactor(
     @CurrentUserId() userId: string,

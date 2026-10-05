@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { toCurrentUser } from './user.mapper';
+import { STREAK_FREEZES_SELECT, toCurrentUser } from './user.mapper';
 import { ACCOUNT_NOT_FOUND_MESSAGE, STARTER_BOOSTS } from './users.constants';
 import { CurrentUser, NewUser } from './users.types';
 
@@ -35,12 +35,12 @@ export class UsersService {
   async findCurrentUser(id: string): Promise<CurrentUser> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { boosts: { where: { type: 'STREAK_FREEZE' } } },
+      include: { boosts: STREAK_FREEZES_SELECT },
     });
     if (!user) {
       throw new NotFoundException(ACCOUNT_NOT_FOUND_MESSAGE);
     }
-    return toCurrentUser(user, user.boosts[0]?.quantity ?? 0);
+    return toCurrentUser(user);
   }
 
   create(data: NewUser): Promise<User> {
@@ -49,12 +49,16 @@ export class UsersService {
     });
   }
 
+  async rename(id: string, username: string): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { username } });
+  }
+
   async setRefreshTokenHash(id: string, refreshTokenHash: string | null): Promise<void> {
     await this.prisma.user.update({ where: { id }, data: { refreshTokenHash } });
   }
 
   async setTwoFaSecret(id: string, twoFaSecret: string): Promise<void> {
-    await this.prisma.user.update({ where: { id }, data: { twoFaSecret, twoFaEnabled: false } });
+    await this.prisma.user.update({ where: { id }, data: { twoFaSecret } });
   }
 
   async enableTwoFa(id: string): Promise<void> {

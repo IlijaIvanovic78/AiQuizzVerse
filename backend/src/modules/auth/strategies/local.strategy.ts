@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
+import { normalizeEmail } from '../../../common/utils/text.transforms';
 import { WRONG_CREDENTIALS_MESSAGE } from '../auth.constants';
 import { AuthService } from '../auth.service';
 import { AuthUser } from '../auth.types';
@@ -16,6 +17,6 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     if (typeof email !== 'string' || typeof password !== 'string') {
       throw new UnauthorizedException(WRONG_CREDENTIALS_MESSAGE);
     }
-    return this.auth.validateCredentials(email.trim().toLowerCase(), password);
+    return this.auth.validateCredentials(normalizeEmail(email), password);
   }
 }

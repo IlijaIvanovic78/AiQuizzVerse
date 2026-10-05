@@ -1,17 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform, TransformFnParams } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { IsEmail, IsString, Length, Matches, MaxLength } from 'class-validator';
-import {
-  EMAIL_MAX_LENGTH,
-  PASSWORD_MAX_LENGTH,
-  PASSWORD_MIN_LENGTH,
-  USERNAME_PATTERN,
-  USERNAME_RULE_MESSAGE,
-} from '../auth.constants';
-
-function toNormalizedEmail({ value }: TransformFnParams): unknown {
-  return typeof value === 'string' ? value.trim().toLowerCase() : value;
-}
+import { toNormalizedEmail } from '../../../common/utils/text.transforms';
+import { USERNAME_PATTERN, USERNAME_RULE_MESSAGE } from '../../users/users.constants';
+import { EMAIL_MAX_LENGTH, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from '../auth.constants';
 
 export class RegisterDto {
   @ApiProperty({ example: 'hero@example.com' })

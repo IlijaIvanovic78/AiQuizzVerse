@@ -1,3 +1,6 @@
+// The socket gateway decorators read process.env.FRONTEND_URL as soon as their files are imported,
+// before ConfigModule runs, so backend/.env has to be loaded first.
+import 'dotenv/config';
 import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -7,16 +10,16 @@ import { AppModule } from './app.module';
 import { PrismaExceptionFilter } from './prisma/prisma-exception.filter';
 
 const DEFAULT_PORT = 3000;
-// The Angular dev server proxies every browser request, so the real client IP
-// (used by the login rate limit) arrives in X-Forwarded-For from a local address.
-const TRUSTED_PROXIES = 'loopback, uniquelocal';
+// The Angular dev proxy is the only hop in front of the API. Trusting exactly that hop makes
+// req.ip (the login rate limit key) the address the proxy saw, which a client cannot fake.
+const TRUSTED_PROXY_HOPS = 1;
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.set('trust proxy', TRUSTED_PROXIES);
+  app.set('trust proxy', TRUSTED_PROXY_HOPS);
   const config = app.get(ConfigService);
 
-  app.enableCors({ origin: config.getOrThrow<string>('FRONTEND_URL'), credentials: true });
+  app.enableCors({ origin: config.getOrThrow<string>('FRONTEND_URL') });
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );

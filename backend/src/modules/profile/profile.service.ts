@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { USERNAME_TAKEN_MESSAGE } from '../auth/auth.constants';
 import { PLAYER_NOT_FOUND_MESSAGE } from '../friends/friends.constants';
 import { FriendsService } from '../friends/friends.service';
 import { ReviewService } from '../review/review.service';
+import { USERNAME_TAKEN_MESSAGE } from '../users/users.constants';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
 import { PROFILE_USER_SELECT, ProfileUserRow, toProfileUser } from './profile.mapper';
@@ -53,7 +53,7 @@ export class ProfileService {
       throw new ConflictException(USERNAME_TAKEN_MESSAGE);
     }
 
-    await this.prisma.user.update({ where: { id: userId }, data: { username } });
+    await this.users.rename(userId, username);
     return this.users.findCurrentUser(userId);
   }
 
