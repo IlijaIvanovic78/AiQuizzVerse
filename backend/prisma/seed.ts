@@ -4,6 +4,7 @@ import { BoostType, Difficulty, MatchMode, PrismaClient, Question } from '@prism
 import { hash } from 'bcrypt';
 import { addUtcDays, startOfUtcDay, utcToday } from '../src/common/utils/dates';
 import { BCRYPT_ROUNDS } from '../src/modules/auth/auth.constants';
+import { EarnedChest } from '../src/modules/chests/chests.types';
 import { MS_PER_SECOND } from '../src/modules/matches/matches.constants';
 import { PlayerAnswerRecord } from '../src/modules/matches/matches.types';
 import { answerPoints, findWinnerIds, playerOutcome } from '../src/modules/matches/scoring';
@@ -23,6 +24,7 @@ interface DemoUser {
   coins: number;
   xp: number;
   boosts: { type: BoostType; quantity: number }[];
+  chests: EarnedChest[];
 }
 
 interface ScoredRun {
@@ -56,6 +58,11 @@ const DEMO_HERO: DemoUser = {
     { type: 'FIFTY_FIFTY', quantity: 2 },
     { type: 'STREAK_FREEZE', quantity: 1 },
   ],
+  chests: [
+    { type: 'WOODEN', source: 'DAILY_MATCH' },
+    { type: 'SILVER', source: 'LEVEL_UP' },
+    { type: 'GOLDEN', source: 'STREAK' },
+  ],
 };
 
 const DEMO_FRIEND: DemoUser = {
@@ -66,6 +73,7 @@ const DEMO_FRIEND: DemoUser = {
   coins: 300,
   xp: 600,
   boosts: STARTER_BOOSTS,
+  chests: [{ type: 'WOODEN', source: 'DAILY_MATCH' }],
 };
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -81,7 +89,7 @@ async function seedItems(): Promise<void> {
 }
 
 async function seedUser(user: DemoUser, passwordHash: string): Promise<string> {
-  const { boosts, ...profile } = user;
+  const { boosts, chests, ...profile } = user;
   const { id: userId } = await prisma.user.upsert({
     where: { email: user.email },
     update: {},
@@ -102,7 +110,17 @@ async function seedUser(user: DemoUser, passwordHash: string): Promise<string> {
       create: { userId, ...boost },
     });
   }
+  await seedChestsOnce(userId, chests);
   return userId;
+}
+
+/** Only while the user has no chest at all, so restarts never add them again. */
+async function seedChestsOnce(userId: string, chests: EarnedChest[]): Promise<void> {
+  const ownedChests = await prisma.userChest.count({ where: { userId } });
+  if (ownedChests > 0) {
+    return;
+  }
+  await prisma.userChest.createMany({ data: chests.map((chest) => ({ ...chest, userId })) });
 }
 
 async function seedFriendship(senderId: string, receiverId: string): Promise<void> {
