@@ -40,7 +40,7 @@ import { quizzesFeature } from '../../store/quizzes/quizzes.reducer';
 import { EditableQuestionComponent } from './components/editable-question.component';
 import { QuestionModalComponent } from './components/question-modal.component';
 import { QuizSettingsModalComponent } from './components/quiz-settings-modal.component';
-import { SOURCE_LABELS } from './library.constants';
+import { QUIZ_SOURCE_LABELS } from './library.constants';
 
 // The question being written in the modal: an existing one, or null for a new one.
 interface QuestionDraft {
@@ -77,7 +77,7 @@ export class QuizDetailPageComponent {
 
   protected readonly modeChoices = MODE_CHOICES;
   protected readonly itemIconUrl = itemIconUrl;
-  protected readonly sourceLabels = SOURCE_LABELS;
+  protected readonly sourceLabels = QUIZ_SOURCE_LABELS;
   protected readonly minQuestions = MIN_QUESTIONS;
 
   protected readonly user = this.store.selectSignal(authFeature.selectUser);

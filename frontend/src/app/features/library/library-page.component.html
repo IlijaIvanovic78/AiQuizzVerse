@@ -37,12 +37,7 @@
           [formControl]="search"
         />
       </div>
-      <app-theme-filter
-        [counts]="themeCounts()"
-        [total]="quizzes().length"
-        [selected]="theme()"
-        (selectedChange)="theme.set($event)"
-      />
+      <app-theme-filter [counts]="themeCounts()" [total]="quizzes().length" [(selected)]="theme" />
     </div>
 
     <p class="sr-only" aria-live="polite">
@@ -53,7 +48,12 @@
       <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         @for (quiz of shownQuizzes(); track quiz.id) {
           <li animate.enter="fade-enter">
-            <app-quiz-card [quiz]="quiz" [link]="['/library', quiz.id]" (play)="openPlay(quiz)" />
+            <app-quiz-card
+              [quiz]="quiz"
+              [link]="['/library', quiz.id]"
+              [busy]="startingMatch()"
+              (play)="openPlay(quiz)"
+            />
           </li>
         }
       </ul>
@@ -86,7 +86,7 @@
     <ul class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       @for (quiz of featured(); track quiz.id) {
         <li>
-          <app-quiz-card [quiz]="quiz" (play)="openPlay(quiz)" />
+          <app-quiz-card [quiz]="quiz" [busy]="startingMatch()" (play)="openPlay(quiz)" />
         </li>
       }
     </ul>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import { QuizTheme } from '../../../core/models/quiz.model';
 import { ThemeLabelPipe } from '../../../shared/pipes/theme-label.pipe';
 import { ThemeCount } from '../quiz-filters';
@@ -14,6 +14,5 @@ import { ThemeCount } from '../quiz-filters';
 export class ThemeFilterComponent {
   readonly counts = input.required<ThemeCount[]>();
   readonly total = input.required<number>();
-  readonly selected = input.required<QuizTheme | null>();
-  readonly selectedChange = output<QuizTheme | null>();
+  readonly selected = model.required<QuizTheme | null>();
 }
