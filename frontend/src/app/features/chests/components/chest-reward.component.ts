@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { ChestReward } from '../../../core/models/chest.model';
 import { ShopItem } from '../../../core/models/shop.model';
-import { BOOST_LABELS, BoostIconComponent } from '../../../shared/components/boost-icon.component';
+import { BOOST_LABELS } from '../../../shared/boosts';
+import { BoostIconComponent } from '../../../shared/components/boost-icon.component';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PetSpriteComponent } from '../../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';

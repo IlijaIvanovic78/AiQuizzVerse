@@ -1,5 +1,5 @@
 import { ChestReward } from '../../core/models/chest.model';
-import { BOOST_LABELS } from '../../shared/components/boost-icon.component';
+import { BOOST_LABELS } from '../../shared/boosts';
 
 // One short line for a reward, used in the recent rewards list and read out after opening.
 export function rewardSummary(reward: ChestReward): string {
