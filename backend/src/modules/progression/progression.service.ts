@@ -24,7 +24,7 @@ export class ProgressionService {
     const today = utcToday();
     const reward = matchReward(input);
     const newStreak = input.correctCount > 0 ? await this.updateStreak(db, userId, today) : null;
-    const streakBonus = newStreak === null ? 0 : streakBonusCoins(newStreak);
+    const streakBonus = newStreak === null || input.abandoned ? 0 : streakBonusCoins(newStreak);
     const wantedCoins = reward.coins + streakBonus;
     const coinsEarnedToday = await this.matchCoinsEarnedSince(db, userId, today);
     const coinsEarned = capMatchCoins(wantedCoins, coinsEarnedToday);

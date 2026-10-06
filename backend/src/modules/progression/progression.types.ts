@@ -18,7 +18,10 @@ export interface MatchRewardInput {
   difficulty: Difficulty;
   correctCount: number;
   outcome: MatchOutcome;
-  /** Abandoned matches only pay for correct answers, without bonuses. */
+  /**
+   * Abandoned matches pay only for correct answers, with no finish, win or streak bonus.
+   * The streak itself still counts.
+   */
   abandoned: boolean;
 }
 
