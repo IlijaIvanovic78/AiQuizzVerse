@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { AttackType, SabotageType } from '../../../core/models/match.model';
 import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
-import { missesSabotages, ownedAttacks } from '../party-round';
+import { missesSabotages, ownedAttacks } from '../party-round.rules';
 import { SABOTAGES } from '../play.constants';
 import { ChargeMeterComponent } from './charge-meter.component';
 

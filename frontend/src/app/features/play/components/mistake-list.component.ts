@@ -14,6 +14,11 @@ import { REVIEW_ROW_DELAY_MS } from '../play.constants';
 })
 export class MistakeListComponent {
   readonly questions = input.required<MatchResultQuestion[]>();
+  // An empty list is a perfect run only when every answer was right. In a party a player can
+  // also lose every round without a single wrong answer.
+  readonly perfect = input(false);
+  // The notebook note is news only right after the match, not when it is opened again later.
+  readonly justFinished = input(false);
 
   // zip pairs every missed question with a tick, so the rows appear one after another.
   protected readonly shownRows = toSignal(

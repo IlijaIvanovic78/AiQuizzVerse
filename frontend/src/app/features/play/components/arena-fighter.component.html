@@ -20,7 +20,7 @@
       Out
     }
   </span>
-} @else if (fighter().hitBy; as type) {
+} @else if (fighter().activeSabotage; as type) {
   <span class="bubble" [style.background-color]="sabotages[type].badgeColor">
     <app-sabotage-icon [type]="type" [scale]="1" />
     @if (!compact()) {

@@ -9,6 +9,8 @@ import { TEAM_WIN_ACCURACY } from './play.constants';
 
 export type ResultTone = 'victory' | 'almost' | 'draw';
 
+export type MainAction = 'next-step' | 'back-to-path' | 'replay' | 'rematch';
+
 export interface ResultHeadline {
   title: string;
   subtitle: string;
@@ -63,6 +65,19 @@ export function rankPlayers(players: MatchResultPlayer[]): RankedPlayer[] {
     rank: 1 + byScore.filter((other) => other.score > player.score).length,
     player,
   }));
+}
+
+// The big button under the results. A cleared path step leads on to the next step, or back to
+// the finished path after its last step. Otherwise a solo player tries the quiz again, and
+// friends ask for a rematch.
+export function mainActionFor(result: MatchResult): MainAction {
+  if (result.mode !== 'SOLO') {
+    return 'rematch';
+  }
+  if (result.path?.cleared) {
+    return result.path.nextStepId ? 'next-step' : 'back-to-path';
+  }
+  return 'replay';
 }
 
 export function resultHeadline(result: MatchResult, meId: string): ResultHeadline {

@@ -1,5 +1,5 @@
 import { MatchQuestionEvent, RoundResultEvent } from '../../core/models/realtime-events.model';
-import { toRoundView } from './round-view';
+import { toRoundView } from './round-view.rules';
 
 const question: MatchQuestionEvent = {
   matchId: 'match-1',

@@ -1,9 +1,9 @@
 import { AttackType, MatchPlayerView, SabotageType } from '../../core/models/match.model';
 import { ATTACKS, SABOTAGE_TYPES } from '../../shared/sabotages';
 import { SabotageBlock, SabotageHit } from '../../store/match/match.reducer';
-import { MS_PER_SECOND, SABOTAGES } from './play.constants';
+import { MS_PER_SECOND, SABOTAGES, SABOTAGE_NOTICE_MS } from './play.constants';
 
-// When an effect on this player wears off, or 0 when it never hit them this round.
+// When this sabotage wears off on the player, or 0 when it never hit them this round.
 // A player can be hit by the same sabotage twice, so the later end wins.
 export function effectEndsAt(hits: SabotageHit[], userId: string, type: AttackType): number {
   return hits
@@ -13,14 +13,14 @@ export function effectEndsAt(hits: SabotageHit[], userId: string, type: AttackTy
 
 // The newest sabotage that still lasts on each player, like { owl: 'FREEZE' }.
 // A scramble and a shield have no duration, so they never show up here.
-export function lastingHits(hits: SabotageHit[], now: number): Record<string, AttackType> {
-  const latest: Record<string, AttackType> = {};
+export function activeSabotages(hits: SabotageHit[], now: number): Record<string, AttackType> {
+  const active: Record<string, AttackType> = {};
   hits.forEach((hit) => {
     if (hit.type !== 'SHIELD' && hit.landedAt + hit.durationMs > now) {
-      latest[hit.targetUserId] = hit.type;
+      active[hit.targetUserId] = hit.type;
     }
   });
-  return latest;
+  return active;
 }
 
 // Whole seconds left, rounded up, so a freeze shows 3, 2, 1 and then disappears.
@@ -61,6 +61,27 @@ export function blockNotice(
   return `${shield} blocked ${attacker}'s ${attack}!`;
 }
 
+// The line over the arena about whatever landed last, a sabotage or a block, for as long as it
+// is fresh. Null when nothing landed or the last notice is old.
+export function latestNotice(
+  hits: SabotageHit[],
+  blocks: SabotageBlock[],
+  meId: string,
+  names: Record<string, string>,
+  now: number,
+): string | null {
+  const hit = hits.at(-1);
+  const block = blocks.at(-1);
+  const blockIsNewer = block !== undefined && (hit === undefined || block.landedAt >= hit.landedAt);
+  if (blockIsNewer) {
+    return isFresh(block.landedAt, now) ? blockNotice(block, meId, names) : null;
+  }
+  if (hit && isFresh(hit.landedAt, now)) {
+    return sabotageNotice(hit, meId, names);
+  }
+  return null;
+}
+
 // Only players who can still answer can be hit: not me, not away and not answered yet.
 export function sabotageTargets(
   players: MatchPlayerView[],
@@ -84,4 +105,8 @@ export function ownedAttacks(owned: SabotageType[]): AttackType[] {
 // True while the shop still sells a sabotage this player does not have.
 export function missesSabotages(owned: SabotageType[]): boolean {
   return SABOTAGE_TYPES.some((type) => !owned.includes(type));
+}
+
+function isFresh(landedAt: number, now: number): boolean {
+  return landedAt + SABOTAGE_NOTICE_MS > now;
 }

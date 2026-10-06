@@ -9,9 +9,11 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
+import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { Observable, Subject, take } from 'rxjs';
+import { Observable, Subject, map, merge, take } from 'rxjs';
 import { MatchMode, MatchResult } from '../../core/models/match.model';
 import { MatchBoostType } from '../../core/models/shop.model';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog.component';
@@ -22,10 +24,11 @@ import { TreasureChestComponent } from '../../shared/components/treasure-chest.c
 import { authFeature } from '../../store/auth/auth.reducer';
 import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
+import { MatchSocketActions } from '../../store/match/match-socket.actions';
 import { MatchActions } from '../../store/match/match.actions';
 import { MatchPhase, matchFeature } from '../../store/match/match.reducer';
 import { ReviewActions } from '../../store/review/review.actions';
-import { ArenaFighter, arenaSides, toFighter } from './arena-fighter';
+import { ArenaFighter, arenaSides, toFighter } from './arena-fighter.rules';
 import { AnswerGridComponent } from './components/answer-grid.component';
 import { ArenaBannerComponent } from './components/arena-banner.component';
 import { BattleArenaComponent } from './components/battle-arena.component';
@@ -48,11 +51,11 @@ import { LobbyInviteService } from './lobby-invite.service';
 import { MatchClockService } from './match-clock.service';
 import { hasModifier, isControl, isTypingOrInDialog } from './match-keys';
 import { MatchReadAloudService } from './match-read-aloud.service';
-import { chestLabelFor, chestSize, hasTreasureChest } from './match-result';
+import { chestLabelFor, chestSize, hasTreasureChest } from './match-result.rules';
 import { MatchSoundsService } from './match-sounds.service';
 import { PartyRoundService } from './party-round.service';
 import { ANSWER_KEYS, NEXT_KEYS } from './play.constants';
-import { namesById, toRoundView } from './round-view';
+import { namesById, toRoundView } from './round-view.rules';
 
 type MatchStage = 'loading' | 'lobby' | 'battle' | 'finished' | 'interrupted';
 
@@ -109,6 +112,7 @@ export class MatchPageComponent {
   readonly matchId = input.required<string>();
 
   private readonly store = inject(Store);
+  private readonly actions$ = inject(Actions);
   private readonly router = inject(Router);
   protected readonly clock = inject(MatchClockService);
   protected readonly party = inject(PartyRoundService);
@@ -140,6 +144,7 @@ export class MatchPageComponent {
   private readonly leftUserIds = this.store.selectSignal(matchFeature.selectLeftUserIds);
   private readonly lockedOutUserIds = this.store.selectSignal(matchFeature.selectLockedOutUserIds);
   private readonly charges = this.store.selectSignal(matchFeature.selectCharges);
+  private readonly shieldedUserIds = this.store.selectSignal(matchFeature.selectShieldedUserIds);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly signedIn = this.store.selectSignal(authFeature.selectIsAuthenticated);
   protected readonly onlineFriends = this.store.selectSignal(friendsFeature.selectOnlineFriends);
@@ -147,10 +152,30 @@ export class MatchPageComponent {
   protected readonly leaveDialogOpen = signal(false);
   private readonly leaveDecision$ = new Subject<boolean>();
 
+  // True when the match ended while the player was watching. A finished match opened later from
+  // the match history loads its result instead, and it is not celebrated a second time.
+  protected readonly justFinished = toSignal(
+    merge(
+      this.actions$.pipe(
+        ofType(MatchSocketActions.finished),
+        map(() => true),
+      ),
+      this.actions$.pipe(
+        ofType(MatchActions.resultLoaded),
+        map(() => false),
+      ),
+    ),
+    { initialValue: false },
+  );
+
   protected readonly meId = computed(() => this.user()?.id ?? '');
   protected readonly level = computed(() => this.user()?.level ?? 1);
   protected readonly mode = computed<MatchMode>(() => this.match()?.mode ?? 'SOLO');
   protected readonly stage = computed(() => stageFor(this.phase(), this.mode()));
+  // The results and the "match has ended" screen have their own titles.
+  protected readonly showHeader = computed(
+    () => this.stage() !== 'finished' && this.stage() !== 'interrupted',
+  );
   protected readonly isParty = computed(() => this.mode() === 'PARTY');
   private readonly isRunning = computed(() => RUNNING_PHASES.includes(this.phase()));
   private readonly hostInLobby = computed(
@@ -244,6 +269,7 @@ export class MatchPageComponent {
     return this.isRunning() ? 'Quit' : null;
   });
   protected readonly loadingText = computed(() => {
+    // Only a solo match waits in the lobby while loading: it starts by itself right after joining.
     if (this.phase() === 'lobby') {
       return 'Getting your quiz ready...';
     }
@@ -272,11 +298,19 @@ export class MatchPageComponent {
         untracked(() => this.store.dispatch(FriendsActions.load()));
       }
     });
+    // The match can end while the leave dialog is open. Then there is nothing left to lose,
+    // so the player leaves as they asked.
+    effect(() => {
+      if (this.leaveDialogOpen() && !this.isRunning()) {
+        untracked(() => this.decideLeave(true));
+      }
+    });
     inject(DestroyRef).onDestroy(() => this.store.dispatch(MatchActions.left()));
   }
 
   // Used by the leave guard: leaving a running match counts as quitting, so the player confirms.
   confirmLeave(): Observable<boolean> | boolean {
+    // A logout or an expired session navigates away too, and the dialog must never block that.
     if (!this.isRunning() || !this.signedIn()) {
       return true;
     }
@@ -366,8 +400,8 @@ export class MatchPageComponent {
       leftUserIds: this.leftUserIds(),
       charges: this.charges(),
       lockedOutUserIds: this.lockedOutUserIds(),
-      hitByUserId: this.party.hitByUserId(),
-      shieldedUserIds: this.party.shieldedUserIds(),
+      activeSabotageByUserId: this.party.activeSabotageByUserId(),
+      shieldedUserIds: this.shieldedUserIds(),
       blockedUserIds: this.party.blockedUserIds(),
     };
     return match.players.map((player) => toFighter(player, moment));

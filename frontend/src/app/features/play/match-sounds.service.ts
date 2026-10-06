@@ -1,14 +1,16 @@
 import { DestroyRef, Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import { timer } from 'rxjs';
 import { MatchResult } from '../../core/models/match.model';
 import { RoundResultEvent } from '../../core/models/realtime-events.model';
 import { SoundService } from '../../core/sound/sound.service';
 import { authFeature } from '../../store/auth/auth.reducer';
+import { MatchSocketActions } from '../../store/match/match-socket.actions';
 import { matchFeature } from '../../store/match/match.reducer';
 import { MatchClockService } from './match-clock.service';
-import { findPlayer, hasTreasureChest } from './match-result';
+import { findPlayer, hasTreasureChest } from './match-result.rules';
 import { COINS_LAND_MS, LEVEL_UP_DELAY_MS, TIMER_WARNING_SECONDS } from './play.constants';
 
 // The sounds of a match: right and wrong answers, coins landing in the chest, the ticking of
@@ -17,13 +19,13 @@ import { COINS_LAND_MS, LEVEL_UP_DELAY_MS, TIMER_WARNING_SECONDS } from './play.
 @Injectable()
 export class MatchSoundsService {
   private readonly store = inject(Store);
+  private readonly actions$ = inject(Actions);
   private readonly sound = inject(SoundService);
   private readonly clock = inject(MatchClockService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly mode = this.store.selectSignal(matchFeature.selectMode);
   private readonly round = this.store.selectSignal(matchFeature.selectRound);
-  private readonly result = this.store.selectSignal(matchFeature.selectResult);
   private readonly wrongTry = this.store.selectSignal(matchFeature.selectSecondChanceOption);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
   private readonly meId = computed(() => this.user()?.id ?? '');
@@ -39,10 +41,11 @@ export class MatchSoundsService {
       const seconds = this.clock.secondsLeft();
       untracked(() => this.playTimerTick(seconds));
     });
-    effect(() => {
-      const result = this.result();
-      untracked(() => this.celebrate(result));
-    });
+    // Only a match that ends while the player watches is celebrated, not an old one opened
+    // again from the match history.
+    this.actions$
+      .pipe(ofType(MatchSocketActions.finished), takeUntilDestroyed())
+      .subscribe(({ result }) => this.celebrate(result));
     // A second chance means the first pick was wrong, even though the round goes on.
     effect(() => {
       if (this.wrongTry() !== null) {
@@ -77,9 +80,9 @@ export class MatchSoundsService {
     }
   }
 
-  private celebrate(result: MatchResult | null): void {
-    const me = result ? findPlayer(result, this.meId()) : null;
-    if (!result || !me) {
+  private celebrate(result: MatchResult): void {
+    const me = findPlayer(result, this.meId());
+    if (!me) {
       return;
     }
     if (me.coinsEarned > 0) {

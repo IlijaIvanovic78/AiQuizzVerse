@@ -31,7 +31,7 @@ export const BLOCKED_SHOW_MS = 1500;
 
 const FREEZE_SECONDS = 3;
 
-interface SabotageText {
+interface SabotageInfo {
   label: string;
   // As in "demo_friend inked you!"
   pastVerb: string;
@@ -45,7 +45,7 @@ interface SabotageText {
   badgeColor: string;
 }
 
-export const SABOTAGES: Record<AttackType, SabotageText> = {
+export const SABOTAGES: Record<AttackType, SabotageInfo> = {
   INK: {
     label: 'Ink',
     pastVerb: 'inked',
@@ -108,4 +108,4 @@ export const NEXT_KEYS = ['Enter', ' '];
 
 export const INVITE_CODE_LENGTH = 6;
 // Invite codes are sent in capitals, so a code typed in lowercase is still valid.
-export const INVITE_CODE_PATTERN = /^[a-z0-9]{6}$/i;
+export const INVITE_CODE_PATTERN = new RegExp(`^[a-z0-9]{${INVITE_CODE_LENGTH}}$`, 'i');

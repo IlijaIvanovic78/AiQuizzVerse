@@ -13,7 +13,7 @@ import { AttackType, SabotageType } from '../../../core/models/match.model';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
 import { UserAvatarComponent } from '../../../shared/components/user-avatar.component';
-import { ArenaFighter } from '../arena-fighter';
+import { ArenaFighter } from '../arena-fighter.rules';
 import { SABOTAGES } from '../play.constants';
 import { ChargeMeterComponent } from './charge-meter.component';
 
@@ -87,9 +87,10 @@ export class PartyScoreboardComponent {
     if (fighter.lockedOut) {
       return seatStatus('Locked out', 'badge-ruby', 'cross');
     }
-    if (fighter.hitBy) {
-      const { status, badgeColor } = SABOTAGES[fighter.hitBy];
-      return { ...seatStatus(status, 'text-night-950'), badgeColor, sabotageIcon: fighter.hitBy };
+    const sabotage = fighter.activeSabotage;
+    if (sabotage) {
+      const { status, badgeColor } = SABOTAGES[sabotage];
+      return { ...seatStatus(status, 'text-night-950'), badgeColor, sabotageIcon: sabotage };
     }
     if (fighter.shielded) {
       return { ...seatStatus('Shielded', 'badge-shield'), sabotageIcon: 'SHIELD' };

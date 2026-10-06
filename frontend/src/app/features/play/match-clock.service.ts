@@ -35,11 +35,14 @@ export class MatchClockService {
   private readonly phase = this.store.selectSignal(matchFeature.selectPhase);
   private readonly mode = this.store.selectSignal(matchFeature.selectMode);
   private readonly deadlineAt = this.store.selectSignal(matchFeature.selectDeadlineAt);
+  private readonly myAnswer = this.store.selectSignal(matchFeature.selectMyAnswer);
+  // After answering, the player only waits for the round result. Not in a party: there the
+  // others keep racing after a wrong answer, so the clock keeps running.
+  private readonly lockedIn = computed(() => this.myAnswer() !== null && this.mode() !== 'PARTY');
 
-  // In a party the others keep racing after a wrong answer, so the clock keeps running there.
   private readonly answered$ = this.actions$.pipe(
     ofType(MatchActions.answer),
-    filter(() => this.mode() !== 'PARTY'),
+    filter(() => this.lockedIn()),
   );
   private readonly roundEnded$ = this.actions$.pipe(
     ofType(MatchSocketActions.roundFinished, MatchSocketActions.finished),
@@ -59,8 +62,10 @@ export class MatchClockService {
   );
 
   // A new deadline (next question or extra time) restarts the timer through switchMap.
+  // A teammate's extra time reaches a player who already answered too; their bar stays frozen.
   readonly remainingMs = toSignal(
     merge(toObservable(this.deadlineAt), this.secondChance$).pipe(
+      filter((deadlineAt) => deadlineAt === null || !this.lockedIn()),
       switchMap((deadlineAt) => (deadlineAt === null ? of(null) : this.timeLeftUntil(deadlineAt))),
     ),
     { initialValue: null },
@@ -75,7 +80,7 @@ export class MatchClockService {
     return zip(from(COUNTDOWN_LABELS), timer(0, COUNTDOWN_STEP_MS)).pipe(map(([label]) => label));
   }
 
-  // The bar freezes when the player answers, which shows how fast they were.
+  // The bar freezes when the player locks in an answer, which shows how fast they were.
   private timeLeftUntil(deadlineAt: number): Observable<number> {
     const ticks = Math.ceil(msUntil(deadlineAt) / TIMER_TICK_MS);
     return timer(0, TIMER_TICK_MS).pipe(

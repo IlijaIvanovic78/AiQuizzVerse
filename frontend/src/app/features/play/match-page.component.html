@@ -1,3 +1,17 @@
+@if (showHeader()) {
+  <app-match-header
+    [title]="match()?.quiz?.title ?? 'Quiz match'"
+    [theme]="match()?.quiz?.theme ?? null"
+    [mode]="mode()"
+    [kind]="match()?.quiz?.kind ?? null"
+    [progressLabel]="progressLabel()"
+    [muted]="sounds.muted()"
+    [quitLabel]="quitLabel()"
+    (toggleSound)="sounds.toggleMuted()"
+    (quit)="quit()"
+  />
+}
+
 @switch (stage()) {
   @case ('finished') {
     @if (result(); as result) {
@@ -5,6 +19,7 @@
         [result]="result"
         [meId]="meId()"
         [level]="level()"
+        [justFinished]="justFinished()"
         [busy]="busy()"
         [rivalLeft]="rivalLeft()"
         (playAgain)="playAgain(result)"
@@ -23,16 +38,6 @@
 
   @case ('lobby') {
     @if (match(); as match) {
-      <app-match-header
-        [title]="match.quiz.title"
-        [theme]="match.quiz.theme"
-        [mode]="mode()"
-        [kind]="match.quiz.kind"
-        [muted]="sounds.muted()"
-        [quitLabel]="quitLabel()"
-        (toggleSound)="sounds.toggleMuted()"
-        (quit)="quit()"
-      />
       <div class="flex flex-col gap-4">
         <app-battle-arena
           [banner]="true"
@@ -60,18 +65,6 @@
   }
 
   @default {
-    <app-match-header
-      [title]="match()?.quiz?.title ?? 'Quiz match'"
-      [theme]="match()?.quiz?.theme ?? null"
-      [mode]="mode()"
-      [kind]="match()?.quiz?.kind ?? null"
-      [progressLabel]="progressLabel()"
-      [muted]="sounds.muted()"
-      [quitLabel]="quitLabel()"
-      (toggleSound)="sounds.toggleMuted()"
-      (quit)="quit()"
-    />
-
     <!--
       Phones get one column with the question right under the arena, and the chest and scores
       after the answers. From lg on, the arena side and the question side sit next to each other.

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { PetSpriteComponent } from '../../../shared/components/pet-sprite.component';
 import { DESKTOP_UP, TABLET_UP, screenMatches } from '../../../shared/media-query';
-import { ArenaFighter } from '../arena-fighter';
+import { ArenaFighter } from '../arena-fighter.rules';
 import { COINS_LAND_MS } from '../play.constants';
 import { ArenaFighterComponent } from './arena-fighter.component';
 

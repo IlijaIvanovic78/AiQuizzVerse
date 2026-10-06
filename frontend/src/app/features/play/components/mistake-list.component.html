@@ -3,8 +3,13 @@
 
   @if (questions().length === 0) {
     <p class="panel flex items-center gap-3 p-4">
-      <app-pixel-icon name="trophy" [scale]="2" />
-      Perfect run! You did not miss a single question.
+      @if (perfect()) {
+        <app-pixel-icon name="trophy" [scale]="2" />
+        Perfect run! You did not miss a single question.
+      } @else {
+        <app-pixel-icon name="check" [scale]="2" />
+        No wrong answers this time.
+      }
     </p>
   } @else {
     <ol class="flex flex-col gap-3">
@@ -34,8 +39,10 @@
         </li>
       }
     </ol>
-    <p class="mt-3 text-muted">
-      These questions are now in your Mistakes notebook, and they come back for review tomorrow.
-    </p>
+    @if (justFinished()) {
+      <p class="mt-3 text-muted">
+        These questions are now in your Mistakes notebook, and they come back for review tomorrow.
+      </p>
+    }
   }
 </section>

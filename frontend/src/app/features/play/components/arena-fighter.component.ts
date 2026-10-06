@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
-import { ArenaFighter } from '../arena-fighter';
+import { ArenaFighter } from '../arena-fighter.rules';
 import { SABOTAGES } from '../play.constants';
 
 @Component({

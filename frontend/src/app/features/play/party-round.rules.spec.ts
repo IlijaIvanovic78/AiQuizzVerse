@@ -1,15 +1,16 @@
 import { MatchPlayerView, SabotageType } from '../../core/models/match.model';
 import { SabotageBlock, SabotageHit } from '../../store/match/match.reducer';
 import {
+  activeSabotages,
   blockNotice,
   effectEndsAt,
-  lastingHits,
+  latestNotice,
   missesSabotages,
   ownedAttacks,
   sabotageNotice,
   sabotageTargets,
   secondsLeft,
-} from './party-round';
+} from './party-round.rules';
 
 function hit(changes: Partial<SabotageHit>): SabotageHit {
   return {
@@ -19,6 +20,19 @@ function hit(changes: Partial<SabotageHit>): SabotageHit {
     fromUserId: 'fox',
     targetUserId: 'hero',
     durationMs: 3000,
+    fromCharges: 0,
+    landedAt: 10_000,
+    ...changes,
+  };
+}
+
+function block(changes: Partial<SabotageBlock>): SabotageBlock {
+  return {
+    matchId: 'match-1',
+    index: 0,
+    type: 'INK',
+    fromUserId: 'fox',
+    targetUserId: 'owl',
     fromCharges: 0,
     landedAt: 10_000,
     ...changes,
@@ -50,7 +64,7 @@ describe('effectEndsAt', () => {
   });
 });
 
-describe('lastingHits', () => {
+describe('activeSabotages', () => {
   it('keeps the newest effect that still lasts on each player', () => {
     const hits = [
       hit({ type: 'INK', durationMs: 4000 }),
@@ -58,9 +72,9 @@ describe('lastingHits', () => {
       hit({ type: 'MIRROR', targetUserId: 'owl', durationMs: 5000 }),
     ];
 
-    expect(lastingHits(hits, 12_000)).toEqual({ hero: 'FREEZE', owl: 'MIRROR' });
-    expect(lastingHits(hits, 13_800)).toEqual({ hero: 'INK', owl: 'MIRROR' });
-    expect(lastingHits(hits, 15_000)).toEqual({});
+    expect(activeSabotages(hits, 12_000)).toEqual({ hero: 'FREEZE', owl: 'MIRROR' });
+    expect(activeSabotages(hits, 13_800)).toEqual({ hero: 'INK', owl: 'MIRROR' });
+    expect(activeSabotages(hits, 15_000)).toEqual({});
   });
 
   it('leaves out a scramble and a shield, which have no duration', () => {
@@ -69,7 +83,7 @@ describe('lastingHits', () => {
       hit({ type: 'SHIELD', fromUserId: 'owl', targetUserId: 'owl', durationMs: 0 }),
     ];
 
-    expect(lastingHits(hits, 10_000)).toEqual({});
+    expect(activeSabotages(hits, 10_000)).toEqual({});
   });
 });
 
@@ -117,20 +131,29 @@ describe('sabotageNotice', () => {
 });
 
 describe('blockNotice', () => {
-  const block: SabotageBlock = {
-    matchId: 'match-1',
-    index: 0,
-    type: 'INK',
-    fromUserId: 'fox',
-    targetUserId: 'owl',
-    fromCharges: 0,
-    landedAt: 10_000,
-  };
-
   it('tells each player whose shield stopped whose sabotage', () => {
-    expect(blockNotice(block, 'owl', names)).toBe("Your shield blocked quick_fox's ink!");
-    expect(blockNotice(block, 'fox', names)).toBe("wise_owl's shield blocked your ink!");
-    expect(blockNotice(block, 'hero', names)).toBe("wise_owl's shield blocked quick_fox's ink!");
+    expect(blockNotice(block({}), 'owl', names)).toBe("Your shield blocked quick_fox's ink!");
+    expect(blockNotice(block({}), 'fox', names)).toBe("wise_owl's shield blocked your ink!");
+    expect(blockNotice(block({}), 'hero', names)).toBe(
+      "wise_owl's shield blocked quick_fox's ink!",
+    );
+  });
+});
+
+describe('latestNotice', () => {
+  it('tells about whatever landed last', () => {
+    const hits = [hit({ type: 'INK', targetUserId: 'owl' })];
+    const blocks = [block({ landedAt: 11_000 })];
+
+    expect(latestNotice(hits, blocks, 'hero', names, 11_500)).toBe(
+      "wise_owl's shield blocked quick_fox's ink!",
+    );
+    expect(latestNotice(hits, [], 'hero', names, 11_500)).toBe('quick_fox inked wise_owl!');
+  });
+
+  it('is null when nothing landed or the last notice is old', () => {
+    expect(latestNotice([], [], 'hero', names, 10_000)).toBeNull();
+    expect(latestNotice([hit({})], [], 'hero', names, 12_500)).toBeNull();
   });
 });
 

@@ -15,7 +15,7 @@ import { StarRatingComponent } from '../../../shared/components/star-rating.comp
 import { StatTileComponent } from '../../../shared/components/stat-tile.component';
 import { TreasureChestComponent } from '../../../shared/components/treasure-chest.component';
 import { starsForAccuracy } from '../../../shared/stars';
-import { arenaSides, restingFighter } from '../arena-fighter';
+import { arenaSides, baseFighter } from '../arena-fighter.rules';
 import { countUp } from '../count-up';
 import {
   ResultTone,
@@ -25,10 +25,11 @@ import {
   correctAnswers,
   findPlayer,
   hasTreasureChest,
+  mainActionFor,
   missedQuestions,
   rankPlayers,
   resultHeadline,
-} from '../match-result';
+} from '../match-result.rules';
 import { LEVEL_UP_DELAY_MS } from '../play.constants';
 import { BattleArenaComponent } from './battle-arena.component';
 import { ChestsEarnedComponent } from './chests-earned.component';
@@ -70,6 +71,8 @@ export class MatchResultsComponent {
   readonly result = input.required<MatchResult>();
   readonly meId = input.required<string>();
   readonly level = input(1);
+  // False for an old match opened from the match history: it is shown, not celebrated again.
+  readonly justFinished = input(false);
   readonly busy = input(false);
   readonly rivalLeft = input(false);
   readonly playAgain = output<void>();
@@ -87,16 +90,16 @@ export class MatchResultsComponent {
   );
   protected readonly stars = computed(() => starsForAccuracy(this.accuracy()));
   protected readonly missed = computed(() => missedQuestions(this.result()));
+  protected readonly perfect = computed(
+    () => this.me()?.correctCount === this.result().questionCount,
+  );
   protected readonly teamCorrect = computed(() => correctAnswers(this.result()));
   protected readonly showChest = computed(() => hasTreasureChest(this.result().mode));
   protected readonly chestTotal = computed(() =>
     chestSize(this.result().players.length, this.result().questionCount),
   );
   protected readonly chestLabel = computed(() => chestLabelFor(this.result().mode));
-  protected readonly nextStep = computed(() => {
-    const path = this.result().path;
-    return path?.cleared && path.nextStepId ? path : null;
-  });
+  protected readonly mainAction = computed(() => mainActionFor(this.result()));
   protected readonly stepReward = computed(() => {
     const reward = this.result().path?.reward;
     if (!reward) {
@@ -109,7 +112,7 @@ export class MatchResultsComponent {
   protected readonly sides = computed(() => {
     const meFirst = [this.me(), ...this.others()].filter((player) => player !== null);
     const fighters = meFirst.map((player) =>
-      restingFighter(
+      baseFighter(
         player.user,
         player.score,
         this.meId(),

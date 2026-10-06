@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
 import { map, of, switchMap, timer } from 'rxjs';
@@ -8,20 +8,14 @@ import { MatchActions } from '../../store/match/match.actions';
 import { matchFeature } from '../../store/match/match.reducer';
 import { BannerTone } from './components/arena-banner.component';
 import {
-  blockNotice,
+  activeSabotages,
   effectEndsAt,
-  lastingHits,
-  sabotageNotice,
+  latestNotice,
   sabotageTargets,
   secondsLeft,
-} from './party-round';
-import {
-  BLOCKED_SHOW_MS,
-  SABOTAGE_NOTICE_MS,
-  SCRAMBLE_SHAKE_MS,
-  TIMER_TICK_MS,
-} from './play.constants';
-import { namesById } from './round-view';
+} from './party-round.rules';
+import { BLOCKED_SHOW_MS, SCRAMBLE_SHAKE_MS, TIMER_TICK_MS } from './play.constants';
+import { namesById } from './round-view.rules';
 
 interface ArenaNews {
   text: string;
@@ -31,6 +25,8 @@ interface ArenaNews {
 // The party part of the match page: who won the round, sabotage charges, picking a target,
 // shields, and the sabotage effects that wear off after a few seconds. Provided by the match
 // page, like MatchClockService.
+// It hands out only what it works out for a party round. The page selects plain match state,
+// like who is shielded, from the store itself.
 @Injectable()
 export class PartyRoundService {
   private readonly store = inject(Store);
@@ -43,7 +39,7 @@ export class PartyRoundService {
   private readonly charges = this.store.selectSignal(matchFeature.selectCharges);
   private readonly sabotages = this.store.selectSignal(matchFeature.selectSabotages);
   private readonly blocks = this.store.selectSignal(matchFeature.selectBlocks);
-  readonly shieldedUserIds = this.store.selectSignal(matchFeature.selectShieldedUserIds);
+  private readonly shieldedUserIds = this.store.selectSignal(matchFeature.selectShieldedUserIds);
   private readonly answeredUserIds = this.store.selectSignal(matchFeature.selectAnsweredUserIds);
   private readonly leftUserIds = this.store.selectSignal(matchFeature.selectLeftUserIds);
   private readonly lockedOutUserIds = this.store.selectSignal(matchFeature.selectLockedOutUserIds);
@@ -66,7 +62,12 @@ export class PartyRoundService {
     { initialValue: Date.now() },
   );
 
-  private readonly chosen = signal<AttackType | null>(null);
+  // The sabotage the player picked but has not aimed yet. It goes back to null with every new
+  // question and phase, so a half-made choice never carries over.
+  private readonly chosen = linkedSignal({
+    source: () => [this.questionIndex(), this.phase()],
+    computation: (): AttackType | null => null,
+  });
   readonly chosenType = this.chosen.asReadonly();
 
   // Who answered the round first, shown while its answer is revealed.
@@ -124,26 +125,16 @@ export class PartyRoundService {
         hit.landedAt + SCRAMBLE_SHAKE_MS > this.now(),
     ),
   );
-  // The effect each player is under right now, shown on their hero and their seat.
-  readonly hitByUserId = computed(() =>
-    this.questionOpen() ? lastingHits(this.sabotages(), this.now()) : {},
+  // The sabotage that still lasts on each player, shown on their hero and their seat.
+  readonly activeSabotageByUserId = computed(() =>
+    this.questionOpen() ? activeSabotages(this.sabotages(), this.now()) : {},
   );
 
-  private readonly notice = computed(() => {
-    if (!this.questionOpen()) {
-      return null;
-    }
-    const hit = this.sabotages().at(-1);
-    const block = this.blocks().at(-1);
-    if (block && (!hit || block.landedAt >= hit.landedAt)) {
-      return this.isFresh(block.landedAt)
-        ? blockNotice(block, this.meId(), this.playerNames())
-        : null;
-    }
-    return hit && this.isFresh(hit.landedAt)
-      ? sabotageNotice(hit, this.meId(), this.playerNames())
-      : null;
-  });
+  private readonly notice = computed(() =>
+    this.questionOpen()
+      ? latestNotice(this.sabotages(), this.blocks(), this.meId(), this.playerNames(), this.now())
+      : null,
+  );
 
   // The line over the arena: who answered first after a round, or the latest sabotage while
   // a question is open.
@@ -157,15 +148,6 @@ export class PartyRoundService {
     const notice = this.notice();
     return notice ? { text: notice, tone: 'night' } : null;
   });
-
-  constructor() {
-    // A half-made choice never carries over to the next question.
-    effect(() => {
-      this.questionIndex();
-      this.phase();
-      untracked(() => this.chosen.set(null));
-    });
-  }
 
   choose(type: AttackType): void {
     this.chosen.set(type);
@@ -199,10 +181,6 @@ export class PartyRoundService {
       return 'You got it first!';
     }
     return `${this.playerNames()[winnerId] ?? 'Someone'} got it first!`;
-  }
-
-  private isFresh(landedAt: number): boolean {
-    return landedAt + SABOTAGE_NOTICE_MS > this.now();
   }
 
   private isUnder(userId: string, type: AttackType): boolean {

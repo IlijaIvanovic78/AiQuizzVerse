@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
-import { OtherPlayerResult, RoundOutcome } from '../round-view';
+import { OtherPlayerResult, RoundOutcome } from '../round-view.rules';
 
 interface OutcomeLook {
   title: string;

@@ -18,7 +18,8 @@ export interface ArenaFighter {
   // Party only: sabotage charges and what happened to the player in this round.
   charges: number;
   lockedOut: boolean;
-  hitBy: AttackType | null;
+  // The sabotage that still lasts on this player, like FREEZE.
+  activeSabotage: AttackType | null;
   shielded: boolean;
   // A sabotage just bounced off this player's shield.
   blocked: boolean;
@@ -32,7 +33,7 @@ export interface FighterMoment {
   leftUserIds: string[];
   charges: Record<string, number>;
   lockedOutUserIds: string[];
-  hitByUserId: Record<string, AttackType>;
+  activeSabotageByUserId: Record<string, AttackType>;
   shieldedUserIds: string[];
   blockedUserIds: string[];
 }
@@ -53,8 +54,9 @@ export function arenaSides(mode: MatchMode, fighters: ArenaFighter[]): ArenaSide
   return { left: fighters.slice(0, half), right: fighters.slice(half) };
 }
 
-// A hero who only stands in the arena, like on the results screen: nothing happens to them.
-export function restingFighter(
+// The fields every fighter has. The results screen uses it as it is; toFighter adds what
+// happens to the hero in a running match.
+export function baseFighter(
   user: PublicUser,
   score: number,
   meId: string,
@@ -73,7 +75,7 @@ export function restingFighter(
     away: false,
     charges: 0,
     lockedOut: false,
-    hitBy: null,
+    activeSabotage: null,
     shielded: false,
     blocked: false,
   };
@@ -86,13 +88,13 @@ export function toFighter(player: MatchPlayerView, moment: FighterMoment): Arena
   const lockedOut = moment.lockedOutUserIds.includes(user.id);
   const score = moment.scores[user.id] ?? player.score;
   return {
-    ...restingFighter(user, score, moment.meId, actionFor(roundResult, lockedOut)),
+    ...baseFighter(user, score, moment.meId, actionFor(roundResult, lockedOut)),
     points: roundResult?.correct ? roundResult.points : null,
     answered: moment.answeredUserIds.includes(user.id),
     away: user.id !== moment.meId && moment.leftUserIds.includes(user.id),
     charges: moment.charges[user.id] ?? player.charges,
     lockedOut,
-    hitBy: moment.hitByUserId[user.id] ?? null,
+    activeSabotage: moment.activeSabotageByUserId[user.id] ?? null,
     shielded: moment.shieldedUserIds.includes(user.id),
     blocked: moment.blockedUserIds.includes(user.id),
   };

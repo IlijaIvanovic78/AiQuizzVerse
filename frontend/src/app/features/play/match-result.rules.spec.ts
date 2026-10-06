@@ -1,5 +1,6 @@
 import { MatchResult, MatchResultPlayer } from '../../core/models/match.model';
-import { missedQuestions, rankPlayers, resultHeadline } from './match-result';
+import { PathResult } from '../../core/models/path.model';
+import { mainActionFor, missedQuestions, rankPlayers, resultHeadline } from './match-result.rules';
 
 function player(id: string, correctCount: number, isWinner: boolean): MatchResultPlayer {
   return {
@@ -60,6 +61,37 @@ describe('missedQuestions', () => {
     );
 
     expect(missed.map((item) => item.questionId)).toEqual(['wrong']);
+  });
+});
+
+describe('mainActionFor', () => {
+  const step = (changes: Partial<PathResult>): PathResult => ({
+    pathId: 'path-1',
+    stepId: 'step-1',
+    stars: 3,
+    cleared: true,
+    nextStepId: 'step-2',
+    reward: null,
+    ...changes,
+  });
+
+  it('leads a cleared step on to the next one', () => {
+    expect(mainActionFor(result({ path: step({}) }))).toBe('next-step');
+  });
+
+  it('leads back to the path after its last step', () => {
+    expect(mainActionFor(result({ path: step({ nextStepId: null }) }))).toBe('back-to-path');
+  });
+
+  it('offers to try again when the step is not cleared yet', () => {
+    expect(mainActionFor(result({ path: step({ cleared: false, nextStepId: null }) }))).toBe(
+      'replay',
+    );
+    expect(mainActionFor(result({}))).toBe('replay');
+  });
+
+  it('asks for a rematch after a match with friends', () => {
+    expect(mainActionFor(result({ mode: 'PARTY' }))).toBe('rematch');
   });
 });
 

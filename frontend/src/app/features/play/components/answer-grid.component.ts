@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { PixelIconComponent, PixelIconName } from '../../../shared/components/pixel-icon.component';
 import { ANSWER_KEYS, SHORT_OPTION_LENGTH } from '../play.constants';
-import { OtherPick } from '../round-view';
+import { OtherPick } from '../round-view.rules';
 
 type AnswerState =
   | 'open'
