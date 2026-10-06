@@ -60,14 +60,14 @@ A backend module holds its controller, service, `constants`, `types`, `dto/`, a 
 | Progression | `modules/progression` | Match rewards, daily streak, daily coin cap; pure rules in `progression.rules.ts` |
 | Realtime | `modules/realtime` | Default namespace gateway, presence, `NotificationsService`, `WsAuthService` |
 | Friends | `modules/friends` | Requests, friend list, user search; emits `friend:*` events |
-| Profile | `modules/profile` | Profile with stats and theme mastery, rename |
+| Profile | `modules/profile` | Profile with stats and theme mastery, rename, wearing an owned hero or pet (`EquipmentService`) |
 | Documents | `modules/documents` | PDF upload, text extraction, lesson context for the AI |
 | AI | `modules/ai` | `QuizWriterService` (OpenAI through LangChain), prompts, zod schemas; no DB |
 | Quizzes | `modules/quizzes` | Quiz and question CRUD, featured and starter quizzes, AI generation and its limits |
 | LearningPaths | `modules/learning-paths` | Path generation and step progress (stars, unlocks, rewards) |
 | Review | `modules/review` | Mistakes notebook and practice quizzes |
 | Matches | `modules/matches` | Match REST API, `/game` gateway, the in-memory `MatchSession`, saving results |
-| Shop | `modules/shop` | Heroes, pets, sabotages and power-ups: buy, equip, claim a starter hero |
+| Shop | `modules/shop` | Heroes, pets, sabotages and power-ups: buy, claim a starter hero |
 | Chests | `modules/chests` | Earned chests, drop tables and odds, opening; pure rules in `chests.rules.ts` |
 | Payments | `modules/payments` | Coin packs, payment provider factory, checkout / confirm / cancel |
 | Leaderboard | `modules/leaderboard` | Weekly XP ranking for friends or everyone |
@@ -95,8 +95,10 @@ PrismaService, ConfigService and JwtService are global.
 ```
 
 Pure files (mappers, rules, constants) may be imported across folders: the realtime gateway uses
-`friends/friend.mapper.ts`, because FriendsModule already imports RealtimeModule, and the user
-and match mappers use `shop/sabotage-items.ts` to turn owned items into sabotage types. Config
+`friends/friend.mapper.ts`, because FriendsModule already imports RealtimeModule, the user
+and match mappers use `shop/sabotage-items.ts` to turn owned items into sabotage types, and
+`profile/equipment.service.ts` takes its "item not found" message from `shop/shop.constants.ts`,
+so ProfileModule does not import ShopModule. Config
 goes through `ConfigService`. `src/main.ts` imports `dotenv/config` first, because the gateway
 decorators read `process.env.FRONTEND_URL` for CORS as soon as their files are imported, and it
 trusts one proxy hop (the Angular dev proxy), so `req.ip` for the login rate limit is real.
@@ -439,7 +441,7 @@ level 3), QUAKE (120, level 4) and SHIELD (150, level 4), each with a short `des
   (not a starter, not chest-only, not owned yet, level reached), then one transaction spends the
   coins with `user.updateMany({ where: { coins: { gte: price } } })` and creates the `UserItem`.
   A sabotage is bought once and kept for good; it is never used up.
-- **Not worn.** `POST /shop/items/:id/equip` answers 400 for a sabotage, and
+- **Not worn.** `POST /profile/me/equipment/:itemId` answers 400 for a sabotage, and
   `ShopItem.equipped` is always false for one.
 - **Who owns what.** `shop/sabotage-items.ts` maps an item id to its type (`sabotageItemId`:
   FOG is `sabotage-fog`) and `ownedSabotages` turns a list of owned items into `['INK', ...]`.
@@ -515,13 +517,14 @@ registered in `app.config.ts`:
 | `matchInvite` | the team or party invite shown in the dialog |
 | `paths` | path list (loaded again when a new path is ready), open path, path generation |
 | `review` | the mistakes deck |
-| `shop` | entity adapter of items (by price, chest-only last), boosts, coin packs, purchases |
+| `shop` | entity adapter of items (by price, chest-only last; the profile wardrobe reads them too), boosts, coin packs, purchases |
 | `chests` | entity adapter of unopened chests (newest first, `removeOne` after opening), recent rewards, odds, the chest being opened |
 | `friends` | entity adapter keyed by `friendshipId` (by username), requests, search results |
 | `leaderboard`, `matchHistory` | weekly ranking, recent matches |
 
-`PaymentsEffects` works on the `shop` slice; `RealtimeEffects` has no reducer. Tokens are not in
-the store: `TokenStorageService` reads localStorage every time, so another tab's refresh is seen.
+`PaymentsEffects` and `EquipmentEffects` work on the `shop` slice (equipping also updates the
+user in `auth`); `RealtimeEffects` has no reducer. Tokens are not in the store:
+`TokenStorageService` reads localStorage every time, so another tab's refresh is seen.
 
 ### Sockets to store
 
@@ -560,6 +563,25 @@ and `showError$` shows the message. `withFriendInvite` ignores an answer for ano
 and `entered` starts every match, a rematch on the same page too, with an empty map. The button
 reads "Sending..." (disabled, `aria-busy`) while pending, then "Invited". The server sends
 `match:invite` only for the host of a waiting team or party match and only to a friend.
+
+### Wardrobe
+
+The shop only sells. A player puts on an owned hero or pet in the Wardrobe on their own profile
+(`features/profile/components/wardrobe.component.ts`, with Heroes and Pets tabs). A bought hero
+or pet in the shop links there with "Equip in your profile" (`/profile#wardrobe`: the profile
+scrolls to the wardrobe and moves the focus into it), and the profile's "Change hero or pet"
+button does the same. The wardrobe gets the items of the `shop` slice and only emits `equip`,
+`unequipPet` and `retry`; `wardrobe.rules.ts` picks the owned items of a tab in shop order
+(`wardrobeItems`) and writes the "You play as ..." line (`wearingLine`). The arrow keys move
+between its tabs like in the shop (`shared/tabs.ts`).
+
+The wardrobe and the "Equip now" button of a chest reward dispatch `EquipmentActions`
+(`equipItem`, `unequipPet`). `EquipmentEffects` sends `POST /profile/me/equipment/:itemId` or
+`DELETE /profile/me/equipment/pet` with `exhaustMap`, shows a refusal as a toast and plays the
+clink. On the server `EquipmentService` answers 404 for an unknown item and 400 for a sabotage or
+an item the player does not own, then sets `avatarKey` (a hero) or `petKey` (a pet). The reply is
+the updated `CurrentUser`: the `auth` reducer takes it, the `shop` reducer moves the `equipped`
+flags (`withEquippedItems`) and the profile reloads its hero card.
 
 ### Routing
 
@@ -669,11 +691,11 @@ Every sound is synthesized with the Web Audio API; there are no audio files.
   the Open button of a chest card); it only silences clicks.
 - Outside a match the chest opening dialog plays `playChestOpen`, the payment result page
   `playCoin`, `ModalComponent` pops up when created and down when destroyed, `ToastService`
-  plays one tone per toast kind, and `ShopEffects` plays coins for a purchase and a clink when
-  Equip is pressed. Sound is switched off in the match header, with the "Sound effects" switch
-  in the top bar's account menu (`TopBarComponent` takes `muted` and emits `toggleSound`,
-  `ShellComponent` wires them to `SoundService`) or in the profile settings; all three read the
-  same `muted` signal.
+  plays one tone per toast kind, `ShopEffects` plays coins for a purchase and `EquipmentEffects`
+  a clink when Equip is pressed. Sound is switched off in the match header, with the "Sound
+  effects" switch in the top bar's account menu (`TopBarComponent` takes `muted` and emits
+  `toggleSound`, `ShellComponent` wires them to `SoundService`) or in the profile settings; all
+  three read the same `muted` signal.
 
 ### Design system
 
@@ -725,12 +747,15 @@ Every sound is synthesized with the Web Audio API; there are no audio files.
   the players who stayed after the leader quit) without a database or sockets.
   `chests.rules.spec.ts` passes a `randomSequence(...)` function instead of `Math.random`, so
   every roll has a known result.
+  `equipment.service.spec.ts` runs `EquipmentService` on a fake Prisma: a hero or pet is worn,
+  the pet comes off, and a sabotage, an item not owned or an unknown item is refused.
   `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
 - Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match with its lobby
-  invites, paths, leaderboard, match history, match invite, chests), the `clearOnSignOut`
-  meta-reducer and pure helpers (filters, path map, round view, match result, match sounds, UI
-  sounds, party round, arena sides, sabotages, chest reward, shop item state, gate question,
-  profile, pipes, sprite style, quiz form).
+  invites, paths, leaderboard, match history, match invite, chests, shop), the `clearOnSignOut`
+  meta-reducer, `EquipmentEffects` with a fake profile API, and pure helpers (filters, path map,
+  round view, match result, match sounds, UI sounds, party round, arena sides, sabotages, chest
+  reward, shop item state, gate question, profile, wardrobe, tabs, pipes, sprite style, quiz
+  form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev

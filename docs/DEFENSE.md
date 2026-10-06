@@ -25,7 +25,7 @@ prvom prelasku, a sledeći korak se otključava tek kad se pređe prethodni. Sva
 ide u **Mistakes notebook** i vraća se na ponavljanje posle 1, 3 i 7 dana, dok se ne odgovori
 tačno tri puta zaredom (spaced repetition). Igrač skuplja XP, nivoe, dnevni niz (streak) i
 novčiće, kojima u **prodavnici** kupuje heroje, ljubimce, sabotaže i pojačanja (hint, 50/50,
-dodatno vreme, druga šansa).
+dodatno vreme, druga šansa). Heroja i ljubimca koje ima bira u delu **Wardrobe** na svom profilu.
 
 **Sabotaže se otključavaju u prodavnici.** Mastilo (INK) je besplatno za sve i nije predmet.
 Ostalih šest (FREEZE, SCRAMBLE, FOG, MIRROR, QUAKE, SHIELD) su predmeti od 80 do 150 novčića,
@@ -140,8 +140,8 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | `reduce` | [path-page.component.ts:78-80](../frontend/src/app/features/paths/path-page.component.ts#L78-L80), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:46-49](../backend/src/modules/matches/scoring.ts#L46-L49) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:29](../frontend/src/app/features/play/components/mistake-list.component.ts#L29). |
 | `filter` | backend [match-session.ts:281](../backend/src/modules/matches/match-session.ts#L281), [match.effects.ts:403-406](../frontend/src/app/store/match/match.effects.ts#L403-L406), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13), [ui-sounds.service.ts:38](../frontend/src/app/core/sound/ui-sounds.service.ts#L38), [ui-sounds.service.ts:48](../frontend/src/app/core/sound/ui-sounds.service.ts#L48) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. Zvuk aplikacije propušta samo klikove na kontrole i kucanje u poljima za tekst. |
 | `forEach` | [synth.ts:26-28](../frontend/src/app/core/sound/synth.ts#L26-L28), backend [matches.service.ts:149-151](../backend/src/modules/matches/matches.service.ts#L149-L151) | `jingle` svaku notu melodije zakaže sa malim razmakom (npr. level-up). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
-| fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:48](../frontend/src/app/app.config.ts#L48) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
-| Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:77-84](../backend/src/modules/learning-paths/path-generation.service.ts#L77-L84) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:76](../frontend/src/app/app.config.ts#L76)). Backend paralelno piše 5 koraka putanje. |
+| fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:49](../frontend/src/app/app.config.ts#L49) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
+| Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:77-84](../backend/src/modules/learning-paths/path-generation.service.ts#L77-L84) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:78](../frontend/src/app/app.config.ts#L78)). Backend paralelno piše 5 koraka putanje. |
 | `switchMap` | [register-page.component.ts:112-119](../frontend/src/app/features/auth/register-page.component.ts#L112-L119), [friends.effects.ts:41-48](../frontend/src/app/store/friends/friends.effects.ts#L41-L48), [match-clock.service.ts:64-72](../frontend/src/app/features/play/match-clock.service.ts#L64-L72), backend [match-session.ts:103-105](../backend/src/modules/matches/match-session.ts#L103-L105) | Nova vrednost otkazuje prethodni posao: staru proveru imena, staru pretragu, stari tajmer, stari rok runde (posle EXTRA_TIME). |
 | `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87), backend [match-session.ts:284](../backend/src/modules/matches/match-session.ts#L284) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
 | `takeUntil` | backend [match-session.ts:285](../backend/src/modules/matches/match-session.ts#L285), [match-session.ts:735-737](../backend/src/modules/matches/match-session.ts#L735-L737), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
@@ -156,10 +156,10 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | Komponente i servisi | [answer-grid.component.ts:32-40](../frontend/src/app/features/play/components/answer-grid.component.ts#L32-L40), [match-page.component.ts:72-111](../frontend/src/app/features/play/match-page.component.ts#L72-L111), [quizzes-api.service.ts:15-18](../frontend/src/app/core/api/quizzes-api.service.ts#L15-L18), [token-storage.service.ts:6-7](../frontend/src/app/core/auth/token-storage.service.ts#L6-L7) | Prezentaciona komponenta (AnswerGrid) samo crta i javlja klik. Stranica (MatchPage) čita store i šalje akcije. Servis drži ono što nije prikaz: HTTP pozive, tokene. |
 | Ulazni i izlazni parametri | [answer-grid.component.ts:41-57](../frontend/src/app/features/play/components/answer-grid.component.ts#L41-L57), [match-page.component.html:161-174](../frontend/src/app/features/play/match-page.component.html#L161-L174), [quiz-card.component.ts:42-46](../frontend/src/app/shared/components/quiz-card.component.ts#L42-L46), [library-page.component.html:51](../frontend/src/app/features/library/library-page.component.html#L51) | `input()` donosi podatke od roditelja, `output()` šalje događaj nazad. AnswerGrid ne zna ništa o socketima, samo emituje indeks kliknutog odgovora. |
 | Dependency injection | [match-page.component.ts:101-107](../frontend/src/app/features/play/match-page.component.ts#L101-L107), [match-page.component.ts:114-121](../frontend/src/app/features/play/match-page.component.ts#L114-L121), [token-refresh.service.ts:11-15](../frontend/src/app/core/auth/token-refresh.service.ts#L11-L15) | `inject()` uzima zavisnost. `providers` na komponenti pravi novi `MatchClockService` za svaku stranicu meča, pa tajmeri nestaju sa stranicom. `providedIn: 'root'` je jedan primerak za celu aplikaciju. |
-| NgRx store | [app.config.ts:49-60](../frontend/src/app/app.config.ts#L49-L60), [auth.reducer.ts:28-106](../frontend/src/app/store/auth/auth.reducer.ts#L28-L106), [path-page.component.ts:62](../frontend/src/app/features/paths/path-page.component.ts#L62) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
-| NgRx entity | [quizzes.reducer.ts:23-26](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L23-L26), [quizzes.reducer.ts:139-147](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L139-L147), [friends.reducer.ts:23-24](../frontend/src/app/store/friends/friends.reducer.ts#L23-L24), [friends.reducer.ts:104](../frontend/src/app/store/friends/friends.reducer.ts#L104), [shop.reducer.ts:22-24](../frontend/src/app/store/shop/shop.reducer.ts#L22-L24), kovčezi [chests.reducer.ts:19-22](../frontend/src/app/store/chests/chests.reducer.ts#L19-L22), [chests.reducer.ts:59](../frontend/src/app/store/chests/chests.reducer.ts#L59), [chests.reducer.ts:79](../frontend/src/app/store/chests/chests.reducer.ts#L79), [chests.reducer.ts:66-69](../frontend/src/app/store/chests/chests.reducer.ts#L66-L69) | Liste koje se menjaju element po element: obrisan kviz (`removeOne`), promenjen online status prijatelja (`updateOne`), kupljen predmet. Prijatelji imaju `selectId`, jer im je ključ `friendshipId`. Neotvoreni kovčezi su najbolji primer: `chest:earned` doda jedan (`addOne`), otvaranje ga skine (`removeOne`), a `selectTotal` daje broj na ikonici u gornjoj traci bez ručnog brojanja. |
-| NgRx effects | [quizzes.effects.ts:44-54](../frontend/src/app/store/quizzes/quizzes.effects.ts#L44-L54), [match.effects.ts:139-147](../frontend/src/app/store/match/match.effects.ts#L139-L147), [realtime.effects.ts:18-62](../frontend/src/app/store/realtime/realtime.effects.ts#L18-L62) | Sve što izlazi napolje (HTTP, socket, navigacija, toast) je u efektima, pa reducer ostaje čista funkcija. Registracija: [app.config.ts:61-74](../frontend/src/app/app.config.ts#L61-L74). |
-| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:46](../frontend/src/app/app.config.ts#L46), [match-page.component.ts:112](../frontend/src/app/features/play/match-page.component.ts#L112) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
+| NgRx store | [app.config.ts:50-61](../frontend/src/app/app.config.ts#L50-L61), [auth.reducer.ts:29-107](../frontend/src/app/store/auth/auth.reducer.ts#L29-L107), [path-page.component.ts:62](../frontend/src/app/features/paths/path-page.component.ts#L62) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
+| NgRx entity | [quizzes.reducer.ts:23-26](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L23-L26), [quizzes.reducer.ts:139-147](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L139-L147), [friends.reducer.ts:23-24](../frontend/src/app/store/friends/friends.reducer.ts#L23-L24), [friends.reducer.ts:104](../frontend/src/app/store/friends/friends.reducer.ts#L104), [shop.reducer.ts:25-27](../frontend/src/app/store/shop/shop.reducer.ts#L25-L27), kovčezi [chests.reducer.ts:19-22](../frontend/src/app/store/chests/chests.reducer.ts#L19-L22), [chests.reducer.ts:59](../frontend/src/app/store/chests/chests.reducer.ts#L59), [chests.reducer.ts:79](../frontend/src/app/store/chests/chests.reducer.ts#L79), [chests.reducer.ts:66-69](../frontend/src/app/store/chests/chests.reducer.ts#L66-L69) | Liste koje se menjaju element po element: obrisan kviz (`removeOne`), promenjen online status prijatelja (`updateOne`), kupljen predmet. Prijatelji imaju `selectId`, jer im je ključ `friendshipId`. Neotvoreni kovčezi su najbolji primer: `chest:earned` doda jedan (`addOne`), otvaranje ga skine (`removeOne`), a `selectTotal` daje broj na ikonici u gornjoj traci bez ručnog brojanja. |
+| NgRx effects | [quizzes.effects.ts:44-54](../frontend/src/app/store/quizzes/quizzes.effects.ts#L44-L54), [match.effects.ts:139-147](../frontend/src/app/store/match/match.effects.ts#L139-L147), [realtime.effects.ts:18-62](../frontend/src/app/store/realtime/realtime.effects.ts#L18-L62) | Sve što izlazi napolje (HTTP, socket, navigacija, toast) je u efektima, pa reducer ostaje čista funkcija. Registracija: [app.config.ts:62-76](../frontend/src/app/app.config.ts#L62-L76). |
+| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:47](../frontend/src/app/app.config.ts#L47), [match-page.component.ts:112](../frontend/src/app/features/play/match-page.component.ts#L112) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
 
 ### NestJS, Docker, baza
 
@@ -654,7 +654,7 @@ Tok kupovine:
 ### h) Otvaranje kovčega: transakcija, updateMany i ubačena random funkcija
 
 1. Frontend: dugme Open na stranici "Treasure room" šalje `ChestsActions.open({ chestId })`
-   ([chests-page.component.ts:68-71](../frontend/src/app/features/chests/chests-page.component.ts#L68-L71)).
+   ([chests-page.component.ts:71-74](../frontend/src/app/features/chests/chests-page.component.ts#L71-L74)).
    Reducer zapamti kovčeg koji se otvara (`opening`), da dijalog može da ga crta
    ([chests.reducer.ts:45-52](../frontend/src/app/store/chests/chests.reducer.ts#L45-L52)).
 2. Efekat `open$` koristi `exhaustMap`: dok prvi zahtev traje, drugi klik se ignoriše
@@ -766,11 +766,11 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
    na početak liste nedavnih
    ([chests.reducer.ts:73-84](../frontend/src/app/store/chests/chests.reducer.ts#L73-L84)), a
    `auth` reducer upiše nove novčiće i, ako je ispala sabotaža, doda je u `user.sabotages`
-   ([auth.reducer.ts:96-100](../frontend/src/app/store/auth/auth.reducer.ts#L96-L100)). Dijalog
+   ([auth.reducer.ts:97-101](../frontend/src/app/store/auth/auth.reducer.ts#L97-L101)). Dijalog
    pusti animaciju (trese se, poklopac se otvara, nagrada iskoči; za sabotažu "New sabotage:
    Fog!" sa ikonicom). Dok nagrada ne iskoči do kraja, dijalog ne može da se zatvori: nema X ni
    Done, a Escape i klik pored dijaloga ne rade
-   ([chest-opening.component.ts:53-62](../frontend/src/app/features/chests/components/chest-opening.component.ts#L53-L62)),
+   ([chest-opening.component.ts:54-63](../frontend/src/app/features/chests/components/chest-opening.component.ts#L54-L63)),
    pa igrač uvek vidi šta je dobio. Signal `canClose` ide u `[dismissible]` dijaloga
    ([chest-opening.component.html:1](../frontend/src/app/features/chests/components/chest-opening.component.html#L1)),
    a `ModalComponent` bez toga ne zatvara ni na Escape ni na klik pored
@@ -785,18 +785,19 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
    pa ga frontend sam napravi kao predmet koji svi već imaju (`FREE_INK`,
    [shop.constants.ts:25-38](../frontend/src/app/features/shop/shop.constants.ts#L25-L38)) i
    stavi ispred šest sabotaža sa servera
-   ([shop-page.component.ts:83-84](../frontend/src/app/features/shop/shop-page.component.ts#L83-L84)).
+   ([shop-page.component.ts:82-83](../frontend/src/app/features/shop/shop-page.component.ts#L82-L83)).
    Kupovina ide istim putem kao za heroje: dijalog za potvrdu, pa `POST /shop/items/:id/buy`
-   ([shop.controller.ts:32-35](../backend/src/modules/shop/shop.controller.ts#L32-L35)).
+   ([shop.controller.ts:31-34](../backend/src/modules/shop/shop.controller.ts#L31-L34)).
 2. Server, `buyItem` ([shop.service.ts:26-37](../backend/src/modules/shop/shop.service.ts#L26-L37)):
    `assertCanBuy` odbije početni predmet, predmet samo iz kovčega, već kupljen predmet i premali
-   nivo ([shop.service.ts:160-173](../backend/src/modules/shop/shop.service.ts#L160-L173)), pa u
+   nivo ([shop.service.ts:138-151](../backend/src/modules/shop/shop.service.ts#L138-L151)), pa u
    jednoj transakciji `spendCoins` skine novčiće uslovnim `updateMany` (`coins: { gte: price }`)
    i napravi `UserItem` red. Sabotaža se kupuje jednom i ostaje zauvek, ne troši se. Ako dva
    klika stignu istovremeno, `@@unique([userId, itemId])`
    ([schema.prisma:350](../backend/prisma/schema.prisma#L350)) pusti samo jedan red, a drugi
-   zahtev dobije 409 i njegova transakcija vrati novčiće. Sabotaža se ne "oblači": equip vraća
-   400 ([shop.service.ts:41-43](../backend/src/modules/shop/shop.service.ts#L41-L43)).
+   zahtev dobije 409 i njegova transakcija vrati novčiće. Sabotaža se ne "oblači":
+   `POST /profile/me/equipment/:itemId` vraća 400
+   ([equipment.service.ts:21-23](../backend/src/modules/profile/equipment.service.ts#L21-L23)).
 3. Koje sabotaže igrač ima računa jedna mala čista funkcija
    ([sabotage-items.ts:14-24](../backend/src/modules/shop/sabotage-items.ts#L14-L24)):
 
@@ -819,7 +820,7 @@ export function ownedSabotages(items: { itemId: string }[]): SabotageType[] {
    `CurrentUser.sabotages` se pravi ovom funkcijom
    ([user.mapper.ts:61](../backend/src/modules/users/user.mapper.ts#L61)), pa frontend zna koja
    dugmad da pokaže. Posle kupovine `auth` reducer odmah doda novu sabotažu korisniku
-   ([auth.reducer.ts:92-95](../frontend/src/app/store/auth/auth.reducer.ts#L92-L95)).
+   ([auth.reducer.ts:93-96](../frontend/src/app/store/auth/auth.reducer.ts#L93-L96)).
 4. Meč: vlasništvo se čita **jednom**, kad sesija nastaje. `SESSION_SETUP_INCLUDE` uz meč
    učita i sabotaže svakog igrača
    ([match.mapper.ts:52-58](../backend/src/modules/matches/match.mapper.ts#L52-L58)),
@@ -1054,7 +1055,7 @@ export function timerTick(secondsLeft: number | null, answered: boolean): TimerT
 
 Ukus: kratki tonovi i tihe jačine, sat samo u poslednjih 5 sekundi, podignut štit bez zvuka, a
 sabotaža svira samo onome koga je pogodila. Van meča `SoundService` zovu otvaranje kovčega
-([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78))
+([chest-opening.component.ts:73-79](../frontend/src/app/features/chests/components/chest-opening.component.ts#L73-L79))
 i plaćanje
 ([payment-result-page.component.ts:77-81](../frontend/src/app/features/shop/payment-result-page.component.ts#L77-L81)),
 a dugmad, kucanje, dijalozi i toastovi su u odeljku 4m. Zvuk se gasi dugmetom u meču,
@@ -1066,7 +1067,7 @@ effects; sva tri čitaju isti signal `muted`.
 Aplikacija je igra, pa zvuk nije samo u meču: dugmad, linkovi, tabovi i prekidači kliknu, polja
 za tekst tiho kucaju dok se piše, dijalog "iskoči" i "spusti se", a toast ima svoj ton. Nijedno
 dugme nema kod za to. `UiSoundsService` se pokrene jednom pri startu aplikacije
-([app.config.ts:77](../frontend/src/app/app.config.ts#L77)) i stavi po jedan slušalac za
+([app.config.ts:79](../frontend/src/app/app.config.ts#L79)) i stavi po jedan slušalac za
 `click` i za `input` na ceo `document`. To je **event delegation**: događaj iz bilo kog dugmeta
 "ispliva" do `document`-a, pa jedan slušalac čuje sve, i dugmad koja se tek pojave
 ([ui-sounds.service.ts:34-53](../frontend/src/app/core/sound/ui-sounds.service.ts#L34-L53)):
@@ -1142,10 +1143,10 @@ kad se uništi ([modal.component.ts:66-74](../frontend/src/app/shared/components
 ([toast.service.ts:29-33](../frontend/src/app/core/notifications/toast.service.ts#L29-L33),
 [toast.service.ts:62](../frontend/src/app/core/notifications/toast.service.ts#L62)). Kupovina u
 prodavnici pusti novčiće, a toast odmah posle njih ostaje tih, jer ide kroz `playUi`
-([shop.effects.ts:105-132](../frontend/src/app/store/shop/shop.effects.ts#L105-L132)). Equip
-"zazvecka" čim se pritisne, u prodavnici, kovčegu ili toastu
-([shop.effects.ts:134-143](../frontend/src/app/store/shop/shop.effects.ts#L134-L143)). Novčići,
-Equip i kucanje idu kroz `play`, ne kroz `playUi`, pa se uvek čuju.
+([shop.effects.ts:81-105](../frontend/src/app/store/shop/shop.effects.ts#L81-L105)). Equip
+"zazvecka" čim se pritisne, u delu Wardrobe na profilu (odeljak 4n) ili na nagradi iz kovčega
+([equipment.effects.ts:42-51](../frontend/src/app/store/shop/equipment.effects.ts#L42-L51)).
+Novčići, Equip i kucanje idu kroz `play`, ne kroz `playUi`, pa se uvek čuju.
 
 **Prekidač u gornjoj traci.** U meniju naloga (klik na avatar) je prekidač "Sound effects" sa
 ikonicom zvučnika ([top-bar.component.html:100-114](../frontend/src/app/layout/top-bar.component.html#L100-L114)).
@@ -1160,6 +1161,80 @@ Testovi: [ui-sounds.rules.spec.ts](../frontend/src/app/core/sound/ui-sounds.rule
 svaku vrstu kontrole, klik na tekst u dugmetu, isključeno dugme, `data-sound="none"`
 ([ui-sounds.rules.spec.ts:66-73](../frontend/src/app/core/sound/ui-sounds.rules.spec.ts#L66-L73)),
 polja za tekst i brisanje.
+
+### n) Wardrobe: heroj i ljubimac se oblače na profilu
+
+Prodavnica samo prodaje. Heroja i ljubimca koje ima igrač oblači u delu **Wardrobe** na svom
+profilu (tabovi Heroes i Pets). Kartica kupljenog heroja ili ljubimca u prodavnici umesto dugmeta
+Equip ima link "Equip in your profile" na `/profile#wardrobe`
+([item-card.component.html:64-68](../frontend/src/app/features/shop/components/item-card.component.html#L64-L68)),
+a profil tada sam skroluje do Wardrobe-a i stavi fokus u njega
+([profile-page.component.ts:105-107](../frontend/src/app/features/profile/profile-page.component.ts#L105-L107)).
+Dugme "Change hero or pet" na kartici heroja radi isto
+([profile-page.component.ts:181-183](../frontend/src/app/features/profile/profile-page.component.ts#L181-L183)).
+
+1. Backend: dve rute u `ProfileController`, a `JwtAuthGuard` već stoji na klasi
+   ([profile.controller.ts:42-51](../backend/src/modules/profile/profile.controller.ts#L42-L51)).
+   `POST /profile/me/equipment/:itemId` obuče predmet, a `DELETE /profile/me/equipment/pet`
+   skine ljubimca; obe vraćaju ceo `CurrentUser`. Rute su pod `me`, pa igrač menja samo sebe.
+2. `EquipmentService.equip`
+   ([equipment.service.ts:16-29](../backend/src/modules/profile/equipment.service.ts#L16-L29)):
+
+```ts
+  async equip(userId: string, itemId: string): Promise<CurrentUser> {
+    const item = await this.prisma.item.findUnique({ where: { id: itemId } });
+    if (!item) {
+      throw new NotFoundException(ITEM_NOT_FOUND_MESSAGE);
+    }
+    if (item.type === 'SABOTAGE') {
+      throw new BadRequestException('Sabotages are not worn. They work in party matches.');
+    }
+    await this.assertOwned(userId, item);
+
+    const slot = item.type === 'AVATAR' ? { avatarKey: item.id } : { petKey: item.id };
+    await this.prisma.user.update({ where: { id: userId }, data: slot });
+    return this.users.findCurrentUser(userId);
+  }
+```
+
+   Nepostojeći predmet je 404, sabotaža 400, a predmet koji igrač nema 400 sa porukom gde se
+   dobija, prodavnica ili kovčeg
+   ([equipment.service.ts:36-43](../backend/src/modules/profile/equipment.service.ts#L36-L43)).
+   Heroj ide u `avatarKey`, ljubimac u `petKey`. Servis je u `ProfileModule`
+   ([profile.module.ts:12](../backend/src/modules/profile/profile.module.ts#L12)), jer menja samo
+   korisnika; od prodavnice uzima samo poruku `ITEM_NOT_FOUND_MESSAGE` iz čistog fajla
+   `shop.constants.ts`, pa `ProfileModule` ne uvozi `ShopModule`.
+3. Frontend: akcije su posebna grupa `EquipmentActions`
+   ([equipment.actions.ts:6-15](../frontend/src/app/store/shop/equipment.actions.ts#L6-L15)):
+   `equipItem` / `itemEquipped`, `unequipPet` / `petUnequipped` i `failed`. Šalju ih Wardrobe
+   ([profile-page.component.ts:189-195](../frontend/src/app/features/profile/profile-page.component.ts#L189-L195))
+   i dugme "Equip now" na nagradi iz kovčega
+   ([chests-page.component.ts:93-95](../frontend/src/app/features/chests/chests-page.component.ts#L93-L95)).
+4. `EquipmentEffects` zove `ProfileApiService` sa `exhaustMap`, pa dupli klik ne šalje dva
+   zahteva ([equipment.effects.ts:18-40](../frontend/src/app/store/shop/equipment.effects.ts#L18-L40),
+   [profile-api.service.ts:25-31](../frontend/src/app/core/api/profile-api.service.ts#L25-L31)).
+   Greška ide u toast, a Equip "zazvecka" čim se pritisne (odeljak 4m).
+5. Odgovor je novi `CurrentUser`, pa ga čitaju dva reducera: `auth` zameni korisnika
+   ([auth.reducer.ts:78-85](../frontend/src/app/store/auth/auth.reducer.ts#L78-L85)), a `shop`
+   po `avatarKey` i `petKey` pomeri oznaku `equipped` na predmetima (`withEquippedItems`,
+   [shop.reducer.ts:150-156](../frontend/src/app/store/shop/shop.reducer.ts#L150-L156)). Profil na
+   iste akcije ponovo učita karticu heroja
+   ([profile-page.component.ts:243-246](../frontend/src/app/features/profile/profile-page.component.ts#L243-L246)).
+6. `WardrobeComponent` je prezentaciona komponenta: dobija sve predmete iz `shop` slice-a i samo
+   javlja `equip`, `unequipPet` i `retry`
+   ([wardrobe.component.ts:41-49](../frontend/src/app/features/profile/components/wardrobe.component.ts#L41-L49),
+   [profile-page.component.html:64-73](../frontend/src/app/features/profile/profile-page.component.html#L64-L73)).
+   Šta se prikazuje odlučuju čiste funkcije: `wardrobeItems` (samo moji heroji ili ljubimci,
+   redom kao u prodavnici) i `wearingLine` ("You play as ...")
+   ([wardrobe.rules.ts:5-20](../frontend/src/app/features/profile/wardrobe.rules.ts#L5-L20)).
+   Strelice levo i desno menjaju tab isto kao u prodavnici, preko zajedničke funkcije
+   `tabIndexAfterKey` ([tabs.ts:5-11](../frontend/src/app/shared/tabs.ts#L5-L11)).
+
+Testovi: [equipment.service.spec.ts](../backend/src/modules/profile/equipment.service.spec.ts)
+(heroj, ljubimac, skidanje ljubimca, sabotaža, predmet koji igrač nema, 404),
+[equipment.effects.spec.ts](../frontend/src/app/store/shop/equipment.effects.spec.ts),
+[shop.reducer.spec.ts](../frontend/src/app/store/shop/shop.reducer.spec.ts) i
+[wardrobe.rules.spec.ts](../frontend/src/app/features/profile/wardrobe.rules.spec.ts).
 
 ---
 
@@ -1436,7 +1511,7 @@ Backend:
 ```
 
 4. Prodavnica: novi unos u `BOOST_CATALOG`
-   ([shop.constants.ts:4-35](../backend/src/modules/shop/shop.constants.ts#L4-L35)), npr.
+   ([shop.constants.ts:6-37](../backend/src/modules/shop/shop.constants.ts#L6-L37)), npr.
    `{ type: 'REMOVE_ONE', name: 'Remove one', description: 'Removes one wrong answer.', price: 5 }`.
    Trošenje je već atomično ([match-play.service.ts:58-64](../backend/src/modules/matches/match-play.service.ts#L58-L64)).
 
@@ -1665,7 +1740,7 @@ Frontend:
    `SABOTAGE_TYPES`, pa `sabotageOfItem` prepozna predmet `sabotage-shrink`, a traka sabotaža ga
    pokaže kad ga igrač ima (`ownedAttacks`). Tab "Sabotages" ga sam doda, jer lista sve predmete
    tipa `SABOTAGE` sa servera
-   ([shop.reducer.ts:123-125](../frontend/src/app/store/shop/shop.reducer.ts#L123-L125)).
+   ([shop.reducer.ts:140-142](../frontend/src/app/store/shop/shop.reducer.ts#L140-L142)).
 9. Da li sam pogođen, kao signal, pored ostalih
    ([party-round.service.ts:115-118](../frontend/src/app/features/play/party-round.service.ts#L115-L118)):
    `readonly shrunk = computed(() => this.isUnder(this.meId(), 'SHRINK'));`
@@ -1718,9 +1793,9 @@ dogovoru se i slika zove isto.
 4. `docker compose restart backend`. Migracija ne treba, jer je to red u tabeli, a ne izmena
    šeme; seed pri startu radi `upsert` za svaki predmet
    ([seed.ts:97-101](../backend/prisma/seed.ts#L97-L101)).
-5. Proba: Shop → Heroes. Predmet do 150 novčića sam ulazi u "običan predmet" iz kovčega
-   (zajedno sa jeftinijim herojima, ljubimcima i sabotažama), a `chestOnly` u ređi red srebrnog
-   i zlatnog kovčega
+5. Proba: Shop → Heroes, a kupljen heroj se oblači u Profile → Wardrobe (odeljak 4n). Predmet
+   do 150 novčića sam ulazi u "običan predmet" iz kovčega (zajedno sa jeftinijim herojima,
+   ljubimcima i sabotažama), a `chestOnly` u ređi red srebrnog i zlatnog kovčega
    ([chests.rules.ts:60-67](../backend/src/modules/chests/chests.rules.ts#L60-L67)); u
    prodavnici umesto cene piše "Found in chests".
 
@@ -1864,7 +1939,7 @@ export const INVITE_NOTES = [784, 659];
 
    (`effect` i `untracked` dodaj u import iz `@angular/core`, a `SoundService` iz
    `../core/sound/sound.service`.) Zbog `untracked` efekat zavisi samo od `invite`, isto kao kod
-   kovčega ([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78)).
+   kovčega ([chest-opening.component.ts:73-79](../frontend/src/app/features/chests/components/chest-opening.component.ts#L73-L79)).
    Dijalog pri otvaranju pusti i svoj "pop", ali on ide kroz `playUi`, pa se preskoči kad je
    ding-dong upravo počeo.
 4. Proba: dva prozora (trik iz odeljka 2), A pozove B iz lobija, a B čuje "ding-dong".
@@ -1902,7 +1977,7 @@ Ako zvuk zavisi od pravila (kome i kada svira), napiši ga kao čistu funkciju u
 | Šanse u kovčezima | [chests.constants.ts:6-24](../backend/src/modules/chests/chests.constants.ts#L6-L24) |
 | Kada se dobija kovčeg (60%, dve pobede dnevno, svakih 7 dana) | [chests.constants.ts:34-42](../backend/src/modules/chests/chests.constants.ts#L34-L42) |
 | Poeni za tačan odgovor iz druge šanse | [matches.constants.ts:42-43](../backend/src/modules/matches/matches.constants.ts#L42-L43) |
-| Cene pojačanja (druga šansa 20) | [shop.constants.ts:4-35](../backend/src/modules/shop/shop.constants.ts#L4-L35) |
+| Cene pojačanja (druga šansa 20) | [shop.constants.ts:6-37](../backend/src/modules/shop/shop.constants.ts#L6-L37) |
 | Cene i nivoi sabotaža (80-150 novčića, nivo 2-4) | [seed-data/items.ts:107-112](../backend/prisma/seed-data/items.ts#L107-L112) |
 | Besplatne sabotaže (INK) | [matches.constants.ts:58-59](../backend/src/modules/matches/matches.constants.ts#L58-L59) |
 | Naboji za sabotaže (1 na početku, najviše 2) | [matches.constants.ts:45-46](../backend/src/modules/matches/matches.constants.ts#L45-L46) |
@@ -1981,7 +2056,7 @@ migracije i seed se rade sami, a baza čuva podatke u volumenu. Nema "kod mene r
 - Socket poruke prolaze DTO validaciju ([match.gateway.ts:36](../backend/src/modules/matches/match.gateway.ts#L36),
   [answer.dto.ts:5-14](../backend/src/modules/matches/dto/answer.dto.ts#L5-L14)).
 - Novčići i pojačanja se troše jednim uslovnim upitom (`updateMany ... gte`), pa ne mogu u minus
-  ([shop.service.ts:135-149](../backend/src/modules/shop/shop.service.ts#L135-L149),
+  ([shop.service.ts:113-127](../backend/src/modules/shop/shop.service.ts#L113-L127),
   [match-play.service.ts:58-64](../backend/src/modules/matches/match-play.service.ts#L58-L64)).
 - U partiji pojačanja su isključena
   ([match-session.ts:428-441](../backend/src/modules/matches/match-session.ts#L428-L441)).
@@ -2013,7 +2088,7 @@ Frontend: modal sa množenjem dvocifrenog i jednocifrenog broja
 pogrešnog odgovora novo pitanje
 ([grown-up-gate.component.ts:33-43](../frontend/src/app/features/shop/components/grown-up-gate.component.ts#L33-L43));
 tek tačan odgovor šalje checkout
-([shop-page.component.html:177-183](../frontend/src/app/features/shop/shop-page.component.html#L177-L183)).
+([shop-page.component.html:176-182](../frontend/src/app/features/shop/shop-page.component.html#L176-L182)).
 Backend: zbir PAID i otvorenih PENDING kupovina u poslednjih 30 dana + novi paket ne sme preći
 1000 centi ([payments.service.ts:160-180](../backend/src/modules/payments/payments.service.ts#L160-L180),
 [payments.rules.ts:8-10](../backend/src/modules/payments/payments.rules.ts#L8-L10)). Red korisnika
@@ -2112,10 +2187,10 @@ slučajnost postoji samo u kovčezima koji se zarađuju. U kodu:
   ([learning-paths.service.ts:156-171](../backend/src/modules/learning-paths/learning-paths.service.ts#L156-L171)),
   plus seed za demo naloge.
 - Predmet koji postoji samo u kovčezima ne može da se kupi: 400
-  ([shop.service.ts:164-166](../backend/src/modules/shop/shop.service.ts#L164-L166)). Zamrzavanje
+  ([shop.service.ts:142-144](../backend/src/modules/shop/shop.service.ts#L142-L144)). Zamrzavanje
   niza nema cenu (`price: null`), pa i ono vraća 400
-  ([shop.constants.ts:29-34](../backend/src/modules/shop/shop.constants.ts#L29-L34),
-  [shop.service.ts:92-96](../backend/src/modules/shop/shop.service.ts#L92-L96)).
+  ([shop.constants.ts:31-36](../backend/src/modules/shop/shop.constants.ts#L31-L36),
+  [shop.service.ts:70-74](../backend/src/modules/shop/shop.service.ts#L70-L74)).
 - Šanse su javne: `GET /chests/odds` ih računa iz iste tabele po kojoj se izvlači
   ([chests.rules.ts:95-109](../backend/src/modules/chests/chests.rules.ts#L95-L109)), a stranica
   ih prikazuje u panelu "Chances".
