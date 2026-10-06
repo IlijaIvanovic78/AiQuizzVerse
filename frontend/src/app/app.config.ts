@@ -18,6 +18,7 @@ import { AuthEffects } from './store/auth/auth.effects';
 import { authFeature } from './store/auth/auth.reducer';
 import { ChestsEffects } from './store/chests/chests.effects';
 import { chestsFeature } from './store/chests/chests.reducer';
+import { clearOnSignOut } from './store/clear-on-sign-out';
 import { FriendsEffects } from './store/friends/friends.effects';
 import { friendsFeature } from './store/friends/friends.reducer';
 import { LeaderboardEffects } from './store/leaderboard/leaderboard.effects';
@@ -44,7 +45,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     { provide: TitleStrategy, useClass: AppTitleStrategy },
     provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
-    provideStore(),
+    provideStore({}, { metaReducers: [clearOnSignOut] }),
     provideState(authFeature),
     provideState(quizzesFeature),
     provideState(matchFeature),
