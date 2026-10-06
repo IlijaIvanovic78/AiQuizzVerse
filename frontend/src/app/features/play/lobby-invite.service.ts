@@ -1,4 +1,4 @@
-import { DOCUMENT, Injectable, computed, inject, linkedSignal } from '@angular/core';
+import { DOCUMENT, Injectable, computed, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { ToastService } from '../../core/notifications/toast.service';
 import { MatchActions } from '../../store/match/match.actions';
@@ -15,21 +15,16 @@ export class LobbyInviteService {
   private readonly matchId = this.store.selectSignal(matchFeature.selectMatchId);
   private readonly match = this.store.selectSignal(matchFeature.selectMatch);
   private readonly inviteCode = computed(() => this.match()?.inviteCode ?? '');
-  // The friends invited to this lobby. A rematch opens its new lobby on the same page, so the
-  // list starts empty again for every new match.
-  private readonly invited = linkedSignal({
-    source: this.matchId,
-    computation: (): string[] => [],
-  });
 
   readonly canShare = 'share' in navigator;
   readonly shareUrl = computed(() => `${this.origin}/join/${this.inviteCode()}`);
-  readonly invitedIds = this.invited.asReadonly();
+  // A friend shows as invited only after the server sent the invite. Every new match, like a
+  // rematch on the same page, starts with nobody invited.
+  readonly friendInvites = this.store.selectSignal(matchFeature.selectFriendInvites);
 
   invite(friendId: string): void {
     const matchId = this.matchId();
-    if (matchId) {
-      this.invited.update((ids) => [...ids, friendId]);
+    if (matchId && !this.friendInvites()[friendId]) {
       this.store.dispatch(MatchActions.inviteFriend({ matchId, friendId }));
     }
   }

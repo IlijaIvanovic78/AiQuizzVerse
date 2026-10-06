@@ -33,6 +33,9 @@ export interface SabotageBlock extends SabotageBlockedEvent {
   landedAt: number;
 }
 
+// A lobby invite is pending until the server confirms it was sent.
+export type FriendInviteStatus = 'pending' | 'invited';
+
 export interface MatchState {
   matchId: string | null;
   match: MatchView | null;
@@ -59,6 +62,8 @@ export interface MatchState {
   blocks: SabotageBlock[];
   // My first, wrong pick when a second chance gave me another try.
   secondChanceOption: number | null;
+  // Keyed by friend id. A friend who is not in here can be invited.
+  friendInvites: Record<string, FriendInviteStatus>;
   result: MatchResult | null;
   busy: boolean;
   error: string | null;
@@ -89,6 +94,7 @@ export const initialMatchState: MatchState = {
   shieldedUserIds: [],
   blocks: [],
   secondChanceOption: null,
+  friendInvites: {},
   result: null,
   busy: false,
   error: null,
@@ -194,6 +200,15 @@ export const matchFeature = createFeature({
         ...state,
         leftUserIds: addOnce(state.leftUserIds, userId),
       }),
+    ),
+    on(MatchActions.inviteFriend, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, 'pending'),
+    ),
+    on(MatchActions.friendInvited, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, 'invited'),
+    ),
+    on(MatchActions.inviteFailed, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, null),
     ),
   ),
   extraSelectors: ({ selectMatch, selectRound }) => ({
@@ -392,6 +407,26 @@ function usesFromOwned(
 
 function ownedCount(offers: BoostOffer[], type: MatchBoostType): number {
   return offers.find((offer) => offer.type === type)?.owned ?? 0;
+}
+
+// A failed invite (null) makes the friend invitable again. An answer for an earlier match,
+// like the lobby before a rematch, is ignored.
+function withFriendInvite(
+  state: MatchState,
+  matchId: string,
+  friendId: string,
+  status: FriendInviteStatus | null,
+): MatchState {
+  if (matchId !== state.matchId) {
+    return state;
+  }
+  const friendInvites = { ...state.friendInvites };
+  if (status === null) {
+    delete friendInvites[friendId];
+  } else {
+    friendInvites[friendId] = status;
+  }
+  return { ...state, friendInvites };
 }
 
 function addOnce<T>(list: T[], value: T): T[] {

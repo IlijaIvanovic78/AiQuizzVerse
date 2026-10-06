@@ -443,3 +443,42 @@ describe('match reducer in a party', () => {
     expect(state.charges['fox']).toBe(0);
   });
 });
+
+describe('match reducer, friend invites', () => {
+  const lobby = () => reducer(initialMatchState, MatchActions.entered({ matchId: MATCH_ID }));
+  const inviteFox = MatchActions.inviteFriend({ matchId: MATCH_ID, friendId: 'fox' });
+
+  it('keeps an invite pending until the server confirms it', () => {
+    const pending = reducer(lobby(), inviteFox);
+    const sent = reducer(
+      pending,
+      MatchActions.friendInvited({ matchId: MATCH_ID, friendId: 'fox' }),
+    );
+
+    expect(pending.friendInvites).toEqual({ fox: 'pending' });
+    expect(sent.friendInvites).toEqual({ fox: 'invited' });
+  });
+
+  it('lets the host invite again when the invite failed', () => {
+    const pending = reducer(lobby(), inviteFox);
+
+    const state = reducer(
+      pending,
+      MatchActions.inviteFailed({ matchId: MATCH_ID, friendId: 'fox', error: 'Not online' }),
+    );
+
+    expect(state.friendInvites).toEqual({});
+  });
+
+  it('ignores the answer to an invite from an earlier lobby', () => {
+    const pending = reducer(lobby(), inviteFox);
+    const rematch = reducer(pending, MatchActions.entered({ matchId: 'match-2' }));
+
+    const state = reducer(
+      rematch,
+      MatchActions.friendInvited({ matchId: MATCH_ID, friendId: 'fox' }),
+    );
+
+    expect(state.friendInvites).toEqual({});
+  });
+});

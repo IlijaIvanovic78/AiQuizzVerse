@@ -258,8 +258,10 @@ export class MatchEffects {
       ofType(MatchActions.inviteFriend),
       concatMap(({ matchId, friendId }) =>
         this.matchesApi.invite(matchId, { friendId }).pipe(
-          map(() => MatchActions.friendInvited()),
-          catchError((error: unknown) => of(this.failed(error))),
+          map(() => MatchActions.friendInvited({ matchId, friendId })),
+          catchError((error: unknown) =>
+            of(MatchActions.inviteFailed({ matchId, friendId, error: readErrorMessage(error) })),
+          ),
         ),
       ),
     ),
@@ -277,7 +279,7 @@ export class MatchEffects {
   readonly showError$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(MatchActions.failed, MatchSocketActions.errorReceived),
+        ofType(MatchActions.failed, MatchActions.inviteFailed, MatchSocketActions.errorReceived),
         tap(({ error }) => this.toast.error(error)),
       ),
     { dispatch: false },

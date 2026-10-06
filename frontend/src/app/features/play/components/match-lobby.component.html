@@ -107,13 +107,25 @@
               </span>
               <span class="min-w-0 flex-1 truncate font-semibold">{{ friend.user.username }}</span>
               <app-level-badge class="hidden sm:inline-flex" [level]="friend.user.level" />
+              @let inviteStatus = invites()[friend.user.id];
               <button
                 type="button"
                 class="btn btn-secondary btn-sm"
-                [disabled]="invitedIds().includes(friend.user.id)"
+                [disabled]="inviteStatus !== undefined"
+                [attr.aria-busy]="inviteStatus === 'pending'"
                 (click)="invite.emit(friend.user.id)"
               >
-                {{ invitedIds().includes(friend.user.id) ? 'Invited' : 'Invite' }}
+                @switch (inviteStatus) {
+                  @case ('pending') {
+                    Sending...
+                  }
+                  @case ('invited') {
+                    Invited
+                  }
+                  @default {
+                    Invite
+                  }
+                }
               </button>
             </div>
           } @empty {

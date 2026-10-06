@@ -6,6 +6,7 @@ import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.comp
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
 import { MAX_PLAYERS, PLAYERS_TO_START } from '../../../shared/play-modes';
+import { FriendInviteStatus } from '../../../store/match/match.reducer';
 
 interface LobbyStatus {
   title: string;
@@ -31,7 +32,8 @@ export class MatchLobbyComponent {
   readonly shareUrl = input.required<string>();
   readonly canShare = input(false);
   readonly friends = input<Friend[]>([]);
-  readonly invitedIds = input<string[]>([]);
+  // Keyed by friend id; a friend who is missing can be invited.
+  readonly invites = input<Record<string, FriendInviteStatus>>({});
   readonly copyCode = output<void>();
   readonly copyLink = output<void>();
   readonly share = output<void>();
