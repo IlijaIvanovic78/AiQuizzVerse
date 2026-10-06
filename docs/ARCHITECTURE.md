@@ -106,8 +106,11 @@ trusts one proxy hop (the Angular dev proxy), so `req.ip` for the login rate lim
 `backend/prisma/schema.prisma`: snake_case names through `@map` / `@@map`, uuid ids except
 `Item`, child relations cascade on delete unless noted. Migrations start with `init`; later ones
 add quiz soft delete, quiz source, PARTY mode, an `ended_at` index, `coin_cap_reached` and
-chests. The last two drop the old two-player mode (its SQL first turns those matches into
-PARTY rows, then rebuilds the enum) and add sabotage items.
+chests. Two more drop the old two-player mode (its SQL first turns those matches into PARTY
+rows, then rebuilds the enum) and add sabotage items. The newest, `store_match_outcomes`, adds
+`match_players.outcome`, fills it for older rows from `is_winner` (the winner WIN, the other
+party players LOSS, a shared top score of a finished party without a winner DRAW) and then
+drops `is_winner`.
 
 - **User**: unique email and username, `passwordHash`, `twoFaSecret`, `twoFaEnabled`,
   `refreshTokenHash`, `avatarKey`, `petKey`, `xp`, `coins`, `streak`, `longestStreak`,
@@ -125,8 +128,9 @@ PARTY rows, then rebuilds the enum) and add sabotage items.
   1:1 Quiz through the unique `quizId`.
 - **Match**: `mode` (SOLO / TEAM / PARTY), `status` (WAITING / IN_PROGRESS / FINISHED /
   ABANDONED), quiz, host, unique `inviteCode`, `stepReward` (Json), timestamps.
-- **MatchPlayer**: M:N User-Match join table with data: `score`, `correctCount`, `isWinner`,
-  `xpEarned`, `coinsEarned`, `coinCapReached`, `leveledUp`, `answers` (Json list of
+- **MatchPlayer**: M:N User-Match join table with data: `score`, `correctCount`, `outcome`
+  (`MatchOutcome`: WIN / LOSS / DRAW / DONE, set once when the match ends), `xpEarned`,
+  `coinsEarned`, `coinCapReached`, `leveledUp`, `answers` (Json list of
   `{ questionId, optionIndex, correct, points }`, option index in the stored order).
 - **ReviewCard**: unique User-Question pair with `timesWrong`, `correctStreak`, `dueOn` (date).
 - **Item**: `type` AVATAR / PET / SABOTAGE, `price`, `minLevel`, `isStarter`, `isChestOnly`
@@ -250,9 +254,15 @@ question; the team wins at 60% combined accuracy and both are winners. PARTY: 2-
 two friends who want to play against each other start a party for two; the first correct
 answer wins and closes the round, a wrong answer locks the player out of that question and costs
 25 points (never below 0), the highest score wins and a shared top score is a draw. Power-ups
-work only in SOLO and TEAM ("Power-ups are off in party matches. Fair fight!"). History shows
-WIN / LOSS / DRAW for a party, WIN for a team that reached its goal and DONE otherwise
-(`playerOutcome` in `scoring.ts`).
+work only in SOLO and TEAM ("Power-ups are off in party matches. Fair fight!"). Each player's
+outcome (`MatchOutcome`) is decided once when the match ends (`playerOutcome(end, player)` in
+`scoring.ts`) and saved in `MatchPlayer.outcome`: WIN / LOSS / DRAW for a party, WIN for a team
+that finished with its goal reached and DONE otherwise and in SOLO. Rewards, the victory chest,
+the results screen, history and profile wins all read the stored value, and the client only
+shows it. Nothing recomputes it later, because what decides it exists only in the session at
+that moment: who is still connected and whether the match finished or was abandoned. A later
+recount from the scores alone used to show "Good fight, 2nd" for a party the server had paid
+as a draw after the leader left.
 
 **Power-ups**: the session checks that the question is open and the player has not answered or
 used this type on it yet, reserves it, then spends it with `userBoost.updateMany({ where: {
@@ -301,12 +311,13 @@ during play quits at once with the same rules; in the lobby it removes a guest, 
 match when the host leaves. `match:join` on a running match resends the current question with
 the time left, or the last round result.
 
-**Finishing.** `finish()` sets the phase to `finished` before the first `await`. Then
-`MatchResultsService.save` runs one transaction (15 s timeout) that starts with
+**Finishing.** `finish()` sets the phase to `finished` before the first `await`, and
+`summarize()` decides every player's outcome. Then `MatchResultsService.save` runs one
+transaction (15 s timeout) that starts with
 `match.updateMany({ where: { status: 'IN_PROGRESS' } })` and does nothing if another call ended
-the match first. It saves every MatchPlayer row, and for each rewarded player calls
-`ProgressionService.rewardMatchPlayer` and `ReviewService.recordAnswers` with the transaction
-client, then `ChestsService.grantForMatch`; for a finished PATH_STEP quiz it calls
+the match first. It saves every MatchPlayer row with its outcome, and for each rewarded player
+calls `ProgressionService.rewardMatchPlayer` and `ReviewService.recordAnswers` with the
+transaction client, then `ChestsService.grantForMatch`; for a finished PATH_STEP quiz it calls
 `LearningPathsService.recordStepResult` and keeps the reward in `Match.stepReward`. After the
 commit each rewarded player gets their own `match:finished` (with `chestsEarned`),
 `coins:updated` and one `chest:earned` per new chest, and the session leaves the registry, also
@@ -475,8 +486,8 @@ multiplication must be answered before checkout is requested.
 
 `core/` holds singletons: `api/` (typed HttpClient wrappers on `/api`), `auth/` (token storage,
 token refresh, interceptor, guards, bootstrap), `realtime/` (sockets), `sprites/`, `sound/`
-(WebAudio effects, read aloud), `notifications/` (toasts) and `models/` (types mirroring the
-backend). `store/` has one folder per NgRx slice. `features/<area>/` has the routed
+(synthesized WebAudio effects, read aloud), `notifications/` (toasts) and `models/` (types
+mirroring the backend). `store/` has one folder per NgRx slice. `features/<area>/` has the routed
 `*-page.component.ts` files, presentational `components/` (inputs and outputs only) and pure
 helpers with specs (named `*.rules.ts` where they hold game or screen rules, like
 `play/party-round.rules.ts`). `shared/` has reusable components, pipes and form helpers (among them the
@@ -499,7 +510,7 @@ registered in `app.config.ts`:
 | --- | --- |
 | `auth` | current user (with the owned `sabotages`, extended right after a sabotage is bought or comes out of a chest), status `unknown` / `authenticated` / `anonymous`, 2FA token |
 | `quizzes` | entity adapter of quiz summaries (newest first), featured, detail, generation progress |
-| `match` | the open match as a phase machine (`lobby`, `countdown`, `question`, `reveal`, `finished`, ...) |
+| `match` | the open match as a phase machine (`lobby`, `countdown`, `question`, `reveal`, `finished`, ...), and the lobby's friend invites (`pending` until the server confirms, then `invited`) |
 | `matchInvite` | the team or party invite shown in the dialog |
 | `paths` | path list (loaded again when a new path is ready), open path, path generation |
 | `review` | the mistakes deck |
@@ -535,6 +546,19 @@ but another tab stored newer tokens, those are used. A refresh token the server 
 ends the session and sends the user to `/login`; a dropped connection or a server error keeps
 the tokens for the next request. Logging out or an ended session resets every slice through the
 `clearOnSignOut` meta-reducer (`store/clear-on-sign-out.ts`).
+
+### Friend invites in the lobby
+
+The host's Invite button shows only what the server confirmed. `LobbyInviteService.invite`
+dispatches `MatchActions.inviteFriend` unless that friend is already pending or invited, and the
+`match` reducer keeps `friendInvites`, a map from friend id to `pending` or `invited`.
+`inviteFriend$` sends `POST /matches/:id/invite` with `concatMap`: success dispatches
+`friendInvited` (status `invited`, toast "Invite sent!"), an error dispatches `inviteFailed` with
+the server message, which removes the friend from the map so the button offers Invite again,
+and `showError$` shows the message. `withFriendInvite` ignores an answer for another match id,
+and `entered` starts every match, a rematch on the same page too, with an empty map. The button
+reads "Sending..." (disabled, `aria-busy`) while pending, then "Invited". The server sends
+`match:invite` only for the host of a waiting team or party match and only to a friend.
 
 ### Routing
 
@@ -585,6 +609,45 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   animations are off under `prefers-reduced-motion` (the quake then only knocks the buttons out
   of line).
 
+### Sound
+
+Every sound is synthesized with the Web Audio API; there are no audio files.
+
+- **Building blocks** (`core/sound/synth.ts`): plain functions that schedule one sound on the
+  `AudioContext` clock at `start` (seconds) and stop it by themselves. `tone` is one pitch
+  (beeps, clicks, ticks), `slide` glides through a list of frequencies (time up, the mirror
+  "boing"), `tremolo` is a slide whose volume swings `wobbles` times a second (the quake rumble,
+  the freeze shimmer) and `noise` is filtered white noise (a lowpass ink splat, a bandpass fog
+  whoosh). Each one ends in `fadeOut`, an exponential ramp to `SILENT_VOLUME`, so no sound ends
+  with a click.
+- **Numbers** (`core/sound/sound.constants.ts`): notes in Hz, lengths in seconds and three quiet
+  volumes, `FULL_VOLUME` 0.07, `SOFT_VOLUME` 0.05 and `FAINT_VOLUME` 0.03.
+- **`SoundService`** (root) has one method per event: `playCorrect`, `playWrong`, `playCoin`,
+  `playLevelUp`, `playChestOpen`, `playCountdownBeep`, `playGo`, `playTick(urgent)`,
+  `playTimeUp`, `playAnswerLocked`, `playOtherAnswered`, `playPowerUp`, `playRoundLost`,
+  `playVictory`, `playAlmost`, `playStar(starIndex)`, `playShieldBlocked` and one per sabotage
+  that lands on the player (`playInked`, `playFrozen`, `playScrambled`, `playFogged`,
+  `playShaken`, `playMirrored`), plus the `muted` signal and `toggleMuted` (kept in
+  localStorage). Jingles go through `playNotes`, which schedules the notes with `forEach`. Every
+  sound passes the private `play`, which stays silent when muted, in a hidden tab and before the
+  first user interaction (`navigator.userActivation.hasBeenActive`), so sounds never pile up and
+  burst out later.
+- **Triggers in a match** (`features/play/match-sounds.service.ts`): `MatchSoundsService` is
+  provided by the match page, like `MatchClockService`. Signal effects play the countdown (3, 2
+  and 1 beep, GO! jumps up), the clock (a tick through the last 5 seconds, a higher one through
+  the last 3, silent once the player answered), the click of the player's answer and the wrong
+  sound of a second chance. `secondsLeft` is a `computed` of whole seconds, so its effect runs
+  once a second although the timer updates every 250 ms. Action streams play another player's
+  answer (a faint blip), the player's own party lock-out, the round result
+  (`distinctUntilChanged(isSameRound)`, so a result sent again after a reconnect plays once), a
+  power-up, a sabotage that lands on the player, a blocked sabotage the player took part in and
+  `match:finished` (a victory fanfare, "almost", a coin for a draw, or one plink per solo star
+  timed to the star pop, and after a level-up its jingle). Each decision is a pure function in
+  `match-sounds.rules.ts` (`countdownSound`, `timerTick`, `roundSound`, `endingSound`,
+  `starPlinkDelays`) with Vitest tests.
+- Outside a match the chest opening dialog plays `playChestOpen` and the payment result page
+  `playCoin`. Sound is switched off in the match header or in the profile settings.
+
 ### Design system
 
 - Palette in `tailwind.config.js`, repeated as CSS variables in `src/styles.css`: `night`
@@ -623,22 +686,24 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
 ## Testing
 
 - Backend (Jest, `docker compose exec backend npx jest`): `*.spec.ts` next to the code for the
-  pure parts (scoring, option order, party rules, levels, stars, streak, coin cap, review
-  intervals, AI question checks, payment limits, dates, shuffle, mappers, generation limits,
-  chest earning and drop rolls, sabotage item ids and ownership).
+  pure parts (scoring and match outcomes, option order, party rules, levels, stars, streak, coin
+  cap, review intervals, AI question checks, payment limits, dates, shuffle, mappers, generation
+  limits, chest earning and drop rolls, sabotage item ids and ownership).
   `match-session-registry.service.spec.ts` checks the start claim with fake services (the match
   counts as starting until its session is ready, a lost claim does nothing, a claimed match that
   cannot be loaded is abandoned).
   `match-session.spec.ts` drives the real `MatchSession` with a fake server that records emitted
   events and Jest fake timers: rounds, deadlines, reveals, disconnects, power-ups (second chance
-  included), sabotage, shields and the "not owned yet" refusal without a database or sockets.
+  included), sabotage, shields, the "not owned yet" refusal and the saved outcomes (a draw for
+  the players who stayed after the leader quit) without a database or sockets.
   `chests.rules.spec.ts` passes a `randomSequence(...)` function instead of `Math.random`, so
   every roll has a known result.
   `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
-- Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match, paths,
-  leaderboard, match history, match invite, chests), the `clearOnSignOut` meta-reducer and pure
-  helpers (filters, path map, round view, match result, party round, arena sides, sabotages,
-  chest reward, shop item state, gate question, pipes, sprite style, quiz form).
+- Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match with its lobby
+  invites, paths, leaderboard, match history, match invite, chests), the `clearOnSignOut`
+  meta-reducer and pure helpers (filters, path map, round view, match result, match sounds, party
+  round, arena sides, sabotages, chest reward, shop item state, gate question, profile, pipes,
+  sprite style, quiz form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev

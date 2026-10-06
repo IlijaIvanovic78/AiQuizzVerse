@@ -84,9 +84,9 @@ Demo kvizovi iz seed-a su uvek igrivi.
 | `friend@quizverse.dev` | `demo1234` | nivo 4, već je prijatelj sa demo nalogom, ima sabotažu SCRAMBLE i jedan drveni kovčeg |
 
 Oba imaju i besplatno mastilo (INK). Sabotaže demo naloga su u seed-u
-([seed.ts:69](../backend/prisma/seed.ts#L69), [seed.ts:81](../backend/prisma/seed.ts#L81)).
+([seed.ts:76](../backend/prisma/seed.ts#L76), [seed.ts:88](../backend/prisma/seed.ts#L88)).
 Kovčezi iz seed-a se dodaju samo dok nalog nema nijedan, pa ih restart ne vraća posle otvaranja
-([seed.ts:123-130](../backend/prisma/seed.ts#L123-L130)).
+([seed.ts:130-137](../backend/prisma/seed.ts#L130-L137)).
 
 ### Trik: dva igrača u istom browseru
 
@@ -137,16 +137,16 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | Zahtev | Gde | Zašto baš tu |
 | --- | --- | --- |
 | `map` | [realtime.effects.ts:19-21](../frontend/src/app/store/realtime/realtime.effects.ts#L19-L21), [quizzes.effects.ts:47-50](../frontend/src/app/store/quizzes/quizzes.effects.ts#L47-L50) | Socket događaj ili HTTP odgovor pretvara u NgRx akciju, jer reducer razume samo akcije. |
-| `reduce` | [path-page.component.ts:78-80](../frontend/src/app/features/paths/path-page.component.ts#L78-L80), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:42-45](../backend/src/modules/matches/scoring.ts#L42-L45) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:29](../frontend/src/app/features/play/components/mistake-list.component.ts#L29). |
-| `filter` | backend [match-session.ts:275](../backend/src/modules/matches/match-session.ts#L275), [match.effects.ts:401-404](../frontend/src/app/store/match/match.effects.ts#L401-L404), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. |
-| `forEach` | [sound.service.ts:59-63](../frontend/src/app/core/sound/sound.service.ts#L59-L63), backend [matches.service.ts:149-151](../backend/src/modules/matches/matches.service.ts#L149-L151) | Svaku notu melodije zakaže sa malim razmakom (level-up džingl). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
+| `reduce` | [path-page.component.ts:78-80](../frontend/src/app/features/paths/path-page.component.ts#L78-L80), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:46-49](../backend/src/modules/matches/scoring.ts#L46-L49) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:29](../frontend/src/app/features/play/components/mistake-list.component.ts#L29). |
+| `filter` | backend [match-session.ts:281](../backend/src/modules/matches/match-session.ts#L281), [match.effects.ts:403-406](../frontend/src/app/store/match/match.effects.ts#L403-L406), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. |
+| `forEach` | [sound.service.ts:197-201](../frontend/src/app/core/sound/sound.service.ts#L197-L201), backend [matches.service.ts:149-151](../backend/src/modules/matches/matches.service.ts#L149-L151) | Svaku notu melodije zakaže sa malim razmakom (level-up džingl). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
 | fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:47](../frontend/src/app/app.config.ts#L47) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
 | Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:77-84](../backend/src/modules/learning-paths/path-generation.service.ts#L77-L84) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:75](../frontend/src/app/app.config.ts#L75)). Backend paralelno piše 5 koraka putanje. |
-| `switchMap` | [register-page.component.ts:112-119](../frontend/src/app/features/auth/register-page.component.ts#L112-L119), [friends.effects.ts:41-48](../frontend/src/app/store/friends/friends.effects.ts#L41-L48), [match-clock.service.ts:64-72](../frontend/src/app/features/play/match-clock.service.ts#L64-L72), backend [match-session.ts:97-99](../backend/src/modules/matches/match-session.ts#L97-L99) | Nova vrednost otkazuje prethodni posao: staru proveru imena, staru pretragu, stari tajmer, stari rok runde (posle EXTRA_TIME). |
-| `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87), backend [match-session.ts:278](../backend/src/modules/matches/match-session.ts#L278) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
-| `takeUntil` | backend [match-session.ts:279](../backend/src/modules/matches/match-session.ts#L279), [match-session.ts:737-739](../backend/src/modules/matches/match-session.ts#L737-L739), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
+| `switchMap` | [register-page.component.ts:112-119](../frontend/src/app/features/auth/register-page.component.ts#L112-L119), [friends.effects.ts:41-48](../frontend/src/app/store/friends/friends.effects.ts#L41-L48), [match-clock.service.ts:64-72](../frontend/src/app/features/play/match-clock.service.ts#L64-L72), backend [match-session.ts:103-105](../backend/src/modules/matches/match-session.ts#L103-L105) | Nova vrednost otkazuje prethodni posao: staru proveru imena, staru pretragu, stari tajmer, stari rok runde (posle EXTRA_TIME). |
+| `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87), backend [match-session.ts:284](../backend/src/modules/matches/match-session.ts#L284) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
+| `takeUntil` | backend [match-session.ts:285](../backend/src/modules/matches/match-session.ts#L285), [match-session.ts:735-737](../backend/src/modules/matches/match-session.ts#L735-L737), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
 | `zip` | [match-clock.service.ts:79-81](../frontend/src/app/features/play/match-clock.service.ts#L79-L81), [mistake-list.component.ts:23-34](../frontend/src/app/features/play/components/mistake-list.component.ts#L23-L34) | Upari svaku labelu `3, 2, 1, GO!` sa tikom tajmera, pa izlaze jedna po jedna na 750 ms. Isto za redove "pogrešnih" pitanja na rezultatima. |
-| `merge` | [realtime.effects.ts:50-61](../frontend/src/app/store/realtime/realtime.effects.ts#L50-L61), [match.effects.ts:286-292](../frontend/src/app/store/match/match.effects.ts#L286-L292), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89) | Više socket tokova spaja u jedan tok akcija (jedan efekat umesto deset). Tajmer staje na prvi od dva događaja (odgovor ili kraj runde). |
+| `merge` | [realtime.effects.ts:50-61](../frontend/src/app/store/realtime/realtime.effects.ts#L50-L61), [match.effects.ts:288-294](../frontend/src/app/store/match/match.effects.ts#L288-L294), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89) | Više socket tokova spaja u jedan tok akcija (jedan efekat umesto deset). Tajmer staje na prvi od dva događaja (odgovor ili kraj runde). |
 
 ### Angular
 
@@ -167,7 +167,7 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | Povezivanje na bazu | [prisma.service.ts:6-21](../backend/src/prisma/prisma.service.ts#L6-L21), [prisma.module.ts:4-9](../backend/src/prisma/prisma.module.ts#L4-L9), [prisma.config.ts:10-12](../backend/prisma.config.ts#L10-L12) | `PrismaService` nasleđuje `PrismaClient` sa Postgres adapterom, a URL čita iz `ConfigService`. Modul je `@Global`, pa svaki servis može da ga injektuje. `prisma.config.ts` daje isti `DATABASE_URL` Prisma CLI-ju (migracije, seed). |
 | Baza kroz Docker | [docker-compose.yml:2-18](../docker-compose.yml#L2-L18), [docker-compose.yml:33](../docker-compose.yml#L33), [docker-compose.yml:46-48](../docker-compose.yml#L46-L48), [Dockerfile.dev:15](../backend/Dockerfile.dev#L15) | Postgres kontejner sa healthcheck-om; backend čeka zdravu bazu; migracije i seed se rade pri startu. U Docker mreži host baze je `db`, ne `localhost`. |
 | CRUD operacije | [quizzes.controller.ts:36-103](../backend/src/modules/quizzes/quizzes.controller.ts#L36-L103), [quizzes.service.ts:74-140](../backend/src/modules/quizzes/quizzes.service.ts#L74-L140) | Kviz i pitanja: POST (create), GET (read), PATCH/PUT (update), DELETE. Kviz se briše "meko" (`deletedAt`), da istorija mečeva ostane. Prijatelji imaju zahtev, listu, prihvatanje i brisanje; dokumenti i putanje imaju create, read i delete. |
-| Min. tri entiteta sa relacijama | [schema.prisma:105-137](../backend/prisma/schema.prisma#L105-L137) User, [schema.prisma:170-195](../backend/prisma/schema.prisma#L170-L195) Quiz, [schema.prisma:197-215](../backend/prisma/schema.prisma#L197-L215) Question, [schema.prisma:234-251](../backend/prisma/schema.prisma#L234-L251) PathStep, [schema.prisma:277-298](../backend/prisma/schema.prisma#L277-L298) MatchPlayer | 1:N User→Quiz i Quiz→Question; 1:1 PathStep↔Quiz (`quizId @unique`); M:N User↔Match preko MatchPlayer (spojna tabela sa podacima: score, answers, nagrade); M:N User↔User preko Friendship. |
+| Min. tri entiteta sa relacijama | [schema.prisma:113-145](../backend/prisma/schema.prisma#L113-L145) User, [schema.prisma:178-203](../backend/prisma/schema.prisma#L178-L203) Quiz, [schema.prisma:205-223](../backend/prisma/schema.prisma#L205-L223) Question, [schema.prisma:242-259](../backend/prisma/schema.prisma#L242-L259) PathStep, [schema.prisma:285-307](../backend/prisma/schema.prisma#L285-L307) MatchPlayer | 1:N User→Quiz i Quiz→Question; 1:1 PathStep↔Quiz (`quizId @unique`); M:N User↔Match preko MatchPlayer (spojna tabela sa podacima: score, answers, nagrade); M:N User↔User preko Friendship. |
 | Passport.js | [local.strategy.ts:9-21](../backend/src/modules/auth/strategies/local.strategy.ts#L9-L21), [jwt.strategy.ts:8-22](../backend/src/modules/auth/strategies/jwt.strategy.ts#L8-L22), [jwt-refresh.strategy.ts:10-30](../backend/src/modules/auth/strategies/jwt-refresh.strategy.ts#L10-L30), [local-auth.guard.ts:4-5](../backend/src/modules/auth/guards/local-auth.guard.ts#L4-L5) | Tri strategije: email + lozinka (bcrypt), access JWT i refresh JWT. Guardovi samo nasleđuju `AuthGuard('ime')` i stavljaju se na rute, npr. [auth.controller.ts:46](../backend/src/modules/auth/auth.controller.ts#L46). |
 
 Dodatno, ako pita: globalna validacija [main.ts:23-25](../backend/src/main.ts#L23-L25), Swagger
@@ -321,7 +321,7 @@ grešku `unauthorized` obnove token i ponovo se povežu
 
 Server je jedini sudija. Svaki meč ima svoj `MatchSession` objekat u memoriji. Odgovori stižu
 preko `Subject`-a, a rok runde je `BehaviorSubject`
-([match-session.ts:93-99](../backend/src/modules/matches/match-session.ts#L93-L99)):
+([match-session.ts:99-105](../backend/src/modules/matches/match-session.ts#L99-L105)):
 
 ```ts
   private readonly answers$ = new Subject<PlayerAnswer>();
@@ -335,12 +335,12 @@ preko `Subject`-a, a rok runde je `BehaviorSubject`
 
 `deadline$` emituje kad istekne vreme. Kad neko iskoristi EXTRA_TIME, u `deadlineAt$` se upiše
 novo, kasnije vreme, a `switchMap` **otkaže stari tajmer** i pokrene novi
-([match-session.ts:468-473](../backend/src/modules/matches/match-session.ts#L468-L473)).
+([match-session.ts:474-479](../backend/src/modules/matches/match-session.ts#L474-L479)).
 
 Gateway primi `match:answer` i preda ga sesiji
 ([match.gateway.ts:131-135](../backend/src/modules/matches/match.gateway.ts#L131-L135)). Sesija
 sama izračuna koliko je vremena ostalo, ne veruje klijentu
-([match-session.ts:147-157](../backend/src/modules/matches/match-session.ts#L147-L157)):
+([match-session.ts:153-163](../backend/src/modules/matches/match-session.ts#L153-L163)):
 
 ```ts
   submitAnswer(userId: string, questionIndex: number, optionIndex: number): void {
@@ -361,7 +361,7 @@ Ako je igrač uključio drugu šansu, prvi pogrešan odgovor ne ulazi u `answers
 
 Runda počinje u `playRound`. Bitan redosled: **prvo se pretplati** na odgovore, pa tek onda
 pošalje pitanje, da nijedan brzi odgovor ne promakne
-([match-session.ts:257-269](../backend/src/modules/matches/match-session.ts#L257-L269)):
+([match-session.ts:263-275](../backend/src/modules/matches/match-session.ts#L263-L275)):
 
 ```ts
   private playRound(index: number): void {
@@ -379,7 +379,7 @@ pošalje pitanje, da nijedan brzi odgovor ne promakne
   }
 ```
 
-Srce runde ([match-session.ts:271-282](../backend/src/modules/matches/match-session.ts#L271-L282)):
+Srce runde ([match-session.ts:277-288](../backend/src/modules/matches/match-session.ts#L277-L288)):
 
 ```ts
   // take() ends the round once everyone has answered and takeUntil() when the time is up.
@@ -409,19 +409,19 @@ Srce runde ([match-session.ts:271-282](../backend/src/modules/matches/match-sess
   razloga gore). Tada se zove `endRound`.
 
 `endRound` boduje (100 + bonus za brzinu do 50,
-[scoring.ts:23-29](../backend/src/modules/matches/scoring.ts#L23-L29)), pošalje svakom igraču
+[scoring.ts:27-33](../backend/src/modules/matches/scoring.ts#L27-L33)), pošalje svakom igraču
 `match:round-result` i čeka da svi pritisnu Next, istim RxJS oblikom: `filter`, `tap`, `take`,
 `takeUntil(timer(...))`, `toArray`
-([match-session.ts:397-407](../backend/src/modules/matches/match-session.ts#L397-L407)). Drugi
+([match-session.ts:403-413](../backend/src/modules/matches/match-session.ts#L403-L413)). Drugi
 klik istog igrača ne broji se dvaput: `markReady` ga izbaci iz `waitingForNext`, pa ga `filter`
 sledeći put odbaci. Posle
 poslednjeg pitanja `finish` u jednoj transakciji snimi rezultate, nagrade, Mistakes notebook i
-korak putanje ([match-results.service.ts:79-102](../backend/src/modules/matches/match-results.service.ts#L79-L102)).
+korak putanje ([match-results.service.ts:78-101](../backend/src/modules/matches/match-results.service.ts#L78-L101)).
 Odložene akcije sesije idu kroz `after()` sa `takeUntil(this.destroy$)`
-([match-session.ts:737-739](../backend/src/modules/matches/match-session.ts#L737-L739)), a
+([match-session.ts:735-737](../backend/src/modules/matches/match-session.ts#L735-L737)), a
 pretplate na odgovore i na Next takođe imaju `takeUntil(this.destroy$)`, pa `stop()` gasi sve
 odjednom
-([match-session.ts:252-255](../backend/src/modules/matches/match-session.ts#L252-L255)).
+([match-session.ts:258-261](../backend/src/modules/matches/match-session.ts#L258-L261)).
 
 ### d) Kako socket događaji ulaze u NgRx (merge u efektu)
 
@@ -482,10 +482,10 @@ odjednom
    ([match-page.component.ts:290-309](../frontend/src/app/features/play/match-page.component.ts#L290-L309)).
    `switchMap` za novi meč otkaže tokove starog, `takeUntil(left)` ih gasi pri izlasku. Unutra,
    `forMatch(matchId)` filtrira događaje drugog meča
-   ([match.effects.ts:401-404](../frontend/src/app/store/match/match.effects.ts#L401-L404)), a
-   `merge` spaja grupe događaja ([match.effects.ts:286-292](../frontend/src/app/store/match/match.effects.ts#L286-L292)).
+   ([match.effects.ts:403-406](../frontend/src/app/store/match/match.effects.ts#L403-L406)), a
+   `merge` spaja grupe događaja ([match.effects.ts:288-294](../frontend/src/app/store/match/match.effects.ts#L288-L294)).
    Server šalje "koliko je ostalo", a frontend od toga izračuna rok po svom satu
-   ([match.effects.ts:406-409](../frontend/src/app/store/match/match.effects.ts#L406-L409)).
+   ([match.effects.ts:408-411](../frontend/src/app/store/match/match.effects.ts#L408-L411)).
 
 ### e) Odbrojavanje sa zip i tajmer sa takeUntil (frontend)
 
@@ -509,7 +509,7 @@ Sve je u `MatchClockService`, koji je provider stranice meča, pa živi koliko i
 ```
 
 - **zip**: `from(COUNTDOWN_LABELS)` bi odmah izbacio sve četiri labele `['3', '2', '1', 'GO!']`
-  ([play.constants.ts:8-10](../frontend/src/app/features/play/play.constants.ts#L8-L10)), a
+  ([play.constants.ts:10-13](../frontend/src/app/features/play/play.constants.ts#L10-L13)), a
   `timer(0, 750)` kuca na 750 ms. `zip` čeka po jednu vrednost iz oba toka i pravi par, pa
   labele izlaze tempom tajmera:
   `3` (0 ms), `2` (750), `1` (1500), `GO!` (2250). Kad se `from` isprazni, `zip` se završi i
@@ -793,7 +793,7 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
    jednoj transakciji `spendCoins` skine novčiće uslovnim `updateMany` (`coins: { gte: price }`)
    i napravi `UserItem` red. Sabotaža se kupuje jednom i ostaje zauvek, ne troši se. Ako dva
    klika stignu istovremeno, `@@unique([userId, itemId])`
-   ([schema.prisma:341](../backend/prisma/schema.prisma#L341)) pusti samo jedan red, a drugi
+   ([schema.prisma:350](../backend/prisma/schema.prisma#L350)) pusti samo jedan red, a drugi
    zahtev dobije 409 i njegova transakcija vrati novčiće. Sabotaža se ne "oblači": equip vraća
    400 ([shop.service.ts:41-43](../backend/src/modules/shop/shop.service.ts#L41-L43)).
 3. Koje sabotaže igrač ima računa jedna mala čista funkcija
@@ -821,14 +821,14 @@ export function ownedSabotages(items: { itemId: string }[]): SabotageType[] {
    ([auth.reducer.ts:92-95](../frontend/src/app/store/auth/auth.reducer.ts#L92-L95)).
 4. Meč: vlasništvo se čita **jednom**, kad sesija nastaje. `SESSION_SETUP_INCLUDE` uz meč
    učita i sabotaže svakog igrača
-   ([match.mapper.ts:53-59](../backend/src/modules/matches/match.mapper.ts#L53-L59)),
+   ([match.mapper.ts:52-58](../backend/src/modules/matches/match.mapper.ts#L52-L58)),
    `toSessionSetup` ih pretvori u listu tipova
-   ([match.mapper.ts:177-180](../backend/src/modules/matches/match.mapper.ts#L177-L180)), a
+   ([match.mapper.ts:176-179](../backend/src/modules/matches/match.mapper.ts#L176-L179)), a
    `newPlayer` ih sačuva u igraču sesije
    ([session-player.ts:33-53](../backend/src/modules/matches/session-player.ts#L33-L53)). Zato
    runda ostaje sinhrona: nema čekanja na bazu usred pitanja.
 5. Kad stigne `match:sabotage`, `sabotageAttempt` upiše `owned`
-   ([match-session.ts:502](../backend/src/modules/matches/match-session.ts#L502)), a čista
+   ([match-session.ts:508](../backend/src/modules/matches/match-session.ts#L508)), a čista
    funkcija `sabotageError` to proveri odmah posle moda, **pre** naboja
    ([party-rules.ts:27-44](../backend/src/modules/matches/party-rules.ts#L27-L44)):
 
@@ -843,7 +843,7 @@ export function sabotageError(attempt: SabotageAttempt): string | null {
 ```
 
    Greška ide igraču kao `match:error`, a naboj se ne troši, jer `sabotage()` skida naboj tek
-   kad provera prođe ([match-session.ts:185-203](../backend/src/modules/matches/match-session.ts#L185-L203)).
+   kad provera prođe ([match-session.ts:191-209](../backend/src/modules/matches/match-session.ts#L191-L209)).
    Test: [match-session.spec.ts:763-773](../backend/src/modules/matches/match-session.spec.ts#L763-L773).
 6. Frontend u partiji pokazuje samo ono što igrač ima: `ownedAttacks` izbaci napade koje nema
    ([party-round.rules.ts:101-103](../frontend/src/app/features/play/party-round.rules.ts#L101-L103)), dugme za
@@ -851,6 +851,205 @@ export function sabotageError(attempt: SabotageAttempt): string | null {
    tekst bez linka, jer izlazak iz meča znači predaju
    ([sabotage-bar.component.ts:31-33](../frontend/src/app/features/play/components/sabotage-bar.component.ts#L31-L33)).
    To je udobnost; pravo pravilo je na serveru (korak 5).
+
+### j) Kraj meča: ishod se odlučuje jednom i čuva u bazi
+
+Svaki igrač na kraju meča dobije jedan ishod, enum `MatchOutcome`: `WIN`, `LOSS`, `DRAW` ili
+`DONE` ([schema.prisma:71-77](../backend/prisma/schema.prisma#L71-L77)). Poraz i nerešeno postoje
+samo u partiji; SOLO je uvek `DONE`, a tim je `WIN` ako je završio meč i stigao do 60%, inače
+`DONE`.
+
+1. Meč se završava samo kroz `finish(status)`. Pre čuvanja `summarize` napravi `MatchEnd` (mod,
+   FINISHED ili ABANDONED, broj pitanja, svi igrači) i za svakog igrača pozove čistu funkciju
+   `playerOutcome`
+   ([match-session.ts:649-671](../backend/src/modules/matches/match-session.ts#L649-L671),
+   [scoring.ts:51-62](../backend/src/modules/matches/scoring.ts#L51-L62)):
+
+```ts
+/**
+ * Decided once when the match ends; rewards, chests, results and history all use the stored
+ * value. Solo play is DONE, and a team wins together when it finished with its goal reached.
+ */
+export function playerOutcome(end: MatchEnd, player: FinalStanding): MatchOutcome {
+  if (end.mode === 'PARTY') {
+    return partyOutcome(player, end.players);
+  }
+  const teamWins =
+    end.mode === 'TEAM' && end.status === 'FINISHED' && teamWon(end.players, end.questionCount);
+  return teamWins ? 'WIN' : 'DONE';
+}
+```
+
+   U partiji `partyOutcome` gleda samo one koji su ostali (`connected`): ko je otišao je `LOSS`
+   i kad ima najviše poena, od ostalih najveći rezultat sam je `WIN`, a podeljen je `DRAW`
+   ([scoring.ts:64-73](../backend/src/modules/matches/scoring.ts#L64-L73)).
+2. `MatchResultsService` u istoj transakciji upiše ishod u `MatchPlayer.outcome`
+   ([match-results.service.ts:152-171](../backend/src/modules/matches/match-results.service.ts#L152-L171),
+   kolona [schema.prisma:291-292](../backend/prisma/schema.prisma#L291-L292)) i preda ga
+   nagradama ([match-results.service.ts:114](../backend/src/modules/matches/match-results.service.ts#L114)
+   → `outcomeBonus`, [progression.rules.ts:121-132](../backend/src/modules/progression/progression.rules.ts#L121-L132))
+   i kovčegu pobede
+   ([match-results.service.ts:144](../backend/src/modules/matches/match-results.service.ts#L144)
+   → [chests.rules.ts:50-58](../backend/src/modules/chests/chests.rules.ts#L50-L58)).
+3. Posle toga ga svi samo čitaju: istorija mečeva
+   ([match.mapper.ts:110](../backend/src/modules/matches/match.mapper.ts#L110)), ekran rezultata
+   ([match.mapper.ts:214](../backend/src/modules/matches/match.mapper.ts#L214)) i broj pobeda na
+   profilu, gde se računa samo `WIN`, ne i nerešeno
+   ([profile.rules.ts:13](../backend/src/modules/profile/profile.rules.ts#L13)). Frontend ne
+   odlučuje ništa: naslov partije čita `outcome`
+   ([match-result.rules.ts:122-139](../frontend/src/app/features/play/match-result.rules.ts#L122-L139)),
+   `rankPlayers` stavlja one sa `WIN` ili `DRAW` ispred ostalih
+   ([match-result.rules.ts:61-87](../frontend/src/app/features/play/match-result.rules.ts#L61-L87)),
+   a istorija bira značku sa `outcomeLook` (za tim "Team victory" ili "So close",
+   [profile.rules.ts:40-47](../frontend/src/app/features/profile/profile.rules.ts#L40-L47)).
+4. Migracija
+   [20261006100000_store_match_outcomes](../backend/prisma/migrations/20261006100000_store_match_outcomes/migration.sql)
+   doda kolonu sa `DEFAULT 'DONE'`, popuni stare redove iz `is_winner` (pobednik `WIN`, ostali u
+   partiji `LOSS`, podeljen vrh završene partije bez pobednika `DRAW`) i tek onda obriše
+   `is_winner`, pa stara istorija ostaje tačna.
+
+Testovi: vođa koji je otišao je `LOSS`, a dva igrača koja su ostala i izjednačila su `DRAW`
+([scoring.spec.ts:115-121](../backend/src/modules/matches/scoring.spec.ts#L115-L121),
+[match-session.spec.ts:870-886](../backend/src/modules/matches/match-session.spec.ts#L870-L886)),
+i ekran rezultata im kaže "Draw!"
+([match-result.rules.spec.ts:185-193](../frontend/src/app/features/play/match-result.rules.spec.ts#L185-L193)).
+Zašto baš ovako: pitanje 29 u odeljku 6.
+
+### k) Pozivnica prijatelju u lobiju: "Invited" tek kad server potvrdi
+
+Dugme Invite pokazuje samo ono što je server potvrdio. Ako server odbije pozivnicu (npr. meč je
+već krenuo), host dobije poruku servera, a dugme se vrati na Invite.
+
+1. Klik: `LobbyInviteService.invite` pošalje `MatchActions.inviteFriend({ matchId, friendId })`,
+   osim ako taj prijatelj već čeka ili je pozvan
+   ([lobby-invite.service.ts:25-30](../frontend/src/app/features/play/lobby-invite.service.ts#L25-L30)).
+2. Stanje je u `match` slice-u: `friendInvites` je mapa `friendId → 'pending' | 'invited'`
+   ([match.reducer.ts:204-212](../frontend/src/app/store/match/match.reducer.ts#L204-L212)):
+
+```ts
+    on(MatchActions.inviteFriend, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, 'pending'),
+    ),
+    on(MatchActions.friendInvited, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, 'invited'),
+    ),
+    on(MatchActions.inviteFailed, (state, { matchId, friendId }) =>
+      withFriendInvite(state, matchId, friendId, null),
+    ),
+```
+
+   `withFriendInvite` sa `null` izbaci prijatelja iz mape, pa se on ponovo može pozvati, a
+   odgovor za drugi `matchId` (lobi pre rematch-a) ignoriše
+   ([match.reducer.ts:412-430](../frontend/src/app/store/match/match.reducer.ts#L412-L430)).
+   `entered` svaki novi meč počinje od praznog stanja
+   ([match.reducer.ts:128-131](../frontend/src/app/store/match/match.reducer.ts#L128-L131)).
+3. Efekat `inviteFriend$` šalje `POST /matches/:id/invite` sa `concatMap`. Uspeh je
+   `friendInvited` i toast "Invite sent!", greška je `inviteFailed` sa porukom servera, koju
+   `showError$` pokaže kao toast
+   ([match.effects.ts:256-286](../frontend/src/app/store/match/match.effects.ts#L256-L286)).
+4. Server pusti samo hosta, samo meč koji još čeka (WAITING) i samo prijatelja, pa tek onda
+   pošalje `match:invite` u sobu `user:<id>`
+   ([matches.service.ts:121-131](../backend/src/modules/matches/matches.service.ts#L121-L131)).
+5. Dugme dok se čeka piše "Sending..." (isključeno, `aria-busy`), posle potvrde "Invited", a
+   inače "Invite"
+   ([match-lobby.component.html:110-128](../frontend/src/app/features/play/components/match-lobby.component.html#L110-L128)).
+
+Test: [match.reducer.spec.ts:447-484](../frontend/src/app/store/match/match.reducer.spec.ts#L447-L484).
+
+### l) Zvukovi: od događaja u meču do tona
+
+Nema audio fajlova: svaki zvuk se pravi u browseru preko Web Audio API-ja, u tri sloja.
+
+1. **Sastojci**, čiste funkcije u [synth.ts](../frontend/src/app/core/sound/synth.ts). Svaka
+   zakaže jedan zvuk na satu `AudioContext`-a (`start`, u sekundama), sama ga utiša i sama
+   zaustavi:
+   - `tone`: jedan ton (beep, klik, tik)
+     ([synth.ts:6-15](../frontend/src/app/core/sound/synth.ts#L6-L15));
+   - `slide`: ton koji klizi kroz frekvencije, npr. "vreme isteklo" i "boing" ogledala
+     ([synth.ts:17-29](../frontend/src/app/core/sound/synth.ts#L17-L29));
+   - `tremolo`: ton čija jačina treperi `wobbles` puta u sekundi, sporo tutnji (zemljotres), brzo
+     svetluca (led) ([synth.ts:31-46](../frontend/src/app/core/sound/synth.ts#L31-L46));
+   - `noise`: šum kroz filter, lowpass je "pljas" mastila, bandpass "fiju" magle
+     ([synth.ts:48-64](../frontend/src/app/core/sound/synth.ts#L48-L64)).
+
+   `fadeOut` spušta jačinu eksponencijalno do `SILENT_VOLUME` (0.0001, jer eksponencijalni pad
+   ne može do nule), pa nijedan zvuk ne završi "klikom"
+   ([synth.ts:84-91](../frontend/src/app/core/sound/synth.ts#L84-L91)). Note (u Hz), trajanja i
+   samo tri tihe jačine (0.07, 0.05 i 0.03) su u
+   [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts).
+2. **`SoundService`** (`providedIn: 'root'`) ima jednu metodu po događaju: `playCorrect`,
+   `playWrong`, `playCoin`, `playLevelUp`, `playChestOpen`, `playCountdownBeep`, `playGo`,
+   `playTick(urgent)`, `playTimeUp`, `playAnswerLocked`, `playOtherAnswered`, `playPowerUp`,
+   `playRoundLost`, `playVictory`, `playAlmost`, `playStar(starIndex)`, `playShieldBlocked` i
+   po jednu za svaku sabotažu koja pogodi mene (`playInked`, `playFrozen`, ...). Tu su i signal
+   `muted` i `toggleMuted`, koji pamti izbor u `localStorage`. Melodije idu kroz `playNotes`
+   (`forEach` po notama), a svaki zvuk prolazi kroz isto mesto
+   ([sound.service.ts:204-213](../frontend/src/app/core/sound/sound.service.ts#L204-L213)):
+
+```ts
+  // Every sound goes through here, so the Sound off button and a hidden tab silence them all.
+  // Before the first click or key press the browser keeps audio paused, and the sounds would
+  // pile up and all play at once after it, so they are skipped until then.
+  private play(sound: Sound): void {
+    if (this.muted() || this.document.hidden || !navigator.userActivation.hasBeenActive) {
+      return;
+    }
+    const context = this.context();
+    sound(context, context.currentTime);
+  }
+```
+
+3. **Kada šta svira** u meču odlučuje `MatchSoundsService`, provider stranice meča kao
+   `MatchClockService`, pa živi koliko i stranica. Okidači su dve vrste:
+   - signali sa `effect`
+     ([match-sounds.service.ts:64-85](../frontend/src/app/features/play/match-sounds.service.ts#L64-L85)):
+     labela odbrojavanja (`3`, `2`, `1` beep, `GO!` dva tona naviše), sekunde tajmera (tik), moj
+     odgovor (klik) i druga šansa (zvuk greške);
+   - akcije iz socket događaja
+     ([match-sounds.service.ts:91-130](../frontend/src/app/features/play/match-sounds.service.ts#L91-L130)):
+     neko drugi je odgovorio (tihi "blip"), mene je izbacio pogrešan odgovor u partiji, rezultat
+     runde, pojačanje, sabotaža na mene, štit i kraj meča.
+
+   Same odluke su čiste funkcije u
+   [match-sounds.rules.ts](../frontend/src/app/features/play/match-sounds.rules.ts), sa testovima.
+   Kucanje sata ([match-sounds.rules.ts:23-32](../frontend/src/app/features/play/match-sounds.rules.ts#L23-L32)):
+
+```ts
+// The clock ticks through the last seconds of a question and stops as soon as I answered.
+export function timerTick(secondsLeft: number | null, answered: boolean): TimerTick | null {
+  if (answered || secondsLeft === null || secondsLeft <= 0) {
+    return null;
+  }
+  if (secondsLeft > TIMER_WARNING_SECONDS) {
+    return null;
+  }
+  return secondsLeft <= TIMER_URGENT_SECONDS ? 'urgent' : 'tick';
+}
+```
+
+   - Na 5 i 4 sekunde je običan tik, na 3, 2 i 1 viši (`urgent`); čim odgovorim, sat ćuti.
+   - Tik ide tačno jednom u sekundi bez novog tajmera: `remainingMs` se menja na 250 ms, ali
+     `secondsLeft` je `computed` sa `Math.ceil`, a signal javi promenu samo kad se vrednost
+     stvarno promeni, pa `effect` radi jednom po celoj sekundi
+     ([match-clock.service.ts:74-77](../frontend/src/app/features/play/match-clock.service.ts#L74-L77),
+     [match-sounds.service.ts:69-72](../frontend/src/app/features/play/match-sounds.service.ts#L69-L72)).
+   - Rezultat runde koji server ponovo pošalje posle reconnect-a ne svira dvaput:
+     `distinctUntilChanged(isSameRound)`
+     ([match-sounds.service.ts:107-115](../frontend/src/app/features/play/match-sounds.service.ts#L107-L115)).
+   - `roundSound` bira jedan zvuk runde: tačno, pogrešno, "neko je bio brži" (partija) ili
+     vreme isteklo ([match-sounds.rules.ts:34-56](../frontend/src/app/features/play/match-sounds.rules.ts#L34-L56)).
+     Kraj meča prati naslov rezultata (`endingSound`,
+     [match-sounds.rules.ts:62-70](../frontend/src/app/features/play/match-sounds.rules.ts#L62-L70)):
+     pobeda je fanfara, nerešeno novčić, a SOLO svaku zvezdicu "plinkne" baš kad je ona na
+     ekranu najveća (`starPlinkDelays`,
+     [match-sounds.rules.ts:72-75](../frontend/src/app/features/play/match-sounds.rules.ts#L72-L75)).
+
+Ukus: kratki tonovi i tihe jačine, sat samo u poslednjih 5 sekundi, podignut štit bez zvuka, a
+sabotaža svira samo onome koga je pogodila. Van meča `SoundService` zovu otvaranje kovčega
+([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78))
+i plaćanje
+([payment-result-page.component.ts:77-81](../frontend/src/app/features/shop/payment-result-page.component.ts#L77-L81)).
+Zvuk se gasi dugmetom u meču ili u Profile → Settings → Sound effects.
 
 ---
 
@@ -873,7 +1072,7 @@ docker compose restart backend      # start ponovo radi prisma generate
 1. [progression.constants.ts:5](../backend/src/modules/progression/progression.constants.ts#L5):
    sada piše `export const XP_PER_CORRECT = 10;`, promeni npr. u `export const XP_PER_CORRECT = 15;`
 2. Koristi se u `answerReward`
-   ([progression.rules.ts:115-121](../backend/src/modules/progression/progression.rules.ts#L115-L121));
+   ([progression.rules.ts:109-115](../backend/src/modules/progression/progression.rules.ts#L109-L115));
    HARD kvizovi množe sa 1.5.
 3. Testovi očekuju stare brojeve
    ([progression.rules.spec.ts:147](../backend/src/modules/progression/progression.rules.spec.ts#L147)
@@ -887,7 +1086,7 @@ novčića (`DAILY_MATCH_COIN_CAP`, linija 20).
 ### 2. Dodaj novo polje u kviz (npr. `description`)
 
 1. Šema, u `model Quiz` posle `timePerQuestion`
-   ([schema.prisma:180](../backend/prisma/schema.prisma#L180)):
+   ([schema.prisma:188](../backend/prisma/schema.prisma#L188)):
    `description String @default("")` (default da postojeći redovi ne puknu).
 2. Migracija: `docker compose exec backend npx prisma migrate dev --name add_quiz_description`,
    pa `docker compose restart backend`.
@@ -1085,7 +1284,7 @@ Događaj u meču (namespace `/game`) ide istim putem, samo kroz druge fajlove:
 `emitToRoom` u `MatchSession` →
 [match-socket.service.ts:35-53](../frontend/src/app/core/realtime/match-socket.service.ts#L35-L53) →
 [match-socket.actions.ts](../frontend/src/app/store/match/match-socket.actions.ts) →
-`roundEvents`/`lifecycleEvents` u [match.effects.ts:294-349](../frontend/src/app/store/match/match.effects.ts#L294-L349) →
+`roundEvents`/`lifecycleEvents` u [match.effects.ts:296-351](../frontend/src/app/store/match/match.effects.ts#L296-L351) →
 [match.reducer.ts](../frontend/src/app/store/match/match.reducer.ts).
 
 ### 7. Promeni broj pitanja u koraku putanje
@@ -1109,13 +1308,13 @@ vreme po pitanju na putanji (linije 48-52).
 
 Backend:
 
-1. Enum `BoostType` ([schema.prisma:77-83](../backend/prisma/schema.prisma#L77-L83)) dodaj
+1. Enum `BoostType` ([schema.prisma:85-91](../backend/prisma/schema.prisma#L85-L91)) dodaj
    `REMOVE_ONE`, pa migracija i restart.
 2. [matches.constants.ts:33-38](../backend/src/modules/matches/matches.constants.ts#L33-L38):
    dodaj `'REMOVE_ONE'` u `MATCH_BOOST_TYPES` (posle `'SECOND_CHANCE'`). Tip `MatchBoostType` je
    `Exclude<BoostType, 'STREAK_FREEZE'>`, pa ga ne diraš; `UseBoostDto` validira preko ove liste.
 3. Efekat u `applyBoost`
-   ([match-session.ts:450-466](../backend/src/modules/matches/match-session.ts#L450-L466)), novi
+   ([match-session.ts:456-472](../backend/src/modules/matches/match-session.ts#L456-L472)), novi
    `case` u `switch`-u. Dok ga ne dodaš, TypeScript javlja grešku, jer `switch` više ne pokriva
    svaki tip pojačanja:
 
@@ -1142,10 +1341,10 @@ Frontend:
 8. Brojači: `REMOVE_ONE: 0` u `STARTING_BOOST_USES`
    ([store/match/match.constants.ts:6-11](../frontend/src/app/store/match/match.constants.ts#L6-L11))
    i `REMOVE_ONE: ownedCount(offers, 'REMOVE_ONE')` u `usesFromOwned`
-   ([match.reducer.ts:381-391](../frontend/src/app/store/match/match.reducer.ts#L381-L391)).
+   ([match.reducer.ts:396-406](../frontend/src/app/store/match/match.reducer.ts#L396-L406)).
 
 `withBoost` u reduceru već prikazuje `eliminatedOptions`
-([match.reducer.ts:362-377](../frontend/src/app/store/match/match.reducer.ts#L362-L377)), pa za
+([match.reducer.ts:377-392](../frontend/src/app/store/match/match.reducer.ts#L377-L392)), pa za
 prikaz ne treba ništa više.
 
 ### 9. Promeni vreme odbrojavanja (3-2-1) i vreme po pitanju
@@ -1154,12 +1353,15 @@ Odbrojavanje je zadato na dva mesta, koja moraju da se slažu:
 
 1. Server čeka pre prvog pitanja: `COUNTDOWN_SECONDS`
    ([matches.constants.ts:27](../backend/src/modules/matches/matches.constants.ts#L27)), koristi se u
-   [match-session.ts:131](../backend/src/modules/matches/match-session.ts#L131).
-2. Animacija na frontendu ([play.constants.ts:8-10](../frontend/src/app/features/play/play.constants.ts#L8-L10)):
+   [match-session.ts:137](../backend/src/modules/matches/match-session.ts#L137).
+2. Animacija na frontendu ([play.constants.ts:10-13](../frontend/src/app/features/play/play.constants.ts#L10-L13)):
    labele `COUNTDOWN_LABELS` (brojevi i "GO!" na kraju), svaka po `COUNTDOWN_STEP_MS`.
 
 Primer za 5 sekundi: server `COUNTDOWN_SECONDS = 5`; frontend
-`COUNTDOWN_LABELS = ['4', '3', '2', '1', 'GO!']` i `COUNTDOWN_STEP_MS = 1000` (5 labela × 1000 ms).
+`COUNTDOWN_LABELS = ['4', '3', '2', '1', GO_LABEL]` i `COUNTDOWN_STEP_MS = 1000`
+(5 labela × 1000 ms). Zvuk ide sam za labelama: `countdownSound` pusti beep za svaku labelu osim
+`GO_LABEL`
+([match-sounds.rules.ts:15-21](../frontend/src/app/features/play/match-sounds.rules.ts#L15-L21)).
 
 Vreme po pitanju:
 
@@ -1170,7 +1372,7 @@ Vreme po pitanju:
 - koraci putanje: [learning-paths.constants.ts:48-52](../backend/src/modules/learning-paths/learning-paths.constants.ts#L48-L52);
 - Mistakes review: [review.constants.ts:8](../backend/src/modules/review/review.constants.ts#L8);
 - dodatno vreme (+15 s): [matches.constants.ts:41](../backend/src/modules/matches/matches.constants.ts#L41)
-  i tekst na dugmetu [play.constants.ts:22](../frontend/src/app/features/play/play.constants.ts#L22).
+  i tekst na dugmetu [play.constants.ts:25](../frontend/src/app/features/play/play.constants.ts#L25).
 
 ### 10. Dodaj novu temu kviza (enum)
 
@@ -1308,14 +1510,14 @@ Backend:
    funkcija kojom se predmet i tip povezuju svuda; zato `ownedSabotages` sam prepozna kupljen
    Shrink, i u `CurrentUser.sabotages` i u meču. Pa
    `docker compose restart backend`: seed uradi `upsert` za svaki predmet
-   ([seed.ts:90-94](../backend/prisma/seed.ts#L90-L94)). Migracija ne treba, jer je to novi red,
+   ([seed.ts:97-101](../backend/prisma/seed.ts#L97-L101)). Migracija ne treba, jer je to novi red,
    a ne izmena šeme. Sa cenom do 150 nova sabotaža sama ulazi i u "običan predmet" kovčega.
 4. Ništa više: `sabotage()`
-   ([match-session.ts:185-203](../backend/src/modules/matches/match-session.ts#L185-L203))
+   ([match-session.ts:191-209](../backend/src/modules/matches/match-session.ts#L191-L209))
    proveri pravila preko `sabotageError`
    ([party-rules.ts:27-44](../backend/src/modules/matches/party-rules.ts#L27-L44)), uključujući
    vlasništvo; štit radi sam, a `applySabotage`
-   ([match-session.ts:532-543](../backend/src/modules/matches/match-session.ts#L532-L543))
+   ([match-session.ts:538-549](../backend/src/modules/matches/match-session.ts#L538-L549))
    menjaš samo ako server mora nešto da sprovede (kao FREEZE i SCRAMBLE). Za test dodaj
    `SHRINK` u postojeći test
    ([match-session.spec.ts:618-638](../backend/src/modules/matches/match-session.spec.ts#L618-L638));
@@ -1329,7 +1531,7 @@ Frontend:
    ([match.model.ts:12-15](../frontend/src/app/core/models/match.model.ts#L12-L15)); `AttackType`
    ga dobije sam.
 6. Tekstovi u `SABOTAGES` (kompajler traži, jer je `Record<AttackType, ...>`)
-   ([play.constants.ts:48-103](../frontend/src/app/features/play/play.constants.ts#L48-L103)):
+   ([play.constants.ts:51-106](../frontend/src/app/features/play/play.constants.ts#L51-L106)):
 
 ```ts
   SHRINK: {
@@ -1399,26 +1601,108 @@ dogovoru se i slika zove isto.
 
 3. Seed: red u `SEED_ITEMS`
    ([seed-data/items.ts:54-113](../backend/prisma/seed-data/items.ts#L54-L113)), preko pomoćnih
-   funkcija sa linija 17-33:
+   funkcija sa linija 17-32:
    `hero('hero-ice-queen', 'Ice Queen', 210, 4),` (cena 210, od nivoa 4), za ljubimca
    `pet('pet-...', 'Ime', 60, 2),`, a za predmet koji postoji samo u kovčezima
    `chestOnly('hero-ice-queen', 'Ice Queen', 'AVATAR'),`.
 4. `docker compose restart backend`. Migracija ne treba, jer je to red u tabeli, a ne izmena
    šeme; seed pri startu radi `upsert` za svaki predmet
-   ([seed.ts:90-94](../backend/prisma/seed.ts#L90-L94)).
+   ([seed.ts:97-101](../backend/prisma/seed.ts#L97-L101)).
 5. Proba: Shop → Heroes. Predmet do 150 novčića sam ulazi u "običan predmet" iz kovčega
    (zajedno sa jeftinijim herojima, ljubimcima i sabotažama), a `chestOnly` u ređi red srebrnog
    i zlatnog kovčega
    ([chests.rules.ts:60-67](../backend/src/modules/chests/chests.rules.ts#L60-L67)); u
    prodavnici umesto cene piše "Found in chests".
 
-### 16. Brzi brojevi koje profesor može da traži
+### 16. Promeni ili dodaj zvuk
+
+Kako zvuk zvuči piše u `sound.constants.ts` i `SoundService`, a kada svira u `MatchSoundsService`
+i `match-sounds.rules.ts` (ceo tok je u odeljku 4l). Za probu klikni bilo gde na stranici pre
+meča, jer browser do prvog klika ne pušta zvuk, i proveri da zvuk nije isključen.
+
+**Promeni postojeći zvuk**
+
+- Jačina svih zvukova: `FULL_VOLUME`, `SOFT_VOLUME` i `FAINT_VOLUME`
+  ([sound.constants.ts:5-7](../frontend/src/app/core/sound/sound.constants.ts#L5-L7)). Drži ih
+  ispod 0.1; square talas zvuči oštrije, zato uglavnom ide sa nižim.
+- Visina tika: `TICK` ([sound.constants.ts:27](../frontend/src/app/core/sound/sound.constants.ts#L27)),
+  `frequency` za obične sekunde i `urgentFrequency` za poslednje. Beep odbrojavanja je
+  `COUNTDOWN_BEEP`, a `GO!` je `GO` (linije 24-25).
+- Od koje sekunde sat kuca: `TIMER_WARNING_SECONDS`
+  ([play.constants.ts:6](../frontend/src/app/features/play/play.constants.ts#L6)), npr.
+  `export const TIMER_WARNING_SECONDS = 10;`, a viši tik kreće od `TIMER_URGENT_SECONDS`
+  (linija 8). Isti broj boji traku tajmera
+  ([timer-bar.component.ts:25-27](../frontend/src/app/features/play/components/timer-bar.component.ts#L25-L27)),
+  pa zvuk i boja ostaju zajedno. Test očekuje 5 i 3
+  ([match-sounds.rules.spec.ts:73-77](../frontend/src/app/features/play/match-sounds.rules.spec.ts#L73-L77)):
+  `docker compose exec frontend npx ng test --watch=false`, pa ispravi očekivani niz.
+- Talas (`'square'`, `'triangle'`, `'sine'`) i jačina se biraju u metodi servisa, npr.
+  `playTick` ([sound.service.ts:85-91](../frontend/src/app/core/sound/sound.service.ts#L85-L91)).
+
+**Dodaj nov zvuk** (npr. "ding-dong" kad stigne pozivnica za meč)
+
+1. Note u [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts), posle
+   `COIN_NOTES` (linija 16):
+
+```ts
+export const INVITE_NOTES = [784, 659];
+```
+
+2. Metoda u `SoundService`, posle `playCoin`
+   ([sound.service.ts:64-66](../frontend/src/app/core/sound/sound.service.ts#L64-L66)), i
+   `INVITE_NOTES` u import iz `./sound.constants`:
+
+```ts
+  playInvite(): void {
+    this.playNotes(INVITE_NOTES, 'triangle', SOFT_VOLUME);
+  }
+```
+
+   `playNotes` i `play` već paze na Sound off, skriven tab i prvi klik.
+3. Okidač: dijalog pozivnice je u `app.html`, pa postoji sve vreme. U
+   `MatchInviteDialogComponent`
+   ([match-invite-dialog.component.ts:32-45](../frontend/src/app/layout/match-invite-dialog.component.ts#L32-L45))
+   dodaj:
+
+```ts
+  private readonly sound = inject(SoundService);
+
+  constructor() {
+    effect(() => {
+      if (this.invite()) {
+        untracked(() => this.sound.playInvite());
+      }
+    });
+  }
+```
+
+   (`effect` i `untracked` dodaj u import iz `@angular/core`, a `SoundService` iz
+   `../core/sound/sound.service`.) Zbog `untracked` efekat zavisi samo od `invite`, isto kao kod
+   kovčega ([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78)).
+4. Proba: dva prozora (trik iz odeljka 2), A pozove B iz lobija, a B čuje "ding-dong".
+
+Zvuk u meču ide u `MatchSoundsService`: za signal novi `effect` u konstruktoru (kao
+[match-sounds.service.ts:73-77](../frontend/src/app/features/play/match-sounds.service.ts#L73-L77)),
+a za socket događaj nova pretplata u `listenToMatchEvents`
+([match-sounds.service.ts:91-130](../frontend/src/app/features/play/match-sounds.service.ts#L91-L130)),
+npr. kad neko napusti meč:
+
+```ts
+    this.actions$
+      .pipe(ofType(MatchSocketActions.playerLeft), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.sound.playRoundLost());
+```
+
+Ako zvuk zavisi od pravila (kome i kada svira), napiši ga kao čistu funkciju u
+`match-sounds.rules.ts` i dodaj test, kao `timerTick`.
+
+### 17. Brzi brojevi koje profesor može da traži
 
 | Šta | Gde |
 | --- | --- |
 | Besplatni hintovi po meču | [matches.constants.ts:39](../backend/src/modules/matches/matches.constants.ts#L39) i [store/match/match.constants.ts:4](../frontend/src/app/store/match/match.constants.ts#L4) |
 | Poeni za tačan / bonus za brzinu | [matches.constants.ts:29-30](../backend/src/modules/matches/matches.constants.ts#L29-L30) |
-| Procenat za pobedu tima | [matches.constants.ts:31](../backend/src/modules/matches/matches.constants.ts#L31) i [play.constants.ts:21](../frontend/src/app/features/play/play.constants.ts#L21) |
+| Procenat za pobedu tima | [matches.constants.ts:31](../backend/src/modules/matches/matches.constants.ts#L31) i [play.constants.ts:24](../frontend/src/app/features/play/play.constants.ts#L24) |
 | Koliko najduže čeka da svi kliknu Next | [matches.constants.ts:76-81](../backend/src/modules/matches/matches.constants.ts#L76-L81) |
 | Koliko čeka igrača koji je otišao | [matches.constants.ts:83-89](../backend/src/modules/matches/matches.constants.ts#L83-L89) |
 | Mesečni limit kupovine | [payments.constants.ts:1-2](../backend/src/modules/payments/payments.constants.ts#L1-L2) |
@@ -1426,7 +1710,7 @@ dogovoru se i slika zove isto.
 | Dnevni limit AI generisanja | [quizzes.constants.ts:26](../backend/src/modules/quizzes/quizzes.constants.ts#L26) i [create.constants.ts:34](../frontend/src/app/features/create/create.constants.ts#L34) |
 | Intervali ponavljanja grešaka | [review.constants.ts:4](../backend/src/modules/review/review.constants.ts#L4) |
 | Zvezdice 60/80/100% | [progression.constants.ts:22-24](../backend/src/modules/progression/progression.constants.ts#L22-L24) |
-| Kriva nivoa | [progression.rules.ts:29-35](../backend/src/modules/progression/progression.rules.ts#L29-L35) |
+| Kriva nivoa | [progression.rules.ts:23-29](../backend/src/modules/progression/progression.rules.ts#L23-L29) |
 | Šanse u kovčezima | [chests.constants.ts:6-24](../backend/src/modules/chests/chests.constants.ts#L6-L24) |
 | Kada se dobija kovčeg (60%, dve pobede dnevno, svakih 7 dana) | [chests.constants.ts:34-42](../backend/src/modules/chests/chests.constants.ts#L34-L42) |
 | Poeni za tačan odgovor iz druge šanse | [matches.constants.ts:42-43](../backend/src/modules/matches/matches.constants.ts#L42-L43) |
@@ -1435,6 +1719,8 @@ dogovoru se i slika zove isto.
 | Besplatne sabotaže (INK) | [matches.constants.ts:58-59](../backend/src/modules/matches/matches.constants.ts#L58-L59) |
 | Naboji za sabotaže (1 na početku, najviše 2) | [matches.constants.ts:45-46](../backend/src/modules/matches/matches.constants.ts#L45-L46) |
 | Trajanje sabotaža | [matches.constants.ts:60-74](../backend/src/modules/matches/matches.constants.ts#L60-L74) |
+| Od koje sekunde sat kuca (5, viši tik od 3) | [play.constants.ts:6-8](../frontend/src/app/features/play/play.constants.ts#L6-L8) |
+| Jačina zvukova | [sound.constants.ts:5-7](../frontend/src/app/core/sound/sound.constants.ts#L5-L7) |
 
 ---
 
@@ -1443,8 +1729,8 @@ dogovoru se i slika zove isto.
 **1. Zašto server meri vreme, a ne klijent?**
 Klijentu se ne veruje: sat može da se namesti, a poruka putuje mrežom. Server sam upiše
 `remainingMs` kad odgovor stigne
-([match-session.ts:147-157](../backend/src/modules/matches/match-session.ts#L147-L157)) i iz toga
-računa bonus za brzinu ([scoring.ts:23-29](../backend/src/modules/matches/scoring.ts#L23-L29)).
+([match-session.ts:153-163](../backend/src/modules/matches/match-session.ts#L153-L163)) i iz toga
+računa bonus za brzinu ([scoring.ts:27-33](../backend/src/modules/matches/scoring.ts#L27-L33)).
 Rok je na serveru (`deadlineAt$`), a klijent dobija samo "koliko je ostalo" i crta traku.
 
 **2. Zašto i signali i RxJS?**
@@ -1488,7 +1774,7 @@ pravi korisnik ostaje bez sesije i mora ponovo da se uloguje, umesto da obojica 
 Veze između tabela preko stranog ključa. 1:N: jedan korisnik ima više kvizova (`Quiz.ownerId`).
 1:1: jedan korak putanje ima tačno jedan kviz (`PathStep.quizId @unique`). M:N: korisnik igra više
 mečeva, meč ima više igrača, pa postoji spojna tabela `MatchPlayer` koja čuva i score, odgovore i
-nagrade ([schema.prisma:277-298](../backend/prisma/schema.prisma#L277-L298)). `onDelete: Cascade`
+nagrade ([schema.prisma:285-307](../backend/prisma/schema.prisma#L285-L307)). `onDelete: Cascade`
 briše decu kad se obriše roditelj.
 
 **7. Zašto Docker?**
@@ -1498,18 +1784,18 @@ migracije i seed se rade sami, a baza čuva podatke u volumenu. Nema "kod mene r
 **8. Kako se sprečava varanje?**
 
 - Tačan odgovor ne ide klijentu dok runda traje: pitanje nosi samo tekst i opcije
-  ([match-session.ts:696-707](../backend/src/modules/matches/match-session.ts#L696-L707)).
+  ([match-session.ts:694-705](../backend/src/modules/matches/match-session.ts#L694-L705)).
 - Opcije se mešaju po meču, a server ih vraća u originalni redosled pre bodovanja
   ([option-order.ts:10-32](../backend/src/modules/matches/option-order.ts#L10-L32)).
 - Vreme meri server; jedan odgovor po rundi (`canAnswer`,
-  [match-session.ts:284-290](../backend/src/modules/matches/match-session.ts#L284-L290)).
+  [match-session.ts:290-296](../backend/src/modules/matches/match-session.ts#L290-L296)).
 - Socket poruke prolaze DTO validaciju ([match.gateway.ts:36](../backend/src/modules/matches/match.gateway.ts#L36),
   [answer.dto.ts:5-14](../backend/src/modules/matches/dto/answer.dto.ts#L5-L14)).
 - Novčići i pojačanja se troše jednim uslovnim upitom (`updateMany ... gte`), pa ne mogu u minus
   ([shop.service.ts:135-149](../backend/src/modules/shop/shop.service.ts#L135-L149),
   [match-play.service.ts:58-64](../backend/src/modules/matches/match-play.service.ts#L58-L64)).
 - U partiji pojačanja su isključena
-  ([match-session.ts:422-435](../backend/src/modules/matches/match-session.ts#L422-L435)).
+  ([match-session.ts:428-441](../backend/src/modules/matches/match-session.ts#L428-L441)).
 - Nagrada iz kovčega se izvlači na serveru, a sabotaže proverava server, uključujući i to da li
   ih igrač ima ([party-rules.ts:27-44](../backend/src/modules/matches/party-rules.ts#L27-L44));
   klijent samo javi nameru i nacrta rezultat. Sakriveno dugme u traci nije zaštita: ručno
@@ -1518,19 +1804,19 @@ migracije i seed se rade sami, a baza čuva podatke u volumenu. Nema "kod mene r
 **9. Šta se dešava ako se igrač diskonektuje?**
 Gateway proverava da li je igraču ostao ijedan socket u sobi meča (više tabova, reconnect)
 ([match.gateway.ts:208-224](../backend/src/modules/matches/match.gateway.ts#L208-L224)). Ako ne,
-`playerDisconnected` ([match-session.ts:219-235](../backend/src/modules/matches/match-session.ts#L219-L235)):
+`playerDisconnected` ([match-session.ts:225-241](../backend/src/modules/matches/match-session.ts#L225-L241)):
 SOLO ide dalje (propuštena pitanja 0 poena) i posle 60 s bez povratka postaje ABANDONED; u
 TEAM i PARTY ostali dobiju `match:player-left` i runde čekaju samo povezane. Tim posle 30 s
 postaje ABANDONED. Partija ide dalje dok su bar dvojica; ako ostane samo jedan duže od 30 s, on
 pobeđuje, pa u partiji za dvoje pobedi onaj ko je ostao
-([match-session.ts:598-609](../backend/src/modules/matches/match-session.ts#L598-L609)).
+([match-session.ts:604-611](../backend/src/modules/matches/match-session.ts#L604-L611)).
 Ko napusti partiju, zadrži poene za svoje odgovore, ali pobediti ili izjednačiti mogu samo oni
 koji su ostali, čak i kad je onaj koji je otišao vodio
-([match-session.ts:652-656](../backend/src/modules/matches/match-session.ts#L652-L656)).
+([scoring.ts:64-73](../backend/src/modules/matches/scoring.ts#L64-L73)).
 Kad se vrati, klijent sam pošalje `match:join` na reconnect
 ([match-socket.service.ts:55-58](../frontend/src/app/core/realtime/match-socket.service.ts#L55-L58)),
 a server mu pošalje trenutno pitanje sa preostalim vremenom
-([match-session.ts:611-625](../backend/src/modules/matches/match-session.ts#L611-L625)).
+([match-session.ts:613-627](../backend/src/modules/matches/match-session.ts#L613-L627)).
 
 **10. Kako radi grown-up provera i limit potrošnje?**
 Frontend: modal sa množenjem dvocifrenog i jednocifrenog broja
@@ -1577,7 +1863,7 @@ Dok se meč posle toga učitava, registry ga drži u skupu `starting`, pa igrač
 vrati ne proglasi meč prekinutim
 ([match.gateway.ts:182-193](../backend/src/modules/matches/match.gateway.ts#L182-L193)).
 Kraj: `updateMany where status 'IN_PROGRESS'` u transakciji, pa se nagrade dele samo jednom
-([match-results.service.ts:79-89](../backend/src/modules/matches/match-results.service.ts#L79-L89)).
+([match-results.service.ts:78-88](../backend/src/modules/matches/match-results.service.ts#L78-L88)).
 
 **16. Šta se desi sa mečevima kad se server restartuje?**
 Sesije su u memoriji, pa ne mogu da se nastave. Pri startu se svi WAITING/IN_PROGRESS mečevi
@@ -1632,7 +1918,7 @@ slučajnost postoji samo u kovčezima koji se zarađuju. U kodu:
 - Nema rute koja pravi kovčeg. `ChestsController` ima samo listu, šanse i otvaranje
   ([chests.controller.ts:24-41](../backend/src/modules/chests/chests.controller.ts#L24-L41)).
   Kovčeg se upisuje samo u transakciji koja snima meč
-  ([match-results.service.ts:135-155](../backend/src/modules/matches/match-results.service.ts#L135-L155))
+  ([match-results.service.ts:130-150](../backend/src/modules/matches/match-results.service.ts#L130-L150))
   ili prvi prelazak koraka putanje
   ([learning-paths.service.ts:156-171](../backend/src/modules/learning-paths/learning-paths.service.ts#L156-L171)),
   plus seed za demo naloge.
@@ -1669,22 +1955,22 @@ kovčega.
 
 1. Igrač klikne dugme pre odgovora. Server proveri da sme (`assertCanUseBoost`), skine jedno
    pojačanje atomičnim `updateMany ... gte: 1` i postavi `secondChance = 'armed'`
-   ([match-session.ts:460-462](../backend/src/modules/matches/match-session.ts#L460-L462)).
+   ([match-session.ts:466-468](../backend/src/modules/matches/match-session.ts#L466-L468)).
 2. Kad stigne odgovor, `submitAnswer` pre slanja u `answers$` pita `secondChanceCovers`
-   ([match-session.ts:475-483](../backend/src/modules/matches/match-session.ts#L475-L483)):
+   ([match-session.ts:481-489](../backend/src/modules/matches/match-session.ts#L481-L489)):
    uključena, ovo pitanje, igrač još sme da odgovori i odgovor je **pogrešan**. Tada odgovor
    uopšte ne ulazi u rundu (pa ga `take(n)` ne broji i runda ne staje), stanje postaje
    `'spent'`, a igrač dobije `match:second-chance { wrongOption }`
-   ([match-session.ts:485-492](../backend/src/modules/matches/match-session.ts#L485-L492)).
+   ([match-session.ts:491-498](../backend/src/modules/matches/match-session.ts#L491-L498)).
 3. Drugi odgovor ide normalnim putem kroz `answers$`. `pointsFor` vidi `'spent'` i daje
    `secondTryPoints`: 50 za tačan (pola osnovnih poena, bez bonusa za brzinu), 0 za pogrešan
-   ([match-session.ts:362-376](../backend/src/modules/matches/match-session.ts#L362-L376),
-   [scoring.ts:31-34](../backend/src/modules/matches/scoring.ts#L31-L34)). Ako je prvi odgovor
+   ([match-session.ts:368-382](../backend/src/modules/matches/match-session.ts#L368-L382),
+   [scoring.ts:35-38](../backend/src/modules/matches/scoring.ts#L35-L38)). Ako je prvi odgovor
    tačan, boduje se normalno, a pojačanje je potrošeno.
 4. Stanje važi samo za jedno pitanje; `resetRoundState` ga vraća na `'unused'`
    ([session-player.ts:55-62](../backend/src/modules/matches/session-player.ts#L55-L62)).
 5. Frontend: reducer obriše moj odgovor i zapamti pogrešnu opciju
-   ([match.reducer.ts:354-360](../frontend/src/app/store/match/match.reducer.ts#L354-L360)),
+   ([match.reducer.ts:369-375](../frontend/src/app/store/match/match.reducer.ts#L369-L375)),
    `AnswerGrid` je precrta, pojavi se "Second chance! Try again", a tajmer, koji je stao na prvom
    odgovoru, ponovo krene ([match-clock.service.ts:58-62](../frontend/src/app/features/play/match-clock.service.ts#L58-L62)).
 
@@ -1721,6 +2007,24 @@ prvo prebacila stare mečeve tog moda u PARTY (`UPDATE "matches" SET "mode" = 'P
 tek onda napravila enum `MatchMode` bez njega
 ([schema.prisma:58-62](../backend/prisma/schema.prisma#L58-L62)), da istorija mečeva ostane
 čitljiva.
+
+**29. Zašto se ishod meča čuva u bazi?**
+Zato što se tačno može odlučiti samo jednom, na kraju meča, u sesiji na serveru. Tada se zna sve
+što pravilo traži: ko je još povezan, da li je meč završen (FINISHED) ili prekinut (ABANDONED) i
+ko ima koliko poena. Posle toga sesije više nema, a iz samih poena se ne vidi ko je otišao.
+Ranije su ekran rezultata i istorija ponovo računali ishod iz poena, pa je partija u kojoj je
+vođa otišao, a ostali izjednačili, na serveru bila nerešena (i plaćena kao nerešeno), a na
+ekranu i u istoriji je pisalo "Good fight, 2nd". Sada (ceo tok je u odeljku 4j):
+
+- Pravilo je na jednom mestu, u čistoj funkciji `playerOutcome` sa testovima
+  ([scoring.ts:51-62](../backend/src/modules/matches/scoring.ts#L51-L62)).
+- Ishod se upiše u istoj transakciji kao poeni i nagrade (`MatchPlayer.outcome`), pa nagrada,
+  kovčeg pobede, ekran rezultata, istorija i broj pobeda na profilu uvek kažu isto. Frontend samo
+  prikazuje `outcome`, ništa ne računa.
+- Isto kao `xpEarned` i `coinsEarned`: čuva se ono što se desilo, a ne računa ponovo. Ako se
+  pravilo kasnije promeni, stari mečevi ostaju onakvi kakvi su bili.
+
+Cena je jedna kolona i migracija koja je popunila stare redove iz `is_winner`.
 
 ---
 
@@ -1770,5 +2074,6 @@ tek onda napravila enum `MatchMode` bez njega
 | Otključavanje (unlock) | Predmet koji se kupi jednom i ostaje zauvek, kao sabotaža u prodavnici; ne troši se i ne "oblači" se. |
 | Ubačena zavisnost (random) | Funkcija ne zove `Math.random` sama, nego ga dobija kao parametar, pa test može da pošalje zadate brojeve. |
 | Soft delete | Umesto brisanja upiše se `deletedAt`, a upiti preskaču takve redove. |
+| Web Audio API | Browser API koji pravi zvuk iz koda: oscilator daje ton, gain jačinu, filter boju. Od njih su svi 8-bit zvuci igre (`synth.ts`), bez audio fajlova. |
 | Swagger | Automatska dokumentacija REST API-ja na `/api/docs`, iz dekoratora kontrolera i DTO-a. |
 | Healthcheck | Provera da li servis radi; Docker po njoj zna kad je baza spremna. |
