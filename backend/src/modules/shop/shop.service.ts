@@ -5,7 +5,7 @@ import { levelForXp } from '../progression/progression.rules';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
 import { toShopItem } from './shop-item.mapper';
-import { BOOST_CATALOG } from './shop.constants';
+import { BOOST_CATALOG, ITEM_NOT_FOUND_MESSAGE } from './shop.constants';
 import { BoostOffer, BoostPurchase, ItemPurchase, ShopCustomer, ShopItem } from './shop.types';
 
 @Injectable()
@@ -34,28 +34,6 @@ export class ShopService {
 
     const customer = await this.findCustomer(userId);
     return { coins: customer.coins, item: toShopItem(item, customer) };
-  }
-
-  async equipItem(userId: string, itemId: string): Promise<CurrentUser> {
-    const item = await this.findItem(itemId);
-    if (item.type === 'SABOTAGE') {
-      throw new BadRequestException('Sabotages are not worn. They work in party matches.');
-    }
-    const owned = await this.prisma.userItem.count({ where: { userId, itemId } });
-    if (owned === 0) {
-      throw new BadRequestException(
-        item.isChestOnly ? 'Find this one in chests first.' : 'Get this item in the shop first.',
-      );
-    }
-
-    const slot = item.type === 'AVATAR' ? { avatarKey: item.id } : { petKey: item.id };
-    await this.prisma.user.update({ where: { id: userId }, data: slot });
-    return this.users.findCurrentUser(userId);
-  }
-
-  async unequipPet(userId: string): Promise<CurrentUser> {
-    await this.prisma.user.update({ where: { id: userId }, data: { petKey: null } });
-    return this.users.findCurrentUser(userId);
   }
 
   async claimStarter(userId: string, itemId: string): Promise<CurrentUser> {
@@ -151,7 +129,7 @@ export class ShopService {
   private async findItem(itemId: string): Promise<Item> {
     const item = await this.prisma.item.findUnique({ where: { id: itemId } });
     if (!item) {
-      throw new NotFoundException('We could not find that item.');
+      throw new NotFoundException(ITEM_NOT_FOUND_MESSAGE);
     }
     return item;
   }

@@ -1,6 +1,8 @@
 import { EXTRA_TIME_MS, MS_PER_SECOND } from '../matches/matches.constants';
 import { BoostCatalogEntry } from './shop.types';
 
+export const ITEM_NOT_FOUND_MESSAGE = 'We could not find that item.';
+
 export const BOOST_CATALOG: BoostCatalogEntry[] = [
   {
     type: 'HINT',

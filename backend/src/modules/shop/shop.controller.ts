@@ -1,6 +1,5 @@
 import {
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -32,17 +31,6 @@ export class ShopController {
   @Post('items/:id/buy')
   buyItem(@CurrentUserId() userId: string, @Param('id') itemId: string): Promise<ItemPurchase> {
     return this.shop.buyItem(userId, itemId);
-  }
-
-  @Post('items/:id/equip')
-  @HttpCode(HttpStatus.OK)
-  equipItem(@CurrentUserId() userId: string, @Param('id') itemId: string): Promise<CurrentUser> {
-    return this.shop.equipItem(userId, itemId);
-  }
-
-  @Delete('pet')
-  unequipPet(@CurrentUserId() userId: string): Promise<CurrentUser> {
-    return this.shop.unequipPet(userId);
   }
 
   @Post('starters/:id/claim')
