@@ -53,6 +53,8 @@ import { MAX_STARS_PER_STEP, SOURCE_LABELS } from './paths.constants';
 })
 export class PathPageComponent {
   readonly pathId = input.required<string>();
+  // "Next step" on the results screen links here with ?step=<id> so that step opens right away.
+  readonly step = input<string>();
 
   private readonly store = inject(Store);
   private readonly readAloud = inject(ReadAloudService);
@@ -111,6 +113,12 @@ export class PathPageComponent {
     effect(() => {
       const pathId = this.pathId();
       untracked(() => this.load(pathId));
+    });
+    effect(() => {
+      const linkedStep = this.steps().find((step) => step.id === this.step());
+      if (linkedStep) {
+        untracked(() => this.selectStep(linkedStep));
+      }
     });
     inject(DestroyRef).onDestroy(() => this.readAloud.stop());
   }
