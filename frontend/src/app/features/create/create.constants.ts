@@ -1,8 +1,15 @@
 import { HttpStatusCode } from '@angular/common/http';
-import { Audience, Difficulty, QuizLanguage, QuizTheme } from '../../core/models/quiz.model';
+import {
+  Audience,
+  Difficulty,
+  QuizLanguage,
+  QuizSource,
+  QuizTheme,
+} from '../../core/models/quiz.model';
 import { GenerationStep } from '../../core/models/realtime-events.model';
 import { MAX_QUESTIONS, MIN_QUESTIONS } from '../../shared/forms/quiz-form';
-import { AudienceChoice, CreateKind, PictureChoice, SourceKind, WizardStep } from './create.types';
+import { PATH_STEP_COUNT } from '../paths/paths.constants';
+import { AudienceChoice, CreateKind, PictureChoice, WizardStep } from './create.types';
 
 // Home and the paths page link here with ?make=path to open the wizard on a learning path.
 export const NEW_PATH_QUERY_PARAMS = { make: 'path' };
@@ -23,7 +30,6 @@ export const DEFAULT_TIME_BY_AUDIENCE: Record<Audience, number> = {
 };
 
 export const DEFAULT_QUESTION_COUNT = 5;
-export const PATH_STEP_COUNT = 5;
 // The server writes this many quizzes per player a day; a path counts once for every step.
 export const DAILY_CREATION_LIMIT = 15;
 export const MAX_PDF_MEGABYTES = 10;
@@ -48,7 +54,7 @@ export const STEP_TITLES: Record<WizardStep, string> = {
   questions: 'Write your questions',
 };
 
-export const SOURCE_CHOICES: PictureChoice<SourceKind>[] = [
+export const SOURCE_CHOICES: PictureChoice<QuizSource>[] = [
   {
     value: 'TOPIC',
     title: 'Pick a topic',
@@ -56,7 +62,7 @@ export const SOURCE_CHOICES: PictureChoice<SourceKind>[] = [
     image: 'sword',
   },
   {
-    value: 'PDF',
+    value: 'DOCUMENT',
     title: 'Upload a lesson',
     text: 'Turn your own PDF notes into questions.',
     image: 'chest',

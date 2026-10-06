@@ -2,8 +2,6 @@ import { DocumentSummary } from '../../core/models/document.model';
 import { Audience } from '../../core/models/quiz.model';
 import { ItemImageName } from '../../shared/icons';
 
-export type SourceKind = 'TOPIC' | 'PDF' | 'MANUAL';
-
 export type CreateKind = 'QUIZ' | 'PATH';
 
 export type WizardStep = 'source' | 'make' | 'settings' | 'questions';

@@ -14,7 +14,13 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { Store } from '@ngrx/store';
-import { Audience, Difficulty, QuizLanguage, QuizTheme } from '../../core/models/quiz.model';
+import {
+  Audience,
+  Difficulty,
+  QuizLanguage,
+  QuizSource,
+  QuizTheme,
+} from '../../core/models/quiz.model';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { PixelIconComponent } from '../../shared/components/pixel-icon.component';
 import { touchedAndInvalid } from '../../shared/forms/form-signals';
@@ -52,7 +58,7 @@ import {
   NEW_PATH_QUERY_PARAMS,
   STEP_TITLES,
 } from './create.constants';
-import { CreateKind, CreatePhase, SourceKind, WizardStep } from './create.types';
+import { CreateKind, CreatePhase, WizardStep } from './create.types';
 import { LessonUploadService } from './lesson-upload.service';
 
 // Holds every choice of the wizard; each step component only shows and changes its part.
@@ -86,8 +92,9 @@ export class CreatePageComponent {
   protected readonly stepTitles = STEP_TITLES;
 
   protected readonly step = signal<WizardStep>('source');
-  protected readonly source = signal<SourceKind>('TOPIC');
-  protected readonly kind = linkedSignal<CreateKind>(() =>
+  protected readonly source = signal<QuizSource>('TOPIC');
+  // The pick on the "make" step; links with ?make=path start on a learning path.
+  protected readonly chosenKind = linkedSignal<CreateKind>(() =>
     this.make() === NEW_PATH_QUERY_PARAMS.make ? 'PATH' : 'QUIZ',
   );
   protected readonly audience = signal<Audience>('KIDS');
@@ -122,20 +129,21 @@ export class CreatePageComponent {
   private readonly pathCreating = this.store.selectSignal(pathsFeature.selectCreating);
   private readonly pathError = this.store.selectSignal(pathsFeature.selectCreationError);
 
-  // A quiz written by hand is always a quick quiz.
-  protected readonly makeKind = computed<CreateKind>(() =>
-    this.source() === 'MANUAL' ? 'QUIZ' : this.kind(),
+  // What the wizard will make: a quiz written by hand is always a quick quiz.
+  protected readonly kindToMake = computed<CreateKind>(() =>
+    this.source() === 'MANUAL' ? 'QUIZ' : this.chosenKind(),
   );
   protected readonly steps = computed(() =>
     this.source() === 'MANUAL' ? MANUAL_STEPS : GENERATED_STEPS,
   );
   protected readonly subject = computed(() => {
-    if (this.source() === 'PDF') {
+    if (this.source() === 'DOCUMENT') {
       return this.lessonUpload.document()?.fileName ?? '';
     }
     return this.source() === 'TOPIC' ? this.topicValue().trim() : this.quizTitleValue().trim();
   });
-  protected readonly workingKind = computed<CreateKind>(() =>
+  // What the quiz master is writing right now, for the progress screen.
+  protected readonly kindBeingCreated = computed<CreateKind>(() =>
     this.pathCreating() ? 'PATH' : 'QUIZ',
   );
   // Starting a quiz or a path clears its old error, so at most one of them is set.
@@ -151,7 +159,7 @@ export class CreatePageComponent {
   });
 
   constructor() {
-    // A quiz still being written keeps its progress screen; anything older starts fresh.
+    // A quiz or path still being written keeps its progress screen; anything older starts fresh.
     if (!this.quizCreating() && !this.pathCreating()) {
       this.clearResults();
     }
@@ -203,7 +211,7 @@ export class CreatePageComponent {
 
   protected generate(): void {
     const source = this.sourceRequest();
-    if (this.makeKind() === 'PATH') {
+    if (this.kindToMake() === 'PATH') {
       const request = { ...source, audience: this.audience(), language: this.language() };
       this.store.dispatch(PathsActions.create({ request }));
       return;
@@ -276,11 +284,10 @@ export class CreatePageComponent {
 
   // A generated quiz or path is about either the typed topic or the uploaded lesson.
   private sourceRequest(): { topic?: string; documentId?: string } {
-    const document = this.lessonUpload.document();
-    if (this.source() === 'PDF' && document) {
-      return { documentId: document.id };
+    if (this.source() === 'TOPIC') {
+      return { topic: this.topic.value.trim() };
     }
-    return { topic: this.topic.value.trim() };
+    return { documentId: this.lessonUpload.document()?.id };
   }
 
   private clearResults(): void {

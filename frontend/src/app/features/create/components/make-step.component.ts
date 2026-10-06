@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, model } from '@angular/core';
 import { ChoiceCardComponent } from '../../../shared/components/choice-card.component';
 import { itemIconUrl } from '../../../shared/icons';
-import { DAILY_CREATION_LIMIT, KIND_CHOICES, PATH_STEP_COUNT } from '../create.constants';
+import { PATH_STEP_COUNT } from '../../paths/paths.constants';
+import { DAILY_CREATION_LIMIT, KIND_CHOICES } from '../create.constants';
 import { CreateKind } from '../create.types';
 
 // Wizard step 2 for the quiz master: one quick quiz or a whole learning path.

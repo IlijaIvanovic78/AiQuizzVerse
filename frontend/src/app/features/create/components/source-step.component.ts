@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { QuizSource } from '../../../core/models/quiz.model';
 import { ChoiceCardComponent } from '../../../shared/components/choice-card.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../../shared/forms/quiz-form';
 import { itemIconUrl } from '../../../shared/icons';
 import { SOURCE_CHOICES, TOPIC_SUGGESTIONS } from '../create.constants';
-import { SourceKind, UploadState } from '../create.types';
+import { UploadState } from '../create.types';
 import { PdfDropzoneComponent } from './pdf-dropzone.component';
 
 // Wizard step 1: a typed topic, an uploaded lesson or questions written by hand.
@@ -22,7 +23,7 @@ import { PdfDropzoneComponent } from './pdf-dropzone.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SourceStepComponent {
-  readonly source = model.required<SourceKind>();
+  readonly source = model.required<QuizSource>();
   readonly topic = input.required<FormControl<string>>();
   readonly topicValue = input.required<string>();
   readonly topicInvalid = input.required<boolean>();

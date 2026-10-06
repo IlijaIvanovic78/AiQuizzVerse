@@ -6,7 +6,7 @@
 @switch (phase()) {
   @case ('working') {
     <app-generation-progress
-      [kind]="workingKind()"
+      [kind]="kindBeingCreated()"
       [progress]="progress()"
       [heroKey]="user()?.avatarKey ?? null"
       [petKey]="user()?.petKey ?? null"
@@ -58,7 +58,7 @@
                 <button
                   type="button"
                   class="btn btn-primary btn-lg"
-                  [disabled]="source() === 'PDF' && !lessonUpload.document()"
+                  [disabled]="source() === 'DOCUMENT' && !lessonUpload.document()"
                   (click)="continueFromSource()"
                 >
                   Next
@@ -69,7 +69,7 @@
 
           @case ('make') {
             <div animate.enter="fade-enter">
-              <app-make-step [(kind)]="kind" />
+              <app-make-step [(kind)]="chosenKind" />
               <div class="wizard-actions">
                 <button type="button" class="btn btn-secondary" (click)="goBack()">Back</button>
                 <button type="button" class="btn btn-primary btn-lg" (click)="showStep('settings')">
@@ -83,7 +83,7 @@
             <div animate.enter="fade-enter">
               <app-settings-step
                 [source]="source()"
-                [kind]="makeKind()"
+                [kind]="kindToMake()"
                 [subject]="subject()"
                 [quizTitle]="quizTitle"
                 [quizTitleInvalid]="quizTitleInvalid()"
@@ -104,7 +104,7 @@
                 >
                   @if (source() === 'MANUAL') {
                     Next: write questions
-                  } @else if (makeKind() === 'PATH') {
+                  } @else if (kindToMake() === 'PATH') {
                     Create my path
                   } @else {
                     Create my quiz

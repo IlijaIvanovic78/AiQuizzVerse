@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Audience, Difficulty, QuizLanguage, QuizTheme } from '../../../core/models/quiz.model';
+import {
+  Audience,
+  Difficulty,
+  QuizLanguage,
+  QuizSource,
+  QuizTheme,
+} from '../../../core/models/quiz.model';
 import { NumberStepperComponent } from '../../../shared/components/number-stepper.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import {
@@ -14,8 +20,9 @@ import {
 } from '../../../shared/forms/quiz-form';
 import { LanguageLabelPipe } from '../../../shared/pipes/language-label.pipe';
 import { ThemeLabelPipe } from '../../../shared/pipes/theme-label.pipe';
-import { DIFFICULTY_CHOICES, LANGUAGES, PATH_STEP_COUNT, QUIZ_THEMES } from '../create.constants';
-import { CreateKind, SourceKind } from '../create.types';
+import { PATH_STEP_COUNT } from '../../paths/paths.constants';
+import { DIFFICULTY_CHOICES, LANGUAGES, QUIZ_THEMES } from '../create.constants';
+import { CreateKind } from '../create.types';
 import { AudiencePickerComponent } from './audience-picker.component';
 
 // Wizard settings: who it is for, the language and, for a quiz, difficulty, length and time.
@@ -35,7 +42,7 @@ import { AudiencePickerComponent } from './audience-picker.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsStepComponent {
-  readonly source = input.required<SourceKind>();
+  readonly source = input.required<QuizSource>();
   readonly kind = input.required<CreateKind>();
   readonly subject = input.required<string>();
   readonly quizTitle = input.required<FormControl<string>>();

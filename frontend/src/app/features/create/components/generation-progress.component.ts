@@ -4,7 +4,8 @@ import { HeroSpriteComponent } from '../../../shared/components/hero-sprite.comp
 import { PetSpriteComponent } from '../../../shared/components/pet-sprite.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { TABLET_UP, screenMatches } from '../../../shared/media-query';
-import { PATH_STEP_COUNT, QUIZ_GENERATION_STEPS } from '../create.constants';
+import { PATH_STEP_COUNT } from '../../paths/paths.constants';
+import { QUIZ_GENERATION_STEPS } from '../create.constants';
 import { pathProgressFraction, quizProgressFraction, quizStepStates } from '../create.rules';
 import { CreateKind } from '../create.types';
 
