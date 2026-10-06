@@ -11,6 +11,7 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { SoundService } from '../../core/sound/sound.service';
 import { PixelIconComponent } from './pixel-icon.component';
 
 type ModalSize = 'sm' | 'md' | 'lg';
@@ -54,6 +55,7 @@ export class ModalComponent {
   });
 
   private readonly document = inject(DOCUMENT);
+  private readonly sound = inject(SoundService);
   private readonly dialog = viewChild.required<ElementRef<HTMLElement>>('dialog');
   private readonly body = viewChild.required<ElementRef<HTMLElement>>('body');
   private readonly openedFrom = this.document.activeElement;
@@ -61,9 +63,14 @@ export class ModalComponent {
   // still fires its click on the backdrop, so the backdrop only closes presses that began on it.
   private pressStartedOnBackdrop = false;
 
+  // The dialog pops up when it opens and pops down when it closes.
   constructor() {
+    this.sound.playModalOpen();
     afterNextRender(() => this.focusFirstElement());
-    inject(DestroyRef).onDestroy(() => this.restoreFocus());
+    inject(DestroyRef).onDestroy(() => {
+      this.restoreFocus();
+      this.sound.playModalClose();
+    });
   }
 
   protected rememberPressStart(event: PointerEvent): void {

@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Action } from '@ngrx/store';
+import { SoundService } from '../sound/sound.service';
 
 const TOAST_DURATION_MS = 4000;
 const ERROR_TOAST_DURATION_MS = 6000;
@@ -21,8 +22,15 @@ export interface ToastAction {
 
 @Injectable({ providedIn: 'root' })
 export class ToastService {
+  private readonly sound = inject(SoundService);
   private readonly toastList = signal<Toast[]>([]);
   private nextId = 1;
+
+  private readonly toneSounds: Record<ToastTone, () => void> = {
+    info: () => this.sound.playToastInfo(),
+    success: () => this.sound.playToastSuccess(),
+    error: () => this.sound.playToastError(),
+  };
 
   readonly toasts = this.toastList.asReadonly();
 
@@ -51,6 +59,7 @@ export class ToastService {
       action: button?.action ?? null,
     };
     this.toastList.update((toasts) => [...toasts, toast]);
+    this.toneSounds[tone]();
     const duration = tone === 'error' ? ERROR_TOAST_DURATION_MS : TOAST_DURATION_MS;
     setTimeout(() => this.dismiss(toast.id), duration);
   }
