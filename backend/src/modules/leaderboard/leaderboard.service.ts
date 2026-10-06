@@ -28,6 +28,7 @@ export class LeaderboardService {
         : await this.globalEntries(weekStart);
 
     const mine = entries.find((entry) => entry.user.id === userId);
+    // Only the global board can leave the player out (below the top list); friends lists everyone.
     const me = mine
       ? { rank: mine.rank, weeklyXp: mine.weeklyXp }
       : await this.findGlobalRank(userId, weekStart);
@@ -48,8 +49,11 @@ export class LeaderboardService {
 
   /** For a player below the global top list: one more than the number of players ahead. */
   private async findGlobalRank(userId: string, weekStart: Date): Promise<LeaderboardMe> {
-    const mine = await this.weeklyXpByUser(weekStart, { userId });
-    const weeklyXp = mine.get(userId) ?? 0;
+    const { _sum } = await this.prisma.matchPlayer.aggregate({
+      _sum: { xpEarned: true },
+      where: { userId, match: endedSince(weekStart) },
+    });
+    const weeklyXp = _sum.xpEarned ?? 0;
     if (weeklyXp === 0) {
       return { rank: null, weeklyXp };
     }

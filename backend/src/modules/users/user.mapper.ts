@@ -1,7 +1,8 @@
-import { Prisma, User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { utcToday } from '../../common/utils/dates';
 import { displayedStreak, levelForXp, levelProgress } from '../progression/progression.rules';
-import { ownedSabotages } from '../shop/sabotage-items';
+import { StreakState } from '../progression/progression.types';
+import { ownedSabotages, SABOTAGE_ITEMS_SELECT } from '../shop/sabotage-items';
 import { CurrentUser, PublicUser } from './users.types';
 
 export const PUBLIC_USER_SELECT = {
@@ -14,22 +15,24 @@ export const PUBLIC_USER_SELECT = {
 
 export type PublicUserRow = Prisma.UserGetPayload<{ select: typeof PUBLIC_USER_SELECT }>;
 
-/** The user's streak freeze boost, loaded together with the user as `boosts`. */
-export const STREAK_FREEZES_SELECT = {
-  where: { type: 'STREAK_FREEZE' },
-  select: { quantity: true },
-} satisfies Prisma.User$boostsArgs;
+/** Every boost row of the user. There is one row per boost type, so this stays small. */
+const USER_BOOSTS = { select: { type: true, quantity: true } } satisfies Prisma.User$boostsArgs;
 
-interface WithStreakFreezes {
-  boosts: { quantity: number }[];
-}
+/** What streakStateOf needs from a user row. */
+export const STREAK_SELECT = {
+  streak: true,
+  lastPlayedOn: true,
+  boosts: USER_BOOSTS,
+} satisfies Prisma.UserSelect;
 
-/** Loaded with SABOTAGE_ITEMS_SELECT. */
-interface WithSabotageItems {
-  items: { itemId: string }[];
-}
+type StreakRow = Prisma.UserGetPayload<{ select: typeof STREAK_SELECT }>;
 
-type StreakRow = Pick<User, 'streak' | 'lastPlayedOn'> & WithStreakFreezes;
+export const CURRENT_USER_INCLUDE = {
+  boosts: USER_BOOSTS,
+  items: SABOTAGE_ITEMS_SELECT,
+} satisfies Prisma.UserInclude;
+
+type CurrentUserRow = Prisma.UserGetPayload<{ include: typeof CURRENT_USER_INCLUDE }>;
 
 export function toPublicUser(user: PublicUserRow): PublicUser {
   return {
@@ -41,16 +44,17 @@ export function toPublicUser(user: PublicUserRow): PublicUser {
   };
 }
 
-export function toCurrentUser(user: User & WithStreakFreezes & WithSabotageItems): CurrentUser {
+export function toCurrentUser(user: CurrentUserRow): CurrentUser {
   const { xpIntoLevel, xpForNextLevel } = levelProgress(user.xp);
+  const streakState = streakStateOf(user);
   return {
     ...toPublicUser(user),
     email: user.email,
     xp: user.xp,
     coins: user.coins,
-    streak: shownStreak(user),
+    streak: displayedStreak(streakState, utcToday()),
     longestStreak: user.longestStreak,
-    streakFreezes: streakFreezesOf(user),
+    streakFreezes: streakState.streakFreezes,
     twoFaEnabled: user.twoFaEnabled,
     xpIntoLevel,
     xpForNextLevel,
@@ -58,16 +62,11 @@ export function toCurrentUser(user: User & WithStreakFreezes & WithSabotageItems
   };
 }
 
-/** displayedStreak for a user row loaded with STREAK_FREEZES_SELECT. */
-export function shownStreak(user: StreakRow): number {
-  const streakState = {
+export function streakStateOf(user: StreakRow): StreakState {
+  const streakFreeze = user.boosts.find((boost) => boost.type === 'STREAK_FREEZE');
+  return {
     streak: user.streak,
     lastPlayedOn: user.lastPlayedOn,
-    streakFreezes: streakFreezesOf(user),
+    streakFreezes: streakFreeze?.quantity ?? 0,
   };
-  return displayedStreak(streakState, utcToday());
-}
-
-function streakFreezesOf(user: WithStreakFreezes): number {
-  return user.boosts[0]?.quantity ?? 0;
 }
