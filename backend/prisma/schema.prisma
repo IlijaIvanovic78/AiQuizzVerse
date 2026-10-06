@@ -203,6 +203,8 @@ model Question {
   correctIndex     Int      @map("correct_index")
   explanation      String
   hint             String
+  /// REVIEW copies point to the original question. No FK, so deleting the original never
+  /// breaks a review quiz.
   sourceQuestionId String?  @map("source_question_id")
 
   quiz        Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
@@ -255,6 +257,8 @@ model Match {
   quizId     String      @map("quiz_id")
   hostId     String      @map("host_id")
   inviteCode String?     @unique @map("invite_code")
+  /// StepReward { coins, chest } (learning-paths.types.ts) when this match cleared a path
+  /// step for the first time, otherwise null.
   stepReward Json?       @map("step_reward")
   createdAt  DateTime    @default(now()) @map("created_at")
   startedAt  DateTime?   @map("started_at")
@@ -281,6 +285,7 @@ model MatchPlayer {
   coinsEarned    Int      @default(0) @map("coins_earned")
   coinCapReached Boolean  @default(false) @map("coin_cap_reached")
   leveledUp      Boolean  @default(false) @map("leveled_up")
+  /// PlayerAnswerRecord[] (matches.types.ts); optionIndex is in the stored order.
   answers        Json     @default("[]")
   joinedAt       DateTime @default(now()) @map("joined_at")
 
@@ -357,6 +362,7 @@ model UserChest {
   matchId  String?     @map("match_id")
   earnedAt DateTime    @default(now()) @map("earned_at")
   openedAt DateTime?   @map("opened_at")
+  /// ChestReward (chests.types.ts) after opening, null while the chest is closed.
   reward   Json?
 
   user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
