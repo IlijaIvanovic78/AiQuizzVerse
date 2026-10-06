@@ -1,4 +1,4 @@
-<app-modal [title]="title()" size="sm" (closed)="closed.emit()">
+<app-modal [title]="title()" size="sm" [dismissible]="revealed()" (closed)="closed.emit()">
   <div class="flex flex-col items-center gap-4">
     <div class="relative" [class.animate-chest-bounce]="opened()">
       <app-chest-sprite
@@ -29,14 +29,16 @@
         [equipped]="equipped()"
         (equip)="equip.emit($event)"
       />
-      <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-        <button type="button" class="btn btn-ghost" (click)="closed.emit()">Done</button>
-        @if (nextCount() > 0) {
-          <button type="button" class="btn btn-primary" (click)="next.emit()">
-            Next chest ({{ nextCount() }} left)
-          </button>
-        }
-      </div>
+      @if (revealed()) {
+        <div class="flex w-full flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+          <button type="button" class="btn btn-ghost" (click)="closed.emit()">Done</button>
+          @if (nextCount() > 0) {
+            <button type="button" class="btn btn-primary" (click)="next.emit()">
+              Next chest ({{ nextCount() }} left)
+            </button>
+          }
+        </div>
+      }
     } @else {
       <p class="text-muted" aria-hidden="true">The lock is clicking...</p>
     }

@@ -43,6 +43,8 @@ export class ModalComponent {
   // Parchment is for reading: study cards, questions and anything with learning text.
   readonly parchment = input(false);
   readonly size = input<ModalSize>('md');
+  // False while something must be seen to the end, like a chest that is still opening.
+  readonly dismissible = input(true);
   readonly closed = output<void>();
 
   protected readonly titleId = `modal-title-${++nextModalId}`;
@@ -62,7 +64,7 @@ export class ModalComponent {
   }
 
   protected closeOnBackdrop(event: MouseEvent): void {
-    if (event.target === event.currentTarget) {
+    if (this.dismissible() && event.target === event.currentTarget) {
       this.closed.emit();
     }
   }
@@ -71,7 +73,9 @@ export class ModalComponent {
   // so a dialog opened inside another one does not close both.
   protected closeOnEscape(event: Event): void {
     event.stopPropagation();
-    this.closed.emit();
+    if (this.dismissible()) {
+      this.closed.emit();
+    }
   }
 
   // Tab and Shift+Tab wrap around inside the dialog instead of leaving it.

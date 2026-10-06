@@ -17,14 +17,16 @@
   >
     <header class="mb-4 flex items-start justify-between gap-3">
       <h2 class="pt-1 text-2xl" [id]="titleId">{{ title() }}</h2>
-      <button
-        type="button"
-        class="btn btn-ghost btn-sm -mr-2 -mt-1 shrink-0"
-        aria-label="Close"
-        (click)="closed.emit()"
-      >
-        <app-pixel-icon name="cross" />
-      </button>
+      @if (dismissible()) {
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm -mr-2 -mt-1 shrink-0"
+          aria-label="Close"
+          (click)="closed.emit()"
+        >
+          <app-pixel-icon name="cross" />
+        </button>
+      }
     </header>
     <div #body>
       <ng-content />

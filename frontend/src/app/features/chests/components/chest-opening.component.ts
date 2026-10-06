@@ -50,6 +50,13 @@ export class ChestOpeningComponent {
   );
 
   protected readonly opened = computed(() => this.shakeDone() && this.reward() !== null);
+  // The dialog can only be closed once the reward is on screen, so nobody misses what they got.
+  protected readonly revealed = toSignal(
+    toObservable(this.opened).pipe(
+      switchMap((opened) => (opened ? timer(LID_OPEN_MS).pipe(map(() => true)) : of(false))),
+    ),
+    { initialValue: false },
+  );
   protected readonly title = computed(() => CHEST_NAMES[this.chest().type]);
   protected readonly announcement = computed(() => {
     const reward = this.reward();
