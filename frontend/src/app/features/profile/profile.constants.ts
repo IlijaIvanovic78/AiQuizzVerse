@@ -1,5 +1,6 @@
 import { MatchOutcome } from '../../core/models/match.model';
-import { OutcomeLook } from './profile.types';
+import { ICONS_URL, itemIconUrl } from '../../shared/icons';
+import { OutcomeLook, WardrobeTabOption } from './profile.types';
 
 export const RECENT_MATCHES_SHOWN = 8;
 
@@ -17,3 +18,26 @@ export const OUTCOME_LOOKS: Record<MatchOutcome, OutcomeLook> = {
 };
 export const TEAM_VICTORY_LOOK: OutcomeLook = { label: 'Team victory', badge: 'badge-jade' };
 export const SO_CLOSE_LOOK: OutcomeLook = { label: 'So close', badge: 'badge-fog' };
+
+// The shop links to /profile#wardrobe, and the profile then scrolls to the wardrobe.
+export const WARDROBE_FRAGMENT = 'wardrobe';
+
+// The same icons as the Heroes and Pets tabs of the shop.
+export const WARDROBE_TABS: WardrobeTabOption[] = [
+  {
+    id: 'heroes',
+    label: 'Heroes',
+    itemType: 'AVATAR',
+    icon: itemIconUrl('sword'),
+    pixelated: false,
+    emptyText: 'No heroes yet. New ones wait in the shop, and the rarest hide in chests.',
+  },
+  {
+    id: 'pets',
+    label: 'Pets',
+    itemType: 'PET',
+    icon: `${ICONS_URL}heart.png`,
+    pixelated: true,
+    emptyText: 'No pets yet. A pet follows your hero into every game.',
+  },
+];

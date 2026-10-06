@@ -28,6 +28,7 @@
         [style.animation-duration.ms]="rewardPopMs"
         [reward]="reward"
         [equipped]="equipped()"
+        [equipping]="equipping()"
         (equip)="equip.emit($event)"
       />
       @if (canClose()) {

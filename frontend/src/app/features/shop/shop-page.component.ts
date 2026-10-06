@@ -23,6 +23,7 @@ import { SabotageIconComponent } from '../../shared/components/sabotage-icon.com
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { PricePipe } from '../../shared/pipes/price.pipe';
 import { sabotageOfItem } from '../../shared/sabotages';
+import { tabIndexAfterKey } from '../../shared/tabs';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { FREE_HINTS_PER_MATCH } from '../../store/match/match.constants';
 import { PaymentsActions } from '../../store/shop/payments.actions';
@@ -35,8 +36,6 @@ import { GrownUpGateComponent } from './components/grown-up-gate.component';
 import { ItemCardComponent } from './components/item-card.component';
 import { isShownInShop } from './item-state';
 import { FREE_INK, ITEM_TABS, MONTHLY_LIMIT_CENTS, SHOP_TABS, ShopTab } from './shop.constants';
-
-const TAB_KEY_STEPS: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1 };
 
 @Component({
   selector: 'app-shop-page',
@@ -120,14 +119,12 @@ export class ShopPageComponent {
     this.activeTab.set(tab);
   }
 
-  // Arrow keys move between tabs, as screen reader users expect from a tab list.
   protected moveTab(event: KeyboardEvent, index: number): void {
-    const step = TAB_KEY_STEPS[event.key];
-    if (!step) {
+    const nextIndex = tabIndexAfterKey(event.key, index, this.tabs.length);
+    if (nextIndex === null) {
       return;
     }
     event.preventDefault();
-    const nextIndex = (index + step + this.tabs.length) % this.tabs.length;
     this.activeTab.set(this.tabs[nextIndex].id);
     this.tabButtons()[nextIndex].nativeElement.focus();
   }
@@ -146,14 +143,6 @@ export class ShopPageComponent {
       this.store.dispatch(ShopActions.buyBoost({ boostType: boost.type }));
     }
     this.boostToBuy.set(null);
-  }
-
-  protected equip(item: ShopItem): void {
-    this.store.dispatch(ShopActions.equipItem({ itemId: item.id }));
-  }
-
-  protected unequipPet(): void {
-    this.store.dispatch(ShopActions.unequipPet());
   }
 
   protected openCheckout(pack: CoinPackage): void {

@@ -1,0 +1,129 @@
+<section
+  #section
+  class="wardrobe panel"
+  tabindex="-1"
+  [id]="sectionId"
+  aria-labelledby="wardrobe-title"
+>
+  <h2 id="wardrobe-title" class="text-xl">Wardrobe</h2>
+  @if (loaded()) {
+    <p class="mt-1 text-sm text-muted" aria-live="polite">{{ wearing() }}</p>
+  }
+
+  <div class="wardrobe-tabs" role="tablist" aria-label="Wardrobe">
+    @for (tab of tabs(); track tab.id; let index = $index) {
+      <button
+        #tabButton
+        type="button"
+        role="tab"
+        class="wardrobe-tab"
+        [id]="'wardrobe-tab-' + tab.id"
+        [attr.aria-selected]="activeIndex() === index"
+        [attr.aria-controls]="'wardrobe-panel-' + tab.id"
+        [tabIndex]="activeIndex() === index ? 0 : -1"
+        (click)="selectTab(index)"
+        (keydown)="moveTab($event, index)"
+      >
+        <img [src]="tab.icon" alt="" class="tab-icon" [class.pixelated]="tab.pixelated" />
+        {{ tab.label }}
+        @if (loaded()) {
+          <span class="badge">{{ tab.count }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <div
+    class="wardrobe-shelf"
+    role="tabpanel"
+    [id]="'wardrobe-panel-' + activeTab().id"
+    [attr.aria-labelledby]="'wardrobe-tab-' + activeTab().id"
+  >
+    @if (shelf().length > 0) {
+      <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
+        @for (item of shelf(); track item.id) {
+          <li>
+            <article class="wardrobe-card panel" [class.wardrobe-card-worn]="item.equipped">
+              <div class="wardrobe-stage">
+                @if (item.type === 'AVATAR') {
+                  <app-hero-sprite
+                    class="wardrobe-sprite"
+                    [heroKey]="item.id"
+                    [scale]="3"
+                    [decorative]="true"
+                  />
+                } @else {
+                  <app-pet-sprite
+                    class="wardrobe-sprite"
+                    [petKey]="item.id"
+                    [scale]="3"
+                    [decorative]="true"
+                  />
+                }
+                @if (item.equipped) {
+                  <span class="stage-badge badge badge-jade animate-pop">
+                    <app-pixel-icon name="check" [scale]="1" />
+                    Equipped
+                  </span>
+                }
+              </div>
+
+              <div class="flex flex-1 flex-col gap-2 p-3">
+                <h3 class="break-words text-sm leading-tight sm:text-lg">{{ item.name }}</h3>
+                @if (!item.equipped) {
+                  <button
+                    type="button"
+                    class="btn btn-success btn-sm mt-auto w-full"
+                    [disabled]="busy()"
+                    (click)="equip.emit(item)"
+                  >
+                    Equip<span class="sr-only"> {{ item.name }}</span>
+                  </button>
+                } @else if (item.type === 'PET') {
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm mt-auto w-full"
+                    [disabled]="busy()"
+                    (click)="unequipPet.emit()"
+                  >
+                    Take off pet
+                  </button>
+                } @else {
+                  <p class="worn-plate">Your hero</p>
+                }
+              </div>
+            </article>
+          </li>
+        }
+        <li>
+          <a class="shop-tile" routerLink="/shop">
+            <app-pixel-icon name="coin" [scale]="3" />
+            Get more in the shop
+          </a>
+        </li>
+      </ul>
+    } @else if (loaded()) {
+      <div class="flex flex-col items-center gap-3 px-4 py-8 text-center">
+        <img
+          [src]="activeTab().icon"
+          alt=""
+          class="h-16 w-auto"
+          [class.pixelated]="activeTab().pixelated"
+        />
+        <p class="max-w-sm text-fog-200">{{ activeTab().emptyText }}</p>
+        <a class="btn btn-primary btn-sm" routerLink="/shop">Get more in the shop</a>
+      </div>
+    } @else if (failed()) {
+      <div class="flex flex-col items-center gap-3 px-4 py-8 text-center">
+        <p>The wardrobe didn't open this time. Check your connection and try again.</p>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="retry.emit()">
+          Try again
+        </button>
+      </div>
+    } @else {
+      <div class="py-6">
+        <app-spinner label="Opening the wardrobe..." />
+      </div>
+    }
+  </div>
+</section>

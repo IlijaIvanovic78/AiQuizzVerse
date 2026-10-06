@@ -7,6 +7,7 @@ import { PetSpriteComponent } from '../../../shared/components/pet-sprite.compon
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
 import { sabotageOfItem } from '../../../shared/sabotages';
+import { WARDROBE_FRAGMENT } from '../../profile/profile.constants';
 import { itemState } from '../item-state';
 import { FREE_INK } from '../shop.constants';
 
@@ -31,9 +32,8 @@ export class ItemCardComponent {
   readonly coins = input.required<number>();
   readonly busy = input(false);
   readonly buy = output<ShopItem>();
-  readonly equip = output<ShopItem>();
-  readonly unequip = output<void>();
 
+  protected readonly wardrobeFragment = WARDROBE_FRAGMENT;
   protected readonly state = computed(() => itemState(this.item(), this.level(), this.coins()));
   protected readonly isHero = computed(() => this.item().type === 'AVATAR');
   protected readonly sabotageType = computed(() => sabotageOfItem(this.item()));

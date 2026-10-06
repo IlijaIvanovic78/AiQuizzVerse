@@ -11,7 +11,8 @@ import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { authFeature } from '../../store/auth/auth.reducer';
 import { ChestsActions } from '../../store/chests/chests.actions';
 import { chestsFeature } from '../../store/chests/chests.reducer';
-import { ShopActions } from '../../store/shop/shop.actions';
+import { EquipmentActions } from '../../store/shop/equipment.actions';
+import { shopFeature } from '../../store/shop/shop.reducer';
 import { HOW_TO_EARN } from './chests.constants';
 import { ChestCardComponent } from './components/chest-card.component';
 import { ChestOddsComponent } from './components/chest-odds.component';
@@ -45,6 +46,8 @@ export class ChestsPageComponent {
   protected readonly loaded = this.store.selectSignal(chestsFeature.selectLoaded);
   protected readonly opening = this.store.selectSignal(chestsFeature.selectOpening);
   protected readonly reveal = this.store.selectSignal(chestsFeature.selectReveal);
+  // The shop slice is busy while the found hero or pet is being equipped.
+  protected readonly equipping = this.store.selectSignal(shopFeature.selectBusy);
   private readonly user = this.store.selectSignal(authFeature.selectUser);
 
   protected readonly howToEarn = HOW_TO_EARN;
@@ -88,6 +91,6 @@ export class ChestsPageComponent {
   }
 
   protected equip(item: ShopItem): void {
-    this.store.dispatch(ShopActions.equipItem({ itemId: item.id }));
+    this.store.dispatch(EquipmentActions.equipItem({ itemId: item.id }));
   }
 }

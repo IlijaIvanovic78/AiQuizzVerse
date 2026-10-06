@@ -36,6 +36,7 @@ import { quizzesFeature } from './store/quizzes/quizzes.reducer';
 import { RealtimeEffects } from './store/realtime/realtime.effects';
 import { ReviewEffects } from './store/review/review.effects';
 import { reviewFeature } from './store/review/review.reducer';
+import { EquipmentEffects } from './store/shop/equipment.effects';
 import { PaymentsEffects } from './store/shop/payments.effects';
 import { ShopEffects } from './store/shop/shop.effects';
 import { shopFeature } from './store/shop/shop.reducer';
@@ -66,6 +67,7 @@ export const appConfig: ApplicationConfig = {
       ReviewEffects,
       ShopEffects,
       PaymentsEffects,
+      EquipmentEffects,
       FriendsEffects,
       LeaderboardEffects,
       MatchHistoryEffects,

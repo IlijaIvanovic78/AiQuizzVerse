@@ -29,6 +29,7 @@ export class ChestRewardComponent {
   readonly reward = input.required<ChestReward>();
   // The found hero or pet is already the one the player wears.
   readonly equipped = input(false);
+  readonly equipping = input(false);
   readonly equip = output<ShopItem>();
 
   protected readonly boostLabels = BOOST_LABELS;

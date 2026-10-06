@@ -2,6 +2,7 @@ import { ChestReward, ChestView } from '../../core/models/chest.model';
 import { ShopItem } from '../../core/models/shop.model';
 import { CurrentUser } from '../../core/models/user.model';
 import { ChestsActions } from '../chests/chests.actions';
+import { EquipmentActions } from '../shop/equipment.actions';
 import { ShopActions } from '../shop/shop.actions';
 import { AuthActions } from './auth.actions';
 import { authFeature } from './auth.reducer';
@@ -87,6 +88,27 @@ describe('auth reducer', () => {
 
     expect(state.pending).toBe(false);
     expect(state.error).toBeNull();
+  });
+
+  it('wears the hero and the pet the server equipped', () => {
+    const equipped = { ...user, avatarKey: 'mini-knight', petKey: 'pet-fox' };
+
+    const state = reducer(signedIn, EquipmentActions.itemEquipped({ user: equipped }));
+
+    expect(state.user?.avatarKey).toBe('mini-knight');
+    expect(state.user?.petKey).toBe('pet-fox');
+  });
+
+  it('leaves the hero alone when the pet is taken off', () => {
+    const withPet = reducer(
+      signedIn,
+      EquipmentActions.itemEquipped({ user: { ...user, petKey: 'pet-fox' } }),
+    );
+
+    const state = reducer(withPet, EquipmentActions.petUnequipped({ user }));
+
+    expect(state.user?.avatarKey).toBe('mini-mage');
+    expect(state.user?.petKey).toBeNull();
   });
 
   it('leaves the sabotages alone when a hero is bought', () => {

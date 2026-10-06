@@ -49,11 +49,12 @@
     <p class="mb-4 text-fog-200">
       @switch (activeTab()) {
         @case ('heroes') {
-          Pick the hero you play as. New heroes unlock as you level up, and the rarest ones hide in
-          chests.
+          New heroes unlock as you level up, and the rarest ones hide in chests. Pick the one you
+          play as in the wardrobe on your profile.
         }
         @case ('pets') {
-          A pet follows your hero into every game. The rarest pets hide in chests.
+          A pet follows your hero into every game. The rarest pets hide in chests. Put one on in the
+          wardrobe on your profile.
         }
         @case ('sabotages') {
           Sabotages work in Party matches. You still need charges — win rounds to earn them.
@@ -71,8 +72,6 @@
               [coins]="coins()"
               [busy]="busy()"
               (buy)="itemToBuy.set($event)"
-              (equip)="equip($event)"
-              (unequip)="unequipPet()"
             />
           </li>
         }

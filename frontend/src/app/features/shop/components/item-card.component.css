@@ -70,3 +70,16 @@
   font-weight: 600;
   text-align: center;
 }
+
+/* Heroes and pets are worn from the wardrobe on the profile. The link sits where a Buy button
+   would, with the same height, so the cards in a row still line up. Its words are wrapped in one
+   span, because a flex box would drop the spaces around the hidden item name. */
+.wardrobe-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: auto;
+  font-size: 0.9rem;
+  text-align: center;
+}

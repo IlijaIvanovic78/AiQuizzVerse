@@ -3,6 +3,7 @@ import { ShopItem } from '../../core/models/shop.model';
 import { CurrentUser } from '../../core/models/user.model';
 import { withUnlockedSabotage } from '../../shared/sabotages';
 import { ChestsActions } from '../chests/chests.actions';
+import { EquipmentActions } from '../shop/equipment.actions';
 import { PaymentsActions } from '../shop/payments.actions';
 import { ShopActions } from '../shop/shop.actions';
 import { AuthActions } from './auth.actions';
@@ -77,9 +78,9 @@ export const authFeature = createFeature({
     on(
       AuthActions.tokensRefreshed,
       AuthActions.userRefreshed,
-      ShopActions.itemEquipped,
-      ShopActions.petUnequipped,
       ShopActions.starterClaimed,
+      EquipmentActions.itemEquipped,
+      EquipmentActions.petUnequipped,
       (state, { user }): AuthState => ({ ...state, user }),
     ),
     on(

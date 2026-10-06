@@ -21,4 +21,12 @@ export class ProfileApiService {
   updateMe(request: UpdateProfileRequest): Observable<CurrentUser> {
     return this.http.patch<CurrentUser>(`${this.baseUrl}/me`, request);
   }
+
+  equipItem(itemId: string): Observable<CurrentUser> {
+    return this.http.post<CurrentUser>(`${this.baseUrl}/me/equipment/${itemId}`, {});
+  }
+
+  unequipPet(): Observable<CurrentUser> {
+    return this.http.delete<CurrentUser>(`${this.baseUrl}/me/equipment/pet`);
+  }
 }

@@ -48,16 +48,11 @@
             Follows you everywhere
           }
         </p>
-        @if (!isHero()) {
-          <button
-            type="button"
-            class="btn btn-secondary btn-sm mt-auto w-full"
-            [disabled]="busy()"
-            (click)="unequip.emit()"
-          >
-            Send home
-          </button>
-        }
+        <a class="wardrobe-link link" routerLink="/profile" [fragment]="wardrobeFragment">
+          <span>
+            Change<span class="sr-only"> your {{ isHero() ? 'hero' : 'pet' }}</span> in your profile
+          </span>
+        </a>
       }
       @case ('owned') {
         @if (isFreeSabotage()) {
@@ -66,14 +61,11 @@
           <p class="mt-auto text-sm text-jade-400">Ready for your next party</p>
         } @else {
           <p class="text-sm text-muted">Yours to keep</p>
-          <button
-            type="button"
-            class="btn btn-success btn-sm mt-auto w-full"
-            [disabled]="busy()"
-            (click)="equip.emit(item())"
-          >
-            Equip
-          </button>
+          <a class="wardrobe-link link" routerLink="/profile" [fragment]="wardrobeFragment">
+            <span>
+              Equip<span class="sr-only"> {{ item().name }}</span> in your profile
+            </span>
+          </a>
         }
       }
       @case ('chest-only') {

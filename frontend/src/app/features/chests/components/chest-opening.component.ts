@@ -37,6 +37,7 @@ export class ChestOpeningComponent {
   // Chests still waiting after this one when the player opens them all.
   readonly nextCount = input(0);
   readonly equipped = input(false);
+  readonly equipping = input(false);
   readonly next = output<void>();
   readonly equip = output<ShopItem>();
   readonly closed = output<void>();

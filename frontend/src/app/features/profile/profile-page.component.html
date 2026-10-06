@@ -38,7 +38,9 @@
           (cancel)="cancelRequest(profile)"
         />
       } @else {
-        <a class="btn btn-secondary btn-sm self-start" routerLink="/shop">Change hero or pet</a>
+        <button type="button" class="btn btn-secondary btn-sm self-start" (click)="showWardrobe()">
+          Change hero or pet
+        </button>
       }
     </app-profile-hero-card>
 
@@ -59,6 +61,17 @@
     </section>
 
     @if (isMe()) {
+      <app-wardrobe
+        [items]="shopItems()"
+        [loaded]="shopItemsLoaded()"
+        [failed]="shopError() !== null"
+        [busy]="shopBusy()"
+        [showOnStart]="openedOnWardrobe"
+        (equip)="equip($event)"
+        (unequipPet)="unequipPet()"
+        (retry)="loadWardrobe()"
+      />
+
       <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-2">
         <app-mastery-list [mastery]="profile.mastery" />
         <app-match-history-list

@@ -18,14 +18,6 @@ export class ShopApiService {
     return this.http.post<ItemPurchase>(`${this.baseUrl}/items/${itemId}/buy`, {});
   }
 
-  equipItem(itemId: string): Observable<CurrentUser> {
-    return this.http.post<CurrentUser>(`${this.baseUrl}/items/${itemId}/equip`, {});
-  }
-
-  unequipPet(): Observable<CurrentUser> {
-    return this.http.delete<CurrentUser>(`${this.baseUrl}/pet`);
-  }
-
   claimStarter(itemId: string): Observable<CurrentUser> {
     return this.http.post<CurrentUser>(`${this.baseUrl}/starters/${itemId}/claim`, {});
   }

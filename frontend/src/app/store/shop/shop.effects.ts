@@ -42,30 +42,6 @@ export class ShopEffects {
     ),
   );
 
-  readonly equipItem$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(ShopActions.equipItem),
-      exhaustMap(({ itemId }) =>
-        this.shopApi.equipItem(itemId).pipe(
-          map((user) => ShopActions.itemEquipped({ user })),
-          catchError((error: unknown) => of(this.failed(error))),
-        ),
-      ),
-    ),
-  );
-
-  readonly unequipPet$ = createEffect(() =>
-    this.actions$.pipe(
-      ofType(ShopActions.unequipPet),
-      exhaustMap(() =>
-        this.shopApi.unequipPet().pipe(
-          map((user) => ShopActions.petUnequipped({ user })),
-          catchError((error: unknown) => of(this.failed(error))),
-        ),
-      ),
-    ),
-  );
-
   readonly claimStarter$ = createEffect(() =>
     this.actions$.pipe(
       ofType(ShopActions.claimStarter),
@@ -110,10 +86,7 @@ export class ShopEffects {
         ofType(ShopActions.itemBought),
         tap(({ item }) => {
           this.sound.playCoin();
-          this.toast.success(`${item.name} joined your team!`, {
-            label: 'Equip',
-            action: ShopActions.equipItem({ itemId: item.id }),
-          });
+          this.toast.success(`${item.name} joined your team!`);
         }),
       ),
     { dispatch: false },
@@ -127,17 +100,6 @@ export class ShopEffects {
           this.sound.playCoin();
           this.toast.success(`+1 ${boost.name}`);
         }),
-      ),
-    { dispatch: false },
-  );
-
-  // The clink plays the moment Equip is pressed, in the shop, a chest or a toast, so the click
-  // sound of that button stays quiet.
-  readonly clinkEquip$ = createEffect(
-    () =>
-      this.actions$.pipe(
-        ofType(ShopActions.equipItem),
-        tap(() => this.sound.playEquip()),
       ),
     { dispatch: false },
   );

@@ -22,7 +22,7 @@ describe('itemState', () => {
     expect(itemState(item({ owned: true, equipped: true }), 1, 0)).toBe('equipped');
   });
 
-  it('lets the player equip an owned item even below its level', () => {
+  it('keeps an owned item owned even below its level', () => {
     expect(itemState(item({ owned: true }), 1, 0)).toBe('owned');
   });
 

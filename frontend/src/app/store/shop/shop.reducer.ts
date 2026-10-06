@@ -3,16 +3,19 @@ import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { CoinPackage, PurchaseView } from '../../core/models/payment.model';
 import { BoostOffer, ShopItem } from '../../core/models/shop.model';
 import { CurrentUser } from '../../core/models/user.model';
+import { EquipmentActions } from './equipment.actions';
 import { PaymentsActions } from './payments.actions';
 import { ShopActions } from './shop.actions';
 
-// Also holds the coin packages and purchases that PaymentsActions load.
+// Also holds the coin packages and purchases that PaymentsActions load. EquipmentActions only
+// change which items are equipped.
 interface ShopState extends EntityState<ShopItem> {
   itemsLoaded: boolean;
   boosts: BoostOffer[];
   packages: CoinPackage[];
   purchase: PurchaseView | null;
   purchases: PurchaseView[];
+  purchasesLoading: boolean;
   loading: boolean;
   busy: boolean;
   error: string | null;
@@ -30,6 +33,7 @@ const initialState: ShopState = shopItemsAdapter.getInitialState({
   packages: [],
   purchase: null,
   purchases: [],
+  purchasesLoading: false,
   loading: false,
   busy: false,
   error: null,
@@ -44,8 +48,13 @@ export const shopFeature = createFeature({
       ShopActions.loadBoosts,
       PaymentsActions.loadPackages,
       PaymentsActions.loadPurchase,
-      PaymentsActions.loadHistory,
       (state): ShopState => ({ ...state, loading: true, error: null }),
+    ),
+    // The profile loads the purchases together with the wardrobe items, so the purchases have
+    // their own flag and keep their spinner when the items arrive first.
+    on(
+      PaymentsActions.loadHistory,
+      (state): ShopState => ({ ...state, purchasesLoading: true, error: null }),
     ),
     on(
       ShopActions.itemsLoaded,
@@ -58,10 +67,10 @@ export const shopFeature = createFeature({
     ),
     on(
       ShopActions.buyItem,
-      ShopActions.equipItem,
-      ShopActions.unequipPet,
       ShopActions.claimStarter,
       ShopActions.buyBoost,
+      EquipmentActions.equipItem,
+      EquipmentActions.unequipPet,
       PaymentsActions.checkout,
       PaymentsActions.confirmPurchase,
       PaymentsActions.cancelPurchase,
@@ -73,9 +82,9 @@ export const shopFeature = createFeature({
         shopItemsAdapter.updateOne({ id: item.id, changes: item }, { ...state, busy: false }),
     ),
     on(
-      ShopActions.itemEquipped,
-      ShopActions.petUnequipped,
       ShopActions.starterClaimed,
+      EquipmentActions.itemEquipped,
+      EquipmentActions.petUnequipped,
       (state, { user }): ShopState => withEquippedItems({ ...state, busy: false }, user),
     ),
     on(
@@ -102,13 +111,21 @@ export const shopFeature = createFeature({
     ),
     on(
       PaymentsActions.historyLoaded,
-      (state, { purchases }): ShopState => ({ ...state, purchases, loading: false }),
+      (state, { purchases }): ShopState => ({ ...state, purchases, purchasesLoading: false }),
     ),
     on(
       ShopActions.failed,
       PaymentsActions.failed,
-      (state, { error }): ShopState => ({ ...state, loading: false, busy: false, error }),
+      (state, { error }): ShopState => ({
+        ...state,
+        loading: false,
+        purchasesLoading: false,
+        busy: false,
+        error,
+      }),
     ),
+    // An equip error is shown as a toast, so it leaves error to the shop pages that show it.
+    on(EquipmentActions.failed, (state): ShopState => ({ ...state, busy: false })),
   ),
   extraSelectors: ({ selectShopState }) => {
     const selectAllShopItems = createSelector(selectShopState, selectAll);

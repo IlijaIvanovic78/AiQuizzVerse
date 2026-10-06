@@ -8,9 +8,10 @@ import {
   input,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Actions, ofType } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
 import {
@@ -29,6 +30,7 @@ import { AuthApiService } from '../../core/api/auth-api.service';
 import { ProfileApiService } from '../../core/api/profile-api.service';
 import { TwoFactorSetup } from '../../core/models/auth.model';
 import { ProfileView } from '../../core/models/profile.model';
+import { ShopItem } from '../../core/models/shop.model';
 import { ToastService } from '../../core/notifications/toast.service';
 import { SoundService } from '../../core/sound/sound.service';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
@@ -41,13 +43,17 @@ import { FriendsActions } from '../../store/friends/friends.actions';
 import { friendsFeature } from '../../store/friends/friends.reducer';
 import { MatchHistoryActions } from '../../store/match-history/match-history.actions';
 import { matchHistoryFeature } from '../../store/match-history/match-history.reducer';
+import { EquipmentActions } from '../../store/shop/equipment.actions';
 import { PaymentsActions } from '../../store/shop/payments.actions';
+import { ShopActions } from '../../store/shop/shop.actions';
 import { shopFeature } from '../../store/shop/shop.reducer';
 import { MasteryListComponent } from './components/mastery-list.component';
 import { MatchHistoryListComponent } from './components/match-history-list.component';
 import { ProfileHeroCardComponent } from './components/profile-hero-card.component';
 import { ProfileSettingsComponent } from './components/profile-settings.component';
 import { PurchaseListComponent } from './components/purchase-list.component';
+import { WardrobeComponent } from './components/wardrobe.component';
+import { WARDROBE_FRAGMENT } from './profile.constants';
 import { failedState, statTilesFor } from './profile.rules';
 import { ProfileState } from './profile.types';
 
@@ -66,6 +72,7 @@ const LOADING: ProfileState = { status: 'loading' };
     ProfileHeroCardComponent,
     ProfileSettingsComponent,
     PurchaseListComponent,
+    WardrobeComponent,
   ],
   templateUrl: './profile-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -90,7 +97,15 @@ export class ProfilePageComponent {
   protected readonly historyLoaded = this.store.selectSignal(matchHistoryFeature.selectLoaded);
   protected readonly historyError = this.store.selectSignal(matchHistoryFeature.selectError);
   protected readonly purchases = this.store.selectSignal(shopFeature.selectPurchases);
-  protected readonly purchasesLoading = this.store.selectSignal(shopFeature.selectLoading);
+  protected readonly purchasesLoading = this.store.selectSignal(shopFeature.selectPurchasesLoading);
+  protected readonly shopItems = this.store.selectSignal(shopFeature.selectAllShopItems);
+  protected readonly shopItemsLoaded = this.store.selectSignal(shopFeature.selectItemsLoaded);
+  protected readonly shopError = this.store.selectSignal(shopFeature.selectError);
+  protected readonly shopBusy = this.store.selectSignal(shopFeature.selectBusy);
+  // The shop's "Equip in your profile" link opens /profile#wardrobe.
+  protected readonly openedOnWardrobe =
+    inject(ActivatedRoute).snapshot.fragment === WARDROBE_FRAGMENT;
+  private readonly wardrobe = viewChild(WardrobeComponent);
 
   private readonly retry$ = new Subject<void>();
   protected readonly state = toSignal(
@@ -131,7 +146,7 @@ export class ProfilePageComponent {
   constructor() {
     effect(() => {
       if (this.isMe()) {
-        untracked(() => this.loadMyHistory());
+        untracked(() => this.loadMySections());
       }
     });
     this.actions$
@@ -161,6 +176,22 @@ export class ProfilePageComponent {
     if (profile.friendshipId) {
       this.store.dispatch(FriendsActions.removeRequest({ requestId: profile.friendshipId }));
     }
+  }
+
+  protected showWardrobe(): void {
+    this.wardrobe()?.show();
+  }
+
+  protected loadWardrobe(): void {
+    this.store.dispatch(ShopActions.loadItems());
+  }
+
+  protected equip(item: ShopItem): void {
+    this.store.dispatch(EquipmentActions.equipItem({ itemId: item.id }));
+  }
+
+  protected unequipPet(): void {
+    this.store.dispatch(EquipmentActions.unequipPet());
   }
 
   protected rename(username: string): void {
@@ -197,7 +228,8 @@ export class ProfilePageComponent {
     this.store.dispatch(AuthActions.logout());
   }
 
-  // A friendship change on this page or from a socket event changes the relation buttons.
+  // A friendship change on this page or from a socket event changes the relation buttons, and
+  // a new hero or pet from the wardrobe changes the hero card.
   private refreshes(): Observable<unknown> {
     const friendshipChanged$ = this.actions$.pipe(
       ofType(
@@ -208,7 +240,10 @@ export class ProfilePageComponent {
         FriendsActions.friendRemoved,
       ),
     );
-    return merge(friendshipChanged$, this.retry$);
+    const equipmentChanged$ = this.actions$.pipe(
+      ofType(EquipmentActions.itemEquipped, EquipmentActions.petUnequipped),
+    );
+    return merge(friendshipChanged$, equipmentChanged$, this.retry$);
   }
 
   private fetchProfile(username: string | undefined): Observable<ProfileState> {
@@ -219,9 +254,11 @@ export class ProfilePageComponent {
     );
   }
 
-  private loadMyHistory(): void {
+  // Only my own profile has the match history, the purchases and the wardrobe.
+  private loadMySections(): void {
     this.store.dispatch(MatchHistoryActions.load());
     this.store.dispatch(PaymentsActions.loadHistory());
+    this.loadWardrobe();
   }
 
   private afterRename(): void {
