@@ -8,6 +8,7 @@
   <button
     type="button"
     class="btn btn-primary btn-sm mt-auto w-full"
+    data-sound="none"
     [attr.aria-label]="'Open the ' + name().toLowerCase()"
     [disabled]="busy()"
     (click)="open.emit()"
