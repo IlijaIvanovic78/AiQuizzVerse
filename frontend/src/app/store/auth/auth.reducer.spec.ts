@@ -80,6 +80,15 @@ describe('auth reducer', () => {
     expect(state.user?.sabotages).toEqual(['INK', 'FOG']);
   });
 
+  it('stops a failed settings save without touching the login form error', () => {
+    const saving = reducer(signedIn, AuthActions.changeUsername({ username: 'new_hero' }));
+
+    const state = reducer(saving, AuthActions.settingsFailed({ error: 'This name is taken.' }));
+
+    expect(state.pending).toBe(false);
+    expect(state.error).toBeNull();
+  });
+
   it('leaves the sabotages alone when a hero is bought', () => {
     const hero: ShopItem = { ...fog, id: 'hero-fire-mage', name: 'Fire Mage', type: 'AVATAR' };
 

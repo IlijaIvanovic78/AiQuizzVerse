@@ -35,10 +35,14 @@ export const authFeature = createFeature({
       AuthActions.login,
       AuthActions.register,
       AuthActions.submitTwoFactorCode,
+      (state): AuthState => ({ ...state, pending: true, error: null }),
+    ),
+    // error belongs to the login and register forms; a settings error is shown as a toast.
+    on(
       AuthActions.changeUsername,
       AuthActions.enableTwoFactor,
       AuthActions.disableTwoFactor,
-      (state): AuthState => ({ ...state, pending: true, error: null }),
+      (state): AuthState => ({ ...state, pending: true }),
     ),
     on(
       AuthActions.twoFactorRequired,
@@ -55,9 +59,9 @@ export const authFeature = createFeature({
     ),
     on(
       AuthActions.signInFailed,
-      AuthActions.settingsFailed,
       (state, { error }): AuthState => ({ ...state, pending: false, error }),
     ),
+    on(AuthActions.settingsFailed, (state): AuthState => ({ ...state, pending: false })),
     on(
       AuthActions.sessionMissing,
       AuthActions.sessionExpired,
@@ -87,11 +91,12 @@ export const authFeature = createFeature({
     // A sabotage belongs to the hero, so the party sabotage bar shows a new one right away.
     on(
       ShopActions.itemBought,
-      (state, { coins, item }): AuthState => withNewItem(withCoins(state, coins), item),
+      (state, { coins, item }): AuthState => withSabotageFrom(withCoins(state, coins), item),
     ),
     on(
       ChestsActions.opened,
-      (state, { coins, reward }): AuthState => withNewItem(withCoins(state, coins), reward.item),
+      (state, { coins, reward }): AuthState =>
+        withSabotageFrom(withCoins(state, coins), reward.item),
     ),
   ),
   extraSelectors: ({ selectUser, selectStatus }) => ({
@@ -107,7 +112,8 @@ function withCoins(state: AuthState, coins: number): AuthState {
   return { ...state, user: { ...state.user, coins } };
 }
 
-function withNewItem(state: AuthState, item: ShopItem | null): AuthState {
+// Only a sabotage item adds to the player's sabotages; a hero or a pet leaves them as they are.
+function withSabotageFrom(state: AuthState, item: ShopItem | null): AuthState {
   if (!state.user || !item) {
     return state;
   }
