@@ -14,10 +14,13 @@ export const MatchActions = createActionGroup({
     Create: props<{ request: CreateMatchRequest }>(),
     Join: props<{ inviteCode: string }>(),
     Rematch: props<{ matchId: string }>(),
-    Opened: props<{ match: MatchView }>(),
+    // The server created or joined a match for this player, so the app goes to its page.
+    Ready: props<{ match: MatchView }>(),
+    // The match page opened: the state starts fresh and the match is fetched.
     Entered: props<{ matchId: string }>(),
     Loaded: props<{ match: MatchView }>(),
     'Result Loaded': props<{ result: MatchResult }>(),
+    // The match page closed: the socket leaves the match room.
     Left: emptyProps(),
     Start: emptyProps(),
     Answer: props<{ optionIndex: number }>(),

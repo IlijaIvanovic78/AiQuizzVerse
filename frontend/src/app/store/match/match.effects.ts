@@ -43,7 +43,7 @@ export class MatchEffects {
       ofType(MatchActions.create),
       exhaustMap(({ request }) =>
         this.matchesApi.create(request).pipe(
-          map((match) => MatchActions.opened({ match })),
+          map((match) => MatchActions.ready({ match })),
           catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
@@ -55,7 +55,7 @@ export class MatchEffects {
       ofType(MatchActions.join),
       exhaustMap(({ inviteCode }) =>
         this.matchesApi.join({ inviteCode }).pipe(
-          map((match) => MatchActions.opened({ match })),
+          map((match) => MatchActions.ready({ match })),
           catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
@@ -67,7 +67,7 @@ export class MatchEffects {
       ofType(MatchActions.rematch),
       exhaustMap(({ matchId }) =>
         this.matchesApi.rematch(matchId).pipe(
-          map((match) => MatchActions.opened({ match })),
+          map((match) => MatchActions.ready({ match })),
           catchError((error: unknown) => of(this.failed(error))),
         ),
       ),
@@ -84,7 +84,7 @@ export class MatchEffects {
   readonly goToMatch$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(MatchActions.opened),
+        ofType(MatchActions.ready),
         tap(({ match }) => void this.router.navigate(['/play', match.id])),
       ),
     { dispatch: false },

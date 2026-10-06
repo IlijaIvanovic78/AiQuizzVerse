@@ -115,7 +115,7 @@ export const matchFeature = createFeature({
       MatchActions.rematch,
       (state): MatchState => ({ ...state, busy: true }),
     ),
-    on(MatchActions.opened, (state): MatchState => ({ ...state, busy: false })),
+    on(MatchActions.ready, (state): MatchState => ({ ...state, busy: false })),
     on(MatchActions.failed, MatchSocketActions.errorReceived, (state, { error }) =>
       withError(state, error),
     ),

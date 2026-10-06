@@ -110,9 +110,14 @@ export interface SabotageBlockedEvent {
   fromCharges: number;
 }
 
-// A shield targets the player who raised it.
-export interface SabotagedEvent extends Omit<SabotageBlockedEvent, 'type'> {
+// A sabotage that landed. A shield targets the player who raised it.
+export interface SabotagedEvent {
+  matchId: string;
+  index: number;
   type: SabotageType;
+  fromUserId: string;
+  targetUserId: string;
+  fromCharges: number;
   // 0 for a scramble and a shield, which last until the question ends.
   durationMs: number;
 }
