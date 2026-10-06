@@ -1,13 +1,15 @@
 import { BoostType, ChestSource, ChestType, Item, MatchMode } from '@prisma/client';
 import { ShopItem } from '../shop/shop.types';
 
-export type ItemPool = 'BASIC' | 'CHEST_ONLY';
+export type ItemPoolName = 'BASIC' | 'CHEST_ONLY';
+
+export type ItemPools = Record<ItemPoolName, Item[]>;
 
 /** One row of a drop table: what a chest can give and how likely it is compared to the others. */
 export type ChestDrop =
   | { kind: 'COINS'; weight: number; minCoins: number; maxCoins: number }
   | { kind: 'BOOSTS'; weight: number; boostCount: number; streakFreezes: number }
-  | { kind: 'ITEM'; weight: number; pool: ItemPool };
+  | { kind: 'ITEM'; weight: number; pool: ItemPoolName };
 
 export type MatchChestSource = Exclude<ChestSource, 'PATH_STEP'>;
 
@@ -73,7 +75,7 @@ export interface EarnedChest {
 
 export interface NewChest extends EarnedChest {
   /** The match that earned the chest, so its result can show it. */
-  matchId: string | null;
+  matchId: string;
 }
 
 /** What a saved match tells the chests about one player. */

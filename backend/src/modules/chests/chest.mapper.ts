@@ -14,10 +14,8 @@ export function toChestView(chest: UserChest): ChestView {
   };
 }
 
-/** The item is shown as the shop shows it after the chest is opened: owned either way. */
-export function toChestReward(rolled: RolledReward, customer: ShopCustomer): ChestReward {
-  const item = rolled.item
-    ? toShopItem(rolled.item, { ...customer, ownedItemIds: new Set([rolled.item.id]) })
-    : null;
+export function toChestReward(rolled: RolledReward, player: ShopCustomer): ChestReward {
+  // The player owns the item now, whether it is new or a duplicate.
+  const item = rolled.item ? { ...toShopItem(rolled.item, player), owned: true } : null;
   return { ...rolled, item };
 }

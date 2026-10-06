@@ -1,13 +1,6 @@
 import { Item } from '@prisma/client';
-import {
-  chestOdds,
-  chestsForMatch,
-  RandomFn,
-  rollChest,
-  ItemPools,
-  itemPools,
-} from './chests.rules';
-import { ChestsEarnedToday, MatchChestFacts } from './chests.types';
+import { buildItemPools, chestOdds, chestsForMatch, RandomFn, rollChest } from './chests.rules';
+import { ChestsEarnedToday, ItemPools, MatchChestFacts } from './chests.types';
 
 function makeItem(id: string, price: number, extra: Partial<Item> = {}): Item {
   return {
@@ -111,7 +104,7 @@ describe('item pools', () => {
     const starter = makeItem('mini-mage', 0, { isStarter: true });
     const dragon = makeItem('pet-dragon-red', 300);
 
-    const pools = itemPools([starter, slime, dragon, goldenKing, fog]);
+    const pools = buildItemPools([starter, slime, dragon, goldenKing, fog]);
 
     expect(pools.BASIC).toEqual([slime, fog]);
     expect(pools.CHEST_ONLY).toEqual([goldenKing]);

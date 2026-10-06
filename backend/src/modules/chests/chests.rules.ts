@@ -16,7 +16,7 @@ import {
   ChestsEarnedToday,
   DropOdds,
   EarnedChest,
-  ItemPool,
+  ItemPools,
   MatchChestFacts,
   MatchChestSource,
   RolledReward,
@@ -24,8 +24,6 @@ import {
 
 /** Returns a number from 0 (included) to 1 (excluded), like Math.random. */
 export type RandomFn = () => number;
-
-export type ItemPools = Record<ItemPool, Item[]>;
 
 export function chestsForMatch(match: MatchChestFacts, today: ChestsEarnedToday): EarnedChest[] {
   const sources: MatchChestSource[] = [];
@@ -60,7 +58,7 @@ function earnsVictoryChest(match: MatchChestFacts, today: ChestsEarnedToday): bo
 }
 
 /** Basic items come from the cheaper end of the shop; starters are never in a chest. */
-export function itemPools(items: Item[]): ItemPools {
+export function buildItemPools(items: Item[]): ItemPools {
   const shopItems = items.filter((item) => !item.isStarter && !item.isChestOnly);
   return {
     BASIC: shopItems.filter((item) => item.price <= BASIC_ITEM_MAX_PRICE),
@@ -90,11 +88,10 @@ export function rollChest(
   return itemReward(pickOne(pools[drop.pool], random), ownedItemIds);
 }
 
-/** An item the player already owns is turned into coins. */
-function duplicateCoins(item: Item): number {
-  return item.isChestOnly ? CHEST_ONLY_DUPLICATE_COINS : item.price;
-}
-
+/**
+ * Assumes both item pools have items, which the seed guarantees; rollChest leaves out
+ * an empty pool only as a safety net.
+ */
 export function chestOdds(): ChestOdds {
   return {
     WOODEN: dropOdds(DROP_TABLES.WOODEN),
@@ -162,6 +159,11 @@ function itemReward(item: Item, ownedItemIds: Set<string>): RolledReward {
   const duplicate = ownedItemIds.has(item.id);
   const coins = duplicate ? duplicateCoins(item) : 0;
   return { kind: 'ITEM', coins, boosts: [], item, duplicate };
+}
+
+/** An item the player already owns is turned into coins. */
+function duplicateCoins(item: Item): number {
+  return item.isChestOnly ? CHEST_ONLY_DUPLICATE_COINS : item.price;
 }
 
 function totalWeight(drops: ChestDrop[]): number {

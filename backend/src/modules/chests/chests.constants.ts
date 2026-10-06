@@ -1,4 +1,5 @@
 import { BoostType, ChestType } from '@prisma/client';
+import { MATCH_BOOST_TYPES } from '../matches/matches.constants';
 import { ChestDrop, MatchChestSource } from './chests.types';
 
 /** One roll per chest; the weights of every table add up to 100. */
@@ -22,8 +23,8 @@ export const DROP_TABLES: Record<ChestType, ChestDrop[]> = {
   ],
 };
 
-/** Streak freezes are not in this list: only a golden chest adds one on top. */
-export const CHEST_BOOSTS: BoostType[] = ['HINT', 'FIFTY_FIFTY', 'EXTRA_TIME', 'SECOND_CHANCE'];
+/** The match power-ups. A streak freeze is not one: only a golden chest adds one on top. */
+export const CHEST_BOOSTS: BoostType[] = MATCH_BOOST_TYPES;
 
 /** A basic item is a hero, pet or sabotage from the shop that costs at most this much. */
 export const BASIC_ITEM_MAX_PRICE = 150;
@@ -42,5 +43,4 @@ export const STREAK_CHEST_EVERY_DAYS = 7;
 
 export const RECENT_CHESTS_LIMIT = 10;
 
-export const CHEST_NOT_FOUND_MESSAGE = 'We could not find that chest.';
 export const CHEST_ALREADY_OPEN_MESSAGE = 'This chest is already open.';

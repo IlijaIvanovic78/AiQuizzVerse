@@ -5,12 +5,8 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../realtime/notifications.service';
 import { ShopService } from '../shop/shop.service';
 import { toChestReward, toChestView } from './chest.mapper';
-import {
-  CHEST_ALREADY_OPEN_MESSAGE,
-  CHEST_NOT_FOUND_MESSAGE,
-  RECENT_CHESTS_LIMIT,
-} from './chests.constants';
-import { chestOdds, chestsForMatch, itemPools, rollChest } from './chests.rules';
+import { CHEST_ALREADY_OPEN_MESSAGE, RECENT_CHESTS_LIMIT } from './chests.constants';
+import { buildItemPools, chestOdds, chestsForMatch, rollChest } from './chests.rules';
 import {
   ChestList,
   ChestOdds,
@@ -75,36 +71,32 @@ export class ChestsService {
     return { chest: { ...toChestView(chest), openedAt, reward }, reward, coins };
   }
 
-  // Locks the user row first, so two matches ending at the same time cannot both
-  // take the last daily or victory chest of the day.
+  // Locks the user row until the transaction ends, so two matches ending at the same time
+  // cannot both take the last daily or victory chest of the day.
   async grantForMatch(
     userId: string,
     match: MatchChestFacts,
-    db: Prisma.TransactionClient = this.prisma,
+    tx: Prisma.TransactionClient,
   ): Promise<void> {
-    await db.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
-    const earnedToday = await this.countEarnedToday(db, userId);
+    await tx.$queryRaw`SELECT id FROM users WHERE id = ${userId} FOR UPDATE`;
+    const earnedToday = await this.countEarnedToday(tx, userId);
     const chests = chestsForMatch(match, earnedToday);
-    await db.userChest.createMany({
+    await tx.userChest.createMany({
       data: chests.map((chest) => ({ ...chest, userId, matchId: match.matchId })),
     });
   }
 
-  async grant(
-    userId: string,
-    chest: NewChest,
-    db: Prisma.TransactionClient = this.prisma,
-  ): Promise<void> {
-    await db.userChest.create({ data: { ...chest, userId } });
+  async grant(userId: string, chest: NewChest, tx: Prisma.TransactionClient): Promise<void> {
+    await tx.userChest.create({ data: { ...chest, userId } });
   }
 
   private async rollReward(userId: string, type: ChestType): Promise<ChestReward> {
-    const [items, customer] = await Promise.all([
-      this.prisma.item.findMany({ where: { isStarter: false } }),
+    const [items, player] = await Promise.all([
+      this.prisma.item.findMany(),
       this.shop.findCustomer(userId),
     ]);
-    const rolled = rollChest(type, itemPools(items), customer.ownedItemIds, Math.random);
-    return toChestReward(rolled, customer);
+    const rolled = rollChest(type, buildItemPools(items), player.ownedItemIds, Math.random);
+    return toChestReward(rolled, player);
   }
 
   private async payReward(
@@ -131,19 +123,19 @@ export class ChestsService {
   }
 
   private async countEarnedToday(
-    db: Prisma.TransactionClient,
+    tx: Prisma.TransactionClient,
     userId: string,
   ): Promise<ChestsEarnedToday> {
     const since = utcToday();
     const countSince = (source: ChestSource) =>
-      db.userChest.count({ where: { userId, source, earnedAt: { gte: since } } });
+      tx.userChest.count({ where: { userId, source, earnedAt: { gte: since } } });
     return { daily: await countSince('DAILY_MATCH'), victories: await countSince('VICTORY') };
   }
 
   private async findOwnChest(userId: string, chestId: string): Promise<UserChest> {
     const chest = await this.prisma.userChest.findFirst({ where: { id: chestId, userId } });
     if (!chest) {
-      throw new NotFoundException(CHEST_NOT_FOUND_MESSAGE);
+      throw new NotFoundException('We could not find that chest.');
     }
     return chest;
   }
