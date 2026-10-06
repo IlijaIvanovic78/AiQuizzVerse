@@ -1,7 +1,6 @@
 import { EntityState, createEntityAdapter } from '@ngrx/entity';
 import { createFeature, createReducer, createSelector, on } from '@ngrx/store';
 import { ChestOdds, ChestReward, ChestView } from '../../core/models/chest.model';
-import { AuthActions } from '../auth/auth.actions';
 import { ChestsActions } from './chests.actions';
 import { RECENT_CHESTS_LIMIT } from './chests.constants';
 
@@ -49,20 +48,20 @@ export const chestsFeature = createFeature({
         ...state,
         opening: state.entities[chestId] ?? null,
         reveal: null,
-        error: null,
       }),
     ),
     on(ChestsActions.opened, (state, { chest, reward }) => withOpenedChest(state, chest, reward)),
+    on(ChestsActions.openFailed, (state): ChestsState => ({ ...state, opening: null })),
     on(
       ChestsActions.revealClosed,
       (state): ChestsState => ({ ...state, opening: null, reveal: null }),
     ),
     on(ChestsActions.earned, (state, { chest }) => unopenedAdapter.addOne(chest, state)),
+    // A list or odds request can fail while a chest is opening; the dialog stays open for it.
     on(
       ChestsActions.failed,
-      (state, { error }): ChestsState => ({ ...state, loading: false, opening: null, error }),
+      (state, { error }): ChestsState => ({ ...state, loading: false, error }),
     ),
-    on(AuthActions.logout, AuthActions.sessionExpired, (): ChestsState => initialChestsState),
   ),
   extraSelectors: ({ selectChestsState }) => ({
     selectUnopenedChests: createSelector(selectChestsState, selectAll),
@@ -70,16 +69,16 @@ export const chestsFeature = createFeature({
   }),
 });
 
-// The player may close the dialog before the server answers; the chest is opened all the same.
+// Only the chest shown in the dialog gets its reward revealed.
 function withOpenedChest(state: ChestsState, chest: ChestView, reward: ChestReward): ChestsState {
   const recent = [chest, ...state.recent.filter((old) => old.id !== chest.id)].slice(
     0,
     RECENT_CHESTS_LIMIT,
   );
-  const stillShown = state.opening?.id === chest.id;
+  const isInDialog = state.opening?.id === chest.id;
   return unopenedAdapter.removeOne(chest.id, {
     ...state,
     recent,
-    reveal: stillShown ? reward : state.reveal,
+    reveal: isInDialog ? reward : state.reveal,
   });
 }

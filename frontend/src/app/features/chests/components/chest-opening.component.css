@@ -1,6 +1,9 @@
-/* The reward waits until the lid is open, then pops out of the chest. */
+/* The reward waits until the lid is open, then pops out of the chest. The delay and the
+   duration are bound in the template from LID_OPEN_MS and REWARD_POP_MS. */
 .reward-pop {
-  animation: pop 400ms ease-out both;
+  animation-name: pop;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
 }
 
 .sparkle {

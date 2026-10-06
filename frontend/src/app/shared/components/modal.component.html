@@ -1,6 +1,7 @@
 <div
   class="fixed inset-0 z-40 flex items-end justify-center bg-night-950/80 p-3 sm:items-center sm:p-6"
   animate.enter="fade-enter"
+  (pointerdown)="rememberPressStart($event)"
   (click)="closeOnBackdrop($event)"
 >
   <section

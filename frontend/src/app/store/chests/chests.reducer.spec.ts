@@ -1,5 +1,4 @@
 import { ChestReward, ChestView } from '../../core/models/chest.model';
-import { AuthActions } from '../auth/auth.actions';
 import { ChestsActions } from './chests.actions';
 import { RECENT_CHESTS_LIMIT } from './chests.constants';
 import { chestsFeature } from './chests.reducer';
@@ -68,15 +67,14 @@ describe('chests reducer', () => {
     expect(state.recent[0].id).toBe('older');
   });
 
-  it('opens the chest but shows no reveal when the dialog was already closed', () => {
+  it('keeps the dialog open and reveals the reward when the list fails to load meanwhile', () => {
     const opening = reducer(loaded(), ChestsActions.open({ chestId: 'older' }));
-    const closed = reducer(opening, ChestsActions.revealClosed());
+    const listFailed = reducer(opening, ChestsActions.failed({ error: 'Server is busy.' }));
 
-    const state = opened(closed, 'older');
+    const state = opened(listFailed, 'older');
 
-    expect(state.ids).toEqual(['newer']);
-    expect(state.opening).toBeNull();
-    expect(state.reveal).toBeNull();
+    expect(state.opening?.id).toBe('older');
+    expect(state.reveal).toEqual(coins);
   });
 
   it('keeps only the newest opened chests in recent', () => {
@@ -95,16 +93,12 @@ describe('chests reducer', () => {
   it('closes the dialog when opening fails', () => {
     const opening = reducer(loaded(), ChestsActions.open({ chestId: 'older' }));
 
-    const state = reducer(opening, ChestsActions.failed({ error: 'This chest is already open.' }));
+    const state = reducer(
+      opening,
+      ChestsActions.openFailed({ error: 'This chest is already open.' }),
+    );
 
     expect(state.opening).toBeNull();
-    expect(state.error).toBe('This chest is already open.');
-  });
-
-  it('forgets every chest after logging out', () => {
-    const state = reducer(loaded(), AuthActions.logout());
-
-    expect(state.ids).toEqual([]);
-    expect(state.loaded).toBe(false);
+    expect(state.reveal).toBeNull();
   });
 });

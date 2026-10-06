@@ -16,7 +16,7 @@ import { SoundService } from '../../../core/sound/sound.service';
 import { CHEST_NAMES } from '../../../shared/chests';
 import { ModalComponent } from '../../../shared/components/modal.component';
 import { rewardSummary } from '../chest-reward';
-import { CHEST_SHAKE_MS, LID_OPEN_MS, SPARKLES } from '../chests.constants';
+import { CHEST_SHAKE_MS, LID_OPEN_MS, REWARD_POP_MS, SPARKLES } from '../chests.constants';
 import { ChestRewardComponent } from './chest-reward.component';
 import { ChestSpriteComponent } from './chest-sprite.component';
 
@@ -50,10 +50,13 @@ export class ChestOpeningComponent {
   );
 
   protected readonly opened = computed(() => this.shakeDone() && this.reward() !== null);
-  // The dialog can only be closed once the reward is on screen, so nobody misses what they got.
-  protected readonly revealed = toSignal(
+  // The dialog can only be closed once the reward has fully popped out, so nobody misses what
+  // they got: not with the X, Escape or a click next to the dialog, and there is no Done yet.
+  protected readonly canClose = toSignal(
     toObservable(this.opened).pipe(
-      switchMap((opened) => (opened ? timer(LID_OPEN_MS).pipe(map(() => true)) : of(false))),
+      switchMap((opened) =>
+        opened ? timer(LID_OPEN_MS + REWARD_POP_MS).pipe(map(() => true)) : of(false),
+      ),
     ),
     { initialValue: false },
   );
@@ -64,6 +67,7 @@ export class ChestOpeningComponent {
   });
   protected readonly sparkles = SPARKLES;
   protected readonly rewardDelayMs = LID_OPEN_MS;
+  protected readonly rewardPopMs = REWARD_POP_MS;
 
   constructor() {
     effect(() => {

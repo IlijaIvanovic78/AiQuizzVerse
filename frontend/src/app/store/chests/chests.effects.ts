@@ -57,7 +57,7 @@ export class ChestsEffects {
       exhaustMap(({ chestId }) =>
         this.chestsApi.open(chestId).pipe(
           map(({ chest, reward, coins }) => ChestsActions.opened({ chest, reward, coins })),
-          catchError((error: unknown) => of(this.failed(error), ChestsActions.load())),
+          catchError((error: unknown) => of(this.openFailed(error), ChestsActions.load())),
         ),
       ),
     ),
@@ -89,7 +89,7 @@ export class ChestsEffects {
   readonly showError$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(ChestsActions.failed),
+        ofType(ChestsActions.failed, ChestsActions.openFailed),
         tap(({ error }) => this.toast.error(error)),
       ),
     { dispatch: false },
@@ -97,5 +97,9 @@ export class ChestsEffects {
 
   private failed(error: unknown): Action {
     return ChestsActions.failed({ error: readErrorMessage(error) });
+  }
+
+  private openFailed(error: unknown): Action {
+    return ChestsActions.openFailed({ error: readErrorMessage(error) });
   }
 }

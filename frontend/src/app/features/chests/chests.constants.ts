@@ -8,6 +8,8 @@ export const CHEST_FRAME_COUNT = 4;
 export const CHEST_SHAKE_MS = 900;
 // How long the lid takes to open; the reward pops out right after.
 export const LID_OPEN_MS = 400;
+// How long the reward takes to pop out of the open chest.
+export const REWARD_POP_MS = 400;
 
 interface EarnWay {
   type: ChestType;

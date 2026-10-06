@@ -57,14 +57,22 @@ export class ModalComponent {
   private readonly dialog = viewChild.required<ElementRef<HTMLElement>>('dialog');
   private readonly body = viewChild.required<ElementRef<HTMLElement>>('body');
   private readonly openedFrom = this.document.activeElement;
+  // A press that starts inside the dialog and ends outside it (selecting text, a shaky tap)
+  // still fires its click on the backdrop, so the backdrop only closes presses that began on it.
+  private pressStartedOnBackdrop = false;
 
   constructor() {
     afterNextRender(() => this.focusFirstElement());
     inject(DestroyRef).onDestroy(() => this.restoreFocus());
   }
 
+  protected rememberPressStart(event: PointerEvent): void {
+    this.pressStartedOnBackdrop = event.target === event.currentTarget;
+  }
+
   protected closeOnBackdrop(event: MouseEvent): void {
-    if (this.dismissible() && event.target === event.currentTarget) {
+    const clickedBackdrop = event.target === event.currentTarget;
+    if (this.dismissible() && clickedBackdrop && this.pressStartedOnBackdrop) {
       this.closed.emit();
     }
   }
