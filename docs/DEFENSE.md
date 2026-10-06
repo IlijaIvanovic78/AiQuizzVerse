@@ -136,17 +136,18 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 
 | Zahtev | Gde | Zašto baš tu |
 | --- | --- | --- |
-| `map` | [realtime.effects.ts:19-21](../frontend/src/app/store/realtime/realtime.effects.ts#L19-L21), [quizzes.effects.ts:47-50](../frontend/src/app/store/quizzes/quizzes.effects.ts#L47-L50) | Socket događaj ili HTTP odgovor pretvara u NgRx akciju, jer reducer razume samo akcije. |
+| `map` | [realtime.effects.ts:19-21](../frontend/src/app/store/realtime/realtime.effects.ts#L19-L21), [quizzes.effects.ts:47-50](../frontend/src/app/store/quizzes/quizzes.effects.ts#L47-L50), [ui-sounds.service.ts:37](../frontend/src/app/core/sound/ui-sounds.service.ts#L37) | Socket događaj ili HTTP odgovor pretvara u NgRx akciju, jer reducer razume samo akcije. Klik bilo gde u aplikaciji pretvara u ime zvuka koji ide uz njega. |
 | `reduce` | [path-page.component.ts:78-80](../frontend/src/app/features/paths/path-page.component.ts#L78-L80), [quiz-filters.ts:10-13](../frontend/src/app/features/library/quiz-filters.ts#L10-L13), backend [scoring.ts:46-49](../backend/src/modules/matches/scoring.ts#L46-L49) | Od niza napravi jednu vrednost: ukupno zvezdica na putanji, broj kvizova po temi za filter, ukupno tačnih u timu. RxJS "reduce kroz vreme" je `scan` u [mistake-list.component.ts:29](../frontend/src/app/features/play/components/mistake-list.component.ts#L29). |
-| `filter` | backend [match-session.ts:281](../backend/src/modules/matches/match-session.ts#L281), [match.effects.ts:403-406](../frontend/src/app/store/match/match.effects.ts#L403-L406), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. |
-| `forEach` | [sound.service.ts:197-201](../frontend/src/app/core/sound/sound.service.ts#L197-L201), backend [matches.service.ts:149-151](../backend/src/modules/matches/matches.service.ts#L149-L151) | Svaku notu melodije zakaže sa malim razmakom (level-up džingl). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
-| fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:47](../frontend/src/app/app.config.ts#L47) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
-| Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:77-84](../backend/src/modules/learning-paths/path-generation.service.ts#L77-L84) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:75](../frontend/src/app/app.config.ts#L75)). Backend paralelno piše 5 koraka putanje. |
+| `filter` | backend [match-session.ts:281](../backend/src/modules/matches/match-session.ts#L281), [match.effects.ts:403-406](../frontend/src/app/store/match/match.effects.ts#L403-L406), [auth.guard.ts:13](../frontend/src/app/core/auth/auth.guard.ts#L13), [ui-sounds.service.ts:38](../frontend/src/app/core/sound/ui-sounds.service.ts#L38), [ui-sounds.service.ts:48](../frontend/src/app/core/sound/ui-sounds.service.ts#L48) | Server propušta samo odgovore na trenutno pitanje od igrača koji još smeju da odgovore. Frontend odbacuje zakasnele događaje prethodnog meča. Guard čeka da auth status prestane da bude `unknown`. Zvuk aplikacije propušta samo klikove na kontrole i kucanje u poljima za tekst. |
+| `forEach` | [synth.ts:26-28](../frontend/src/app/core/sound/synth.ts#L26-L28), backend [matches.service.ts:149-151](../backend/src/modules/matches/matches.service.ts#L149-L151) | `jingle` svaku notu melodije zakaže sa malim razmakom (npr. level-up). Posle rematch-a pošalje pozivnicu svakom drugom igraču. |
+| fetch API | [sprite-manifest.service.ts:41](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L41), [app.config.ts:48](../frontend/src/app/app.config.ts#L48) | Manifest sprajtova je statičan fajl, pa se čita direktno sa `fetch` i ne prolazi kroz auth interceptor. `HttpClient` je podešen sa `withFetch()`. |
+| Promise | [sprite-manifest.service.ts:9-16](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L9-L16), [sprite-manifest.service.ts:54](../frontend/src/app/core/sprites/sprite-manifest.service.ts#L54), [auth-bootstrap.service.ts:18-30](../frontend/src/app/core/auth/auth-bootstrap.service.ts#L18-L30), backend [path-generation.service.ts:77-84](../backend/src/modules/learning-paths/path-generation.service.ts#L77-L84) | `new Promise` čeka da se slika učita, `Promise.all` učitava sve sprajtove odjednom. `restore()` vraća Promise koji Angular čeka pre prvog rutiranja ([app.config.ts:76](../frontend/src/app/app.config.ts#L76)). Backend paralelno piše 5 koraka putanje. |
 | `switchMap` | [register-page.component.ts:112-119](../frontend/src/app/features/auth/register-page.component.ts#L112-L119), [friends.effects.ts:41-48](../frontend/src/app/store/friends/friends.effects.ts#L41-L48), [match-clock.service.ts:64-72](../frontend/src/app/features/play/match-clock.service.ts#L64-L72), backend [match-session.ts:103-105](../backend/src/modules/matches/match-session.ts#L103-L105) | Nova vrednost otkazuje prethodni posao: staru proveru imena, staru pretragu, stari tajmer, stari rok runde (posle EXTRA_TIME). |
 | `take` | [auth.guard.ts:14](../frontend/src/app/core/auth/auth.guard.ts#L14), [match-clock.service.ts:87](../frontend/src/app/features/play/match-clock.service.ts#L87), backend [match-session.ts:284](../backend/src/modules/matches/match-session.ts#L284) | Guard uzme prvi poznat status i završi. Tajmer zna koliko tikova ima do roka. Runda se završi kad stigne onoliko odgovora koliko ima igrača. |
 | `takeUntil` | backend [match-session.ts:285](../backend/src/modules/matches/match-session.ts#L285), [match-session.ts:735-737](../backend/src/modules/matches/match-session.ts#L735-L737), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89), [match.effects.ts:144](../frontend/src/app/store/match/match.effects.ts#L144) | Runda staje kad istekne rok. Svi tajmeri meča staju kad se sesija uništi. Traka tajmera staje kad igrač odgovori. Socket događaji prestaju da ulaze u store kad se napusti stranica meča. |
 | `zip` | [match-clock.service.ts:79-81](../frontend/src/app/features/play/match-clock.service.ts#L79-L81), [mistake-list.component.ts:23-34](../frontend/src/app/features/play/components/mistake-list.component.ts#L23-L34) | Upari svaku labelu `3, 2, 1, GO!` sa tikom tajmera, pa izlaze jedna po jedna na 750 ms. Isto za redove "pogrešnih" pitanja na rezultatima. |
 | `merge` | [realtime.effects.ts:50-61](../frontend/src/app/store/realtime/realtime.effects.ts#L50-L61), [match.effects.ts:288-294](../frontend/src/app/store/match/match.effects.ts#L288-L294), [match-clock.service.ts:89](../frontend/src/app/features/play/match-clock.service.ts#L89) | Više socket tokova spaja u jedan tok akcija (jedan efekat umesto deset). Tajmer staje na prvi od dva događaja (odgovor ili kraj runde). |
+| Dodatno: `fromEvent` + `filter` + `throttleTime` | [ui-sounds.service.ts:34-53](../frontend/src/app/core/sound/ui-sounds.service.ts#L34-L53) | Event delegation: po jedan slušalac na `document` za sve klikove i za kucanje, umesto koda u svakom dugmetu. `throttleTime` brzo kucanje svede na najviše jedan tik u 40 ms. Ceo tok je u odeljku 4m. |
 
 ### Angular
 
@@ -155,10 +156,10 @@ Posle izmene `schema.prisma` uradi migraciju i restart backenda (vidi recept 2 u
 | Komponente i servisi | [answer-grid.component.ts:32-40](../frontend/src/app/features/play/components/answer-grid.component.ts#L32-L40), [match-page.component.ts:72-111](../frontend/src/app/features/play/match-page.component.ts#L72-L111), [quizzes-api.service.ts:15-18](../frontend/src/app/core/api/quizzes-api.service.ts#L15-L18), [token-storage.service.ts:6-7](../frontend/src/app/core/auth/token-storage.service.ts#L6-L7) | Prezentaciona komponenta (AnswerGrid) samo crta i javlja klik. Stranica (MatchPage) čita store i šalje akcije. Servis drži ono što nije prikaz: HTTP pozive, tokene. |
 | Ulazni i izlazni parametri | [answer-grid.component.ts:41-57](../frontend/src/app/features/play/components/answer-grid.component.ts#L41-L57), [match-page.component.html:161-174](../frontend/src/app/features/play/match-page.component.html#L161-L174), [quiz-card.component.ts:42-46](../frontend/src/app/shared/components/quiz-card.component.ts#L42-L46), [library-page.component.html:51](../frontend/src/app/features/library/library-page.component.html#L51) | `input()` donosi podatke od roditelja, `output()` šalje događaj nazad. AnswerGrid ne zna ništa o socketima, samo emituje indeks kliknutog odgovora. |
 | Dependency injection | [match-page.component.ts:101-107](../frontend/src/app/features/play/match-page.component.ts#L101-L107), [match-page.component.ts:114-121](../frontend/src/app/features/play/match-page.component.ts#L114-L121), [token-refresh.service.ts:11-15](../frontend/src/app/core/auth/token-refresh.service.ts#L11-L15) | `inject()` uzima zavisnost. `providers` na komponenti pravi novi `MatchClockService` za svaku stranicu meča, pa tajmeri nestaju sa stranicom. `providedIn: 'root'` je jedan primerak za celu aplikaciju. |
-| NgRx store | [app.config.ts:48-59](../frontend/src/app/app.config.ts#L48-L59), [auth.reducer.ts:28-106](../frontend/src/app/store/auth/auth.reducer.ts#L28-L106), [path-page.component.ts:62](../frontend/src/app/features/paths/path-page.component.ts#L62) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
+| NgRx store | [app.config.ts:49-60](../frontend/src/app/app.config.ts#L49-L60), [auth.reducer.ts:28-106](../frontend/src/app/store/auth/auth.reducer.ts#L28-L106), [path-page.component.ts:62](../frontend/src/app/features/paths/path-page.component.ts#L62) | Globalno stanje (korisnik, kvizovi, meč, prijatelji) na jednom mestu. Slice se pravi sa `createFeature`, a komponenta ga čita kao signal (`selectSignal`). |
 | NgRx entity | [quizzes.reducer.ts:23-26](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L23-L26), [quizzes.reducer.ts:139-147](../frontend/src/app/store/quizzes/quizzes.reducer.ts#L139-L147), [friends.reducer.ts:23-24](../frontend/src/app/store/friends/friends.reducer.ts#L23-L24), [friends.reducer.ts:104](../frontend/src/app/store/friends/friends.reducer.ts#L104), [shop.reducer.ts:22-24](../frontend/src/app/store/shop/shop.reducer.ts#L22-L24), kovčezi [chests.reducer.ts:19-22](../frontend/src/app/store/chests/chests.reducer.ts#L19-L22), [chests.reducer.ts:59](../frontend/src/app/store/chests/chests.reducer.ts#L59), [chests.reducer.ts:79](../frontend/src/app/store/chests/chests.reducer.ts#L79), [chests.reducer.ts:66-69](../frontend/src/app/store/chests/chests.reducer.ts#L66-L69) | Liste koje se menjaju element po element: obrisan kviz (`removeOne`), promenjen online status prijatelja (`updateOne`), kupljen predmet. Prijatelji imaju `selectId`, jer im je ključ `friendshipId`. Neotvoreni kovčezi su najbolji primer: `chest:earned` doda jedan (`addOne`), otvaranje ga skine (`removeOne`), a `selectTotal` daje broj na ikonici u gornjoj traci bez ručnog brojanja. |
-| NgRx effects | [quizzes.effects.ts:44-54](../frontend/src/app/store/quizzes/quizzes.effects.ts#L44-L54), [match.effects.ts:139-147](../frontend/src/app/store/match/match.effects.ts#L139-L147), [realtime.effects.ts:18-62](../frontend/src/app/store/realtime/realtime.effects.ts#L18-L62) | Sve što izlazi napolje (HTTP, socket, navigacija, toast) je u efektima, pa reducer ostaje čista funkcija. Registracija: [app.config.ts:60-73](../frontend/src/app/app.config.ts#L60-L73). |
-| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:45](../frontend/src/app/app.config.ts#L45), [match-page.component.ts:112](../frontend/src/app/features/play/match-page.component.ts#L112) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
+| NgRx effects | [quizzes.effects.ts:44-54](../frontend/src/app/store/quizzes/quizzes.effects.ts#L44-L54), [match.effects.ts:139-147](../frontend/src/app/store/match/match.effects.ts#L139-L147), [realtime.effects.ts:18-62](../frontend/src/app/store/realtime/realtime.effects.ts#L18-L62) | Sve što izlazi napolje (HTTP, socket, navigacija, toast) je u efektima, pa reducer ostaje čista funkcija. Registracija: [app.config.ts:61-74](../frontend/src/app/app.config.ts#L61-L74). |
+| Rutiranje | [app.routes.ts:29-33](../frontend/src/app/app.routes.ts#L29-L33), [app.routes.ts:53-67](../frontend/src/app/app.routes.ts#L53-L67), [app.config.ts:46](../frontend/src/app/app.config.ts#L46), [match-page.component.ts:112](../frontend/src/app/features/play/match-page.component.ts#L112) | Lazy `loadComponent`, guardovi (`authGuard`, `heroGuard`, `guestGuard`), child rute ispod shell-a, `canDeactivate` pita pre izlaska iz meča. Zbog `withComponentInputBinding()` parametar `:matchId` stiže kao `input`. |
 
 ### NestJS, Docker, baza
 
@@ -773,7 +774,7 @@ function pickDrop(drops: ChestDrop[], random: RandomFn): ChestDrop {
    pa igrač uvek vidi šta je dobio. Signal `canClose` ide u `[dismissible]` dijaloga
    ([chest-opening.component.html:1](../frontend/src/app/features/chests/components/chest-opening.component.html#L1)),
    a `ModalComponent` bez toga ne zatvara ni na Escape ni na klik pored
-   ([modal.component.ts:73-87](../frontend/src/app/shared/components/modal.component.ts#L73-L87)).
+   ([modal.component.ts:80-94](../frontend/src/app/shared/components/modal.component.ts#L80-L94)).
    Ako zahtev padne (npr. 409 jer je drugi tab bio brži), `openFailed` zatvori dijalog
    ([chests.reducer.ts:54](../frontend/src/app/store/chests/chests.reducer.ts#L54)), a efekat
    pokaže grešku i ponovo učita listu.
@@ -965,26 +966,30 @@ Nema audio fajlova: svaki zvuk se pravi u browseru preko Web Audio API-ja, u tri
    zaustavi:
    - `tone`: jedan ton (beep, klik, tik)
      ([synth.ts:6-15](../frontend/src/app/core/sound/synth.ts#L6-L15));
-   - `slide`: ton koji klizi kroz frekvencije, npr. "vreme isteklo" i "boing" ogledala
+   - `jingle`: note jedna za drugom, svaka zvoni dok ne krene sledeća (level-up, novčići)
      ([synth.ts:17-29](../frontend/src/app/core/sound/synth.ts#L17-L29));
+   - `slide`: ton koji klizi kroz frekvencije, npr. "vreme isteklo" i "boing" ogledala
+     ([synth.ts:31-43](../frontend/src/app/core/sound/synth.ts#L31-L43));
    - `tremolo`: ton čija jačina treperi `wobbles` puta u sekundi, sporo tutnji (zemljotres), brzo
-     svetluca (led) ([synth.ts:31-46](../frontend/src/app/core/sound/synth.ts#L31-L46));
+     svetluca (led) ([synth.ts:45-60](../frontend/src/app/core/sound/synth.ts#L45-L60));
    - `noise`: šum kroz filter, lowpass je "pljas" mastila, bandpass "fiju" magle
-     ([synth.ts:48-64](../frontend/src/app/core/sound/synth.ts#L48-L64)).
+     ([synth.ts:62-78](../frontend/src/app/core/sound/synth.ts#L62-L78)).
 
    `fadeOut` spušta jačinu eksponencijalno do `SILENT_VOLUME` (0.0001, jer eksponencijalni pad
    ne može do nule), pa nijedan zvuk ne završi "klikom"
-   ([synth.ts:84-91](../frontend/src/app/core/sound/synth.ts#L84-L91)). Note (u Hz), trajanja i
-   samo tri tihe jačine (0.07, 0.05 i 0.03) su u
-   [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts).
+   ([synth.ts:98-105](../frontend/src/app/core/sound/synth.ts#L98-L105)). Note (u Hz), trajanja i
+   tihe jačine su u [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts): 0.07,
+   0.05 i 0.03 za igru, a još tiše 0.02 i 0.015 za klikove i kucanje, jer se oni čuju stalno
+   ([sound.constants.ts:5-10](../frontend/src/app/core/sound/sound.constants.ts#L5-L10)).
 2. **`SoundService`** (`providedIn: 'root'`) ima jednu metodu po događaju: `playCorrect`,
    `playWrong`, `playCoin`, `playLevelUp`, `playChestOpen`, `playCountdownBeep`, `playGo`,
    `playTick(urgent)`, `playTimeUp`, `playAnswerLocked`, `playOtherAnswered`, `playPowerUp`,
    `playRoundLost`, `playVictory`, `playAlmost`, `playStar(starIndex)`, `playShieldBlocked` i
-   po jednu za svaku sabotažu koja pogodi mene (`playInked`, `playFrozen`, ...). Tu su i signal
-   `muted` i `toggleMuted`, koji pamti izbor u `localStorage`. Melodije idu kroz `playNotes`
-   (`forEach` po notama), a svaki zvuk prolazi kroz isto mesto
-   ([sound.service.ts:204-213](../frontend/src/app/core/sound/sound.service.ts#L204-L213)):
+   po jednu za svaku sabotažu koja pogodi mene (`playInked`, `playFrozen`, ...), a za ostatak
+   aplikacije i metode za dugmad, kucanje, dijaloge, toastove i Equip (odeljak 4m). Tu su i signal
+   `muted` i `toggleMuted`, koji pamti izbor u `localStorage`. Melodije idu kroz `playNotes`, koji
+   zove `jingle`, a svaki zvuk prolazi kroz isto mesto
+   ([sound.service.ts:319-329](../frontend/src/app/core/sound/sound.service.ts#L319-L329)):
 
 ```ts
   // Every sound goes through here, so the Sound off button and a hidden tab silence them all.
@@ -996,8 +1001,11 @@ Nema audio fajlova: svaki zvuk se pravi u browseru preko Web Audio API-ja, u tri
     }
     const context = this.context();
     sound(context, context.currentTime);
+    this.lastSoundAt = performance.now();
   }
 ```
+
+   `lastSoundAt` pamti kad je počeo poslednji zvuk; treba ga `playUi` iz odeljka 4m.
 
 3. **Kada šta svira** u meču odlučuje `MatchSoundsService`, provider stranice meča kao
    `MatchClockService`, pa živi koliko i stranica. Okidači su dve vrste:
@@ -1048,8 +1056,110 @@ Ukus: kratki tonovi i tihe jačine, sat samo u poslednjih 5 sekundi, podignut š
 sabotaža svira samo onome koga je pogodila. Van meča `SoundService` zovu otvaranje kovčega
 ([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78))
 i plaćanje
-([payment-result-page.component.ts:77-81](../frontend/src/app/features/shop/payment-result-page.component.ts#L77-L81)).
-Zvuk se gasi dugmetom u meču ili u Profile → Settings → Sound effects.
+([payment-result-page.component.ts:77-81](../frontend/src/app/features/shop/payment-result-page.component.ts#L77-L81)),
+a dugmad, kucanje, dijalozi i toastovi su u odeljku 4m. Zvuk se gasi dugmetom u meču,
+prekidačem "Sound effects" u meniju naloga u gornjoj traci ili u Profile → Settings → Sound
+effects; sva tri čitaju isti signal `muted`.
+
+### m) Zvukovi cele aplikacije: jedan slušalac za sve klikove i kucanje
+
+Aplikacija je igra, pa zvuk nije samo u meču: dugmad, linkovi, tabovi i prekidači kliknu, polja
+za tekst tiho kucaju dok se piše, dijalog "iskoči" i "spusti se", a toast ima svoj ton. Nijedno
+dugme nema kod za to. `UiSoundsService` se pokrene jednom pri startu aplikacije
+([app.config.ts:77](../frontend/src/app/app.config.ts#L77)) i stavi po jedan slušalac za
+`click` i za `input` na ceo `document`. To je **event delegation**: događaj iz bilo kog dugmeta
+"ispliva" do `document`-a, pa jedan slušalac čuje sve, i dugmad koja se tek pojave
+([ui-sounds.service.ts:34-53](../frontend/src/app/core/sound/ui-sounds.service.ts#L34-L53)):
+
+```ts
+  private listenToClicks(): void {
+    fromEvent<MouseEvent>(this.document, 'click')
+      .pipe(
+        map((event) => clickSound(event.target)),
+        filter((sound) => sound !== null),
+        observeOn(animationFrameScheduler),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((sound) => this.clickSounds[sound]());
+  }
+
+  private listenToTyping(): void {
+    fromEvent(this.document, 'input')
+      .pipe(
+        filter((event) => isTextField(event.target)),
+        throttleTime(TYPING_SOUND_GAP_MS),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((event) => this.playTyping(event));
+  }
+```
+
+Čitaj odozgo nadole:
+
+- `fromEvent` pravi Observable od DOM događaja, isto kao od socket događaja (odeljak 4d).
+- `map` od kliknutog elementa napravi ime zvuka ili `null`, a `filter` pusti dalje samo klikove
+  na kontrole. Odluka je čista funkcija `clickSound`
+  ([ui-sounds.rules.ts:13-40](../frontend/src/app/core/sound/ui-sounds.rules.ts#L13-L40)):
+  `closest` nađe dugme i kad se klikne na tekst ili ikonicu u njemu, isključeno dugme ćuti,
+  prekidač, čip (`aria-pressed`), checkbox i radio "tiknu" (`toggle`), `.btn-primary` i
+  `.btn-success` sviraju dva tona naviše (`select`), `.btn-danger` nizak ton, linkovi i tabovi
+  "menu", a sva ostala dugmad kratak "blip".
+- `observeOn(animationFrameScheduler)`: zvuk klika čeka sledeći frejm. Do tada je klik već
+  uradio svoje: ako je otvorio dijalog ili pustio svoj zvuk, taj zvuk je već krenuo, a zvuci
+  dugmadi, dijaloga i toastova idu kroz `playUi`, koji preskoči zvuk ako je drugi počeo pre
+  manje od `UI_SOUND_GAP_MS` (100 ms)
+  ([sound.service.ts:310-317](../frontend/src/app/core/sound/sound.service.ts#L310-L317),
+  [sound.constants.ts:54-56](../frontend/src/app/core/sound/sound.constants.ts#L54-L56)). Zato se
+  jedna radnja čuje jednom: klik koji otvori dijalog čuje se kao "pop" dijaloga.
+- `filter` + `throttleTime`: kucanje se čuje samo u poljima za tekst (text, email, search,
+  number, password i textarea,
+  [ui-sounds.rules.ts:42-47](../frontend/src/app/core/sound/ui-sounds.rules.ts#L42-L47)), a
+  `throttleTime(TYPING_SOUND_GAP_MS)` pusti prvi događaj i odbaci sve sledeće u narednih 40 ms,
+  pa brzo kucanje ne pravi zujanje
+  ([sound.constants.ts:57-58](../frontend/src/app/core/sound/sound.constants.ts#L57-L58)).
+  `keySound` po `inputType` prepozna brisanje i pusti niži ton
+  ([ui-sounds.rules.ts:49-52](../frontend/src/app/core/sound/ui-sounds.rules.ts#L49-L52)), a
+  svaki sledeći taster je malo drugačija nota iz `KEY.notes`
+  ([ui-sounds.service.ts:55-62](../frontend/src/app/core/sound/ui-sounds.service.ts#L55-L62)).
+- `takeUntilDestroyed` gasi pretplatu kad se uništi servis, tj. kad se zatvori aplikacija.
+- `clickSounds` je `Record<ClickSound, () => void>`
+  ([ui-sounds.service.ts:18-24](../frontend/src/app/core/sound/ui-sounds.service.ts#L18-L24)),
+  pa kompajler javi ako se doda nova vrsta zvuka, a zaboravi metoda.
+
+**`data-sound="none"`: dugme koje već ima svoj zvuk.** Odgovori u meču (klik odgovora),
+pojačanja (zvuk pojačanja) i Open na kovčegu (melodija kovčega) ne treba da kliknu još jednom.
+Atribut `data-sound="none"` stoji na njima ili na elementu oko njih, a `clickSound` ćuti za svaku
+kontrolu unutar takvog elementa, jer pita `control.closest(SILENT)`
+([ui-sounds.rules.ts:7-8](../frontend/src/app/core/sound/ui-sounds.rules.ts#L7-L8),
+[answer-grid.component.html:7](../frontend/src/app/features/play/components/answer-grid.component.html#L7),
+[boosts-bar.component.html:1](../frontend/src/app/features/play/components/boosts-bar.component.html#L1),
+[chest-card.component.html:11](../frontend/src/app/features/chests/components/chest-card.component.html#L11)).
+Važi samo za klik; kucanje u polju se i dalje čuje.
+
+**Dijalozi, toastovi, kupovina.** `ModalComponent` pusti "pop" naviše kad se napravi i naniže
+kad se uništi ([modal.component.ts:66-74](../frontend/src/app/shared/components/modal.component.ts#L66-L74)).
+`ToastService` za svaki toast pusti ton po vrsti iz `Record<ToastTone, ...>`
+([toast.service.ts:29-33](../frontend/src/app/core/notifications/toast.service.ts#L29-L33),
+[toast.service.ts:62](../frontend/src/app/core/notifications/toast.service.ts#L62)). Kupovina u
+prodavnici pusti novčiće, a toast odmah posle njih ostaje tih, jer ide kroz `playUi`
+([shop.effects.ts:105-132](../frontend/src/app/store/shop/shop.effects.ts#L105-L132)). Equip
+"zazvecka" čim se pritisne, u prodavnici, kovčegu ili toastu
+([shop.effects.ts:134-143](../frontend/src/app/store/shop/shop.effects.ts#L134-L143)). Novčići,
+Equip i kucanje idu kroz `play`, ne kroz `playUi`, pa se uvek čuju.
+
+**Prekidač u gornjoj traci.** U meniju naloga (klik na avatar) je prekidač "Sound effects" sa
+ikonicom zvučnika ([top-bar.component.html:100-114](../frontend/src/app/layout/top-bar.component.html#L100-L114)).
+`TopBarComponent` samo prima `muted` i javlja `toggleSound`
+([top-bar.component.ts:41-43](../frontend/src/app/layout/top-bar.component.ts#L41-L43)), a
+`ShellComponent` ih veže za `SoundService`
+([shell.component.ts:16-22](../frontend/src/app/layout/shell.component.ts#L16-L22)). Pošto je
+`role="switch"`, klik na njega i sam "tikne", ali samo kad se zvuk uključuje, jer isključen zvuk
+ne svira ništa.
+
+Testovi: [ui-sounds.rules.spec.ts](../frontend/src/app/core/sound/ui-sounds.rules.spec.ts) za
+svaku vrstu kontrole, klik na tekst u dugmetu, isključeno dugme, `data-sound="none"`
+([ui-sounds.rules.spec.ts:66-73](../frontend/src/app/core/sound/ui-sounds.rules.spec.ts#L66-L73)),
+polja za tekst i brisanje.
 
 ---
 
@@ -1549,7 +1659,7 @@ Frontend:
    `ICON_FILES`
    ([sabotage-icon.component.ts:17-22](../frontend/src/app/shared/components/sabotage-icon.component.ts#L17-L22)),
    ili nova slika 16x16 `assets/images/icons/shrink.png` i `| 'shrink'` u `PixelIconName`
-   ([pixel-icon.component.ts:4-22](../frontend/src/app/shared/components/pixel-icon.component.ts#L4-L22)).
+   ([pixel-icon.component.ts:4-24](../frontend/src/app/shared/components/pixel-icon.component.ts#L4-L24)).
 8. Dugme i prodavnica: `'SHRINK'` na kraj liste `ATTACKS`
    ([sabotages.ts:5-7](../frontend/src/app/shared/sabotages.ts#L5-L7)). Iz nje se pravi i
    `SABOTAGE_TYPES`, pa `sabotageOfItem` prepozna predmet `sabotage-shrink`, a traka sabotaža ga
@@ -1617,17 +1727,22 @@ dogovoru se i slika zove isto.
 ### 16. Promeni ili dodaj zvuk
 
 Kako zvuk zvuči piše u `sound.constants.ts` i `SoundService`, a kada svira u `MatchSoundsService`
-i `match-sounds.rules.ts` (ceo tok je u odeljku 4l). Za probu klikni bilo gde na stranici pre
-meča, jer browser do prvog klika ne pušta zvuk, i proveri da zvuk nije isključen.
+i `match-sounds.rules.ts` za meč (odeljak 4l), odnosno u `UiSoundsService` i `ui-sounds.rules.ts`
+za dugmad i kucanje (odeljak 4m). Za probu klikni bilo gde na stranici, jer browser do prvog
+klika ne pušta zvuk, i proveri da zvuk nije isključen (meni naloga → Sound effects).
 
 **Promeni postojeći zvuk**
 
-- Jačina svih zvukova: `FULL_VOLUME`, `SOFT_VOLUME` i `FAINT_VOLUME`
-  ([sound.constants.ts:5-7](../frontend/src/app/core/sound/sound.constants.ts#L5-L7)). Drži ih
+- Jačina svih zvukova: `FULL_VOLUME`, `SOFT_VOLUME` i `FAINT_VOLUME`, a za klikove i kucanje
+  `WHISPER_VOLUME` i `TYPING_VOLUME`
+  ([sound.constants.ts:5-10](../frontend/src/app/core/sound/sound.constants.ts#L5-L10)). Drži ih
   ispod 0.1; square talas zvuči oštrije, zato uglavnom ide sa nižim.
-- Visina tika: `TICK` ([sound.constants.ts:27](../frontend/src/app/core/sound/sound.constants.ts#L27)),
+- Visina tika: `TICK` ([sound.constants.ts:30](../frontend/src/app/core/sound/sound.constants.ts#L30)),
   `frequency` za obične sekunde i `urgentFrequency` za poslednje. Beep odbrojavanja je
-  `COUNTDOWN_BEEP`, a `GO!` je `GO` (linije 24-25).
+  `COUNTDOWN_BEEP`, a `GO!` je `GO` (linije 27-28).
+- Zvuci dugmadi (`SELECT`, `DANGER`, `MENU`, `BLIP`, `TOGGLE`) i kucanja (`KEY`, `KEY_DELETE`)
+  ([sound.constants.ts:60-68](../frontend/src/app/core/sound/sound.constants.ts#L60-L68)), a
+  koliko često sme da kucne brzo kucanje je `TYPING_SOUND_GAP_MS` (linija 58).
 - Od koje sekunde sat kuca: `TIMER_WARNING_SECONDS`
   ([play.constants.ts:6](../frontend/src/app/features/play/play.constants.ts#L6)), npr.
   `export const TIMER_WARNING_SECONDS = 10;`, a viši tik kreće od `TIMER_URGENT_SECONDS`
@@ -1637,19 +1752,90 @@ meča, jer browser do prvog klika ne pušta zvuk, i proveri da zvuk nije isklju�
   ([match-sounds.rules.spec.ts:73-77](../frontend/src/app/features/play/match-sounds.rules.spec.ts#L73-L77)):
   `docker compose exec frontend npx ng test --watch=false`, pa ispravi očekivani niz.
 - Talas (`'square'`, `'triangle'`, `'sine'`) i jačina se biraju u metodi servisa, npr.
-  `playTick` ([sound.service.ts:85-91](../frontend/src/app/core/sound/sound.service.ts#L85-L91)).
+  `playTick` ([sound.service.ts:103-109](../frontend/src/app/core/sound/sound.service.ts#L103-L109)).
+
+**Isključi zvuk za jedno dugme** (npr. "Open all" u Treasure room)
+
+1. Na dugme dodaj atribut `data-sound="none"`
+   ([chests-page.component.html:6-11](../frontend/src/app/features/chests/chests-page.component.html#L6-L11)),
+   isto kao na dugmetu Open na kartici kovčega
+   ([chest-card.component.html:11](../frontend/src/app/features/chests/components/chest-card.component.html#L11)):
+
+```html
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-sound="none"
+      [disabled]="opening() !== null"
+      (click)="openAll()"
+    >
+```
+
+2. Ništa više: `clickSound` pita `closest('[data-sound="none"]')`, pa ćuti i za tekst u dugmetu.
+   Ako staviš atribut na element oko više dugmadi, ćute sva, kao odgovori u meču
+   ([answer-grid.component.html:7](../frontend/src/app/features/play/components/answer-grid.component.html#L7)).
+   Kucanje u poljima atribut ne gasi.
+
+**Dodaj zvuk za novu vrstu dugmeta** (npr. `.btn-secondary` dobija svoj ton umesto "blip")
+
+1. Ton u [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts), posle `TOGGLE`
+   (linija 65):
+
+```ts
+export const SECONDARY = { frequency: 660, seconds: 0.04 };
+```
+
+2. Metoda u `SoundService`, posle `playToggle`
+   ([sound.service.ts:237-242](../frontend/src/app/core/sound/sound.service.ts#L237-L242)), i
+   `SECONDARY` u import iz `./sound.constants`. Ide kroz `playUi`, kao ostali zvuci dugmadi:
+
+```ts
+  playSecondary(): void {
+    const { frequency, seconds } = SECONDARY;
+    this.playUi((context, start) =>
+      tone(context, frequency, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+```
+
+3. Pravilo u [ui-sounds.rules.ts](../frontend/src/app/core/sound/ui-sounds.rules.ts): `| 'secondary'`
+   u tip `ClickSound` (linija 1), a u `controlSound` posle provere za `.btn-danger`
+   ([ui-sounds.rules.ts:33-35](../frontend/src/app/core/sound/ui-sounds.rules.ts#L33-L35)):
+
+```ts
+  if (control.matches('.btn-secondary')) {
+    return 'secondary';
+  }
+```
+
+   Redosled provera je bitan: prva koja se poklopi bira zvuk, pa prekidači ostaju `toggle`.
+4. Kompajler sad traži novi unos u `clickSounds`, jer je to `Record<ClickSound, ...>`
+   ([ui-sounds.service.ts:18-24](../frontend/src/app/core/sound/ui-sounds.service.ts#L18-L24)):
+   `secondary: () => this.sound.playSecondary(),`.
+5. Test u [ui-sounds.rules.spec.ts](../frontend/src/app/core/sound/ui-sounds.rules.spec.ts), pored
+   testa za danger dugmad (linije 26-30):
+
+```ts
+  it('plays its own note for secondary buttons', () => {
+    expect(clickSound(find('<button class="btn btn-secondary">Back</button>', 'button'))).toBe(
+      'secondary',
+    );
+  });
+```
+
+   Pa `docker compose exec frontend npx ng test --watch=false`.
 
 **Dodaj nov zvuk** (npr. "ding-dong" kad stigne pozivnica za meč)
 
 1. Note u [sound.constants.ts](../frontend/src/app/core/sound/sound.constants.ts), posle
-   `COIN_NOTES` (linija 16):
+   `COIN_NOTES` (linija 19):
 
 ```ts
 export const INVITE_NOTES = [784, 659];
 ```
 
 2. Metoda u `SoundService`, posle `playCoin`
-   ([sound.service.ts:64-66](../frontend/src/app/core/sound/sound.service.ts#L64-L66)), i
+   ([sound.service.ts:82-84](../frontend/src/app/core/sound/sound.service.ts#L82-L84)), i
    `INVITE_NOTES` u import iz `./sound.constants`:
 
 ```ts
@@ -1679,6 +1865,8 @@ export const INVITE_NOTES = [784, 659];
    (`effect` i `untracked` dodaj u import iz `@angular/core`, a `SoundService` iz
    `../core/sound/sound.service`.) Zbog `untracked` efekat zavisi samo od `invite`, isto kao kod
    kovčega ([chest-opening.component.ts:72-78](../frontend/src/app/features/chests/components/chest-opening.component.ts#L72-L78)).
+   Dijalog pri otvaranju pusti i svoj "pop", ali on ide kroz `playUi`, pa se preskoči kad je
+   ding-dong upravo počeo.
 4. Proba: dva prozora (trik iz odeljka 2), A pozove B iz lobija, a B čuje "ding-dong".
 
 Zvuk u meču ide u `MatchSoundsService`: za signal novi `effect` u konstruktoru (kao
@@ -1720,7 +1908,8 @@ Ako zvuk zavisi od pravila (kome i kada svira), napiši ga kao čistu funkciju u
 | Naboji za sabotaže (1 na početku, najviše 2) | [matches.constants.ts:45-46](../backend/src/modules/matches/matches.constants.ts#L45-L46) |
 | Trajanje sabotaža | [matches.constants.ts:60-74](../backend/src/modules/matches/matches.constants.ts#L60-L74) |
 | Od koje sekunde sat kuca (5, viši tik od 3) | [play.constants.ts:6-8](../frontend/src/app/features/play/play.constants.ts#L6-L8) |
-| Jačina zvukova | [sound.constants.ts:5-7](../frontend/src/app/core/sound/sound.constants.ts#L5-L7) |
+| Jačina zvukova | [sound.constants.ts:5-10](../frontend/src/app/core/sound/sound.constants.ts#L5-L10) |
+| Razmak zvukova dugmadi (100 ms) i kucanja (40 ms) | [sound.constants.ts:54-58](../frontend/src/app/core/sound/sound.constants.ts#L54-L58) |
 
 ---
 
@@ -2075,5 +2264,6 @@ Cena je jedna kolona i migracija koja je popunila stare redove iz `is_winner`.
 | Ubačena zavisnost (random) | Funkcija ne zove `Math.random` sama, nego ga dobija kao parametar, pa test može da pošalje zadate brojeve. |
 | Soft delete | Umesto brisanja upiše se `deletedAt`, a upiti preskaču takve redove. |
 | Web Audio API | Browser API koji pravi zvuk iz koda: oscilator daje ton, gain jačinu, filter boju. Od njih su svi 8-bit zvuci igre (`synth.ts`), bez audio fajlova. |
+| Event delegation | Jedan slušalac na roditelju (ovde `document`) umesto po jednog na svakom dugmetu; događaj "ispliva" do njega, a `event.target` kaže odakle je krenuo (`UiSoundsService`). |
 | Swagger | Automatska dokumentacija REST API-ja na `/api/docs`, iz dekoratora kontrolera i DTO-a. |
 | Healthcheck | Provera da li servis radi; Docker po njoj zna kad je baza spremna. |

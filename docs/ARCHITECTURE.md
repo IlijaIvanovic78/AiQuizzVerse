@@ -486,8 +486,9 @@ multiplication must be answered before checkout is requested.
 
 `core/` holds singletons: `api/` (typed HttpClient wrappers on `/api`), `auth/` (token storage,
 token refresh, interceptor, guards, bootstrap), `realtime/` (sockets), `sprites/`, `sound/`
-(synthesized WebAudio effects, read aloud), `notifications/` (toasts) and `models/` (types
-mirroring the backend). `store/` has one folder per NgRx slice. `features/<area>/` has the routed
+(synthesized WebAudio effects, the app-wide click and typing sounds, read aloud),
+`notifications/` (toasts) and `models/` (types mirroring the backend). `store/` has one folder
+per NgRx slice. `features/<area>/` has the routed
 `*-page.component.ts` files, presentational `components/` (inputs and outputs only) and pure
 helpers with specs (named `*.rules.ts` where they hold game or screen rules, like
 `play/party-round.rules.ts`). `shared/` has reusable components, pipes and form helpers (among them the
@@ -615,23 +616,30 @@ Every sound is synthesized with the Web Audio API; there are no audio files.
 
 - **Building blocks** (`core/sound/synth.ts`): plain functions that schedule one sound on the
   `AudioContext` clock at `start` (seconds) and stop it by themselves. `tone` is one pitch
-  (beeps, clicks, ticks), `slide` glides through a list of frequencies (time up, the mirror
-  "boing"), `tremolo` is a slide whose volume swings `wobbles` times a second (the quake rumble,
-  the freeze shimmer) and `noise` is filtered white noise (a lowpass ink splat, a bandpass fog
-  whoosh). Each one ends in `fadeOut`, an exponential ramp to `SILENT_VOLUME`, so no sound ends
-  with a click.
-- **Numbers** (`core/sound/sound.constants.ts`): notes in Hz, lengths in seconds and three quiet
-  volumes, `FULL_VOLUME` 0.07, `SOFT_VOLUME` 0.05 and `FAINT_VOLUME` 0.03.
+  (beeps, clicks, ticks), `jingle` plays notes one after another with `forEach` (level-up,
+  coins), `slide` glides through a list of frequencies (time up, the mirror "boing"), `tremolo`
+  is a slide whose volume swings `wobbles` times a second (the quake rumble, the freeze shimmer)
+  and `noise` is filtered white noise (a lowpass ink splat, a bandpass fog whoosh). Each one ends
+  in `fadeOut`, an exponential ramp to `SILENT_VOLUME`, so no sound ends with a click.
+- **Numbers** (`core/sound/sound.constants.ts`): notes in Hz, lengths in seconds and quiet
+  volumes, `FULL_VOLUME` 0.07, `SOFT_VOLUME` 0.05 and `FAINT_VOLUME` 0.03 for the game, and
+  `WHISPER_VOLUME` 0.02 and `TYPING_VOLUME` 0.015 for clicks and typing, which happen all the
+  time. `UI_SOUND_GAP_MS` (100) and `TYPING_SOUND_GAP_MS` (40) space out the UI sounds.
 - **`SoundService`** (root) has one method per event: `playCorrect`, `playWrong`, `playCoin`,
   `playLevelUp`, `playChestOpen`, `playCountdownBeep`, `playGo`, `playTick(urgent)`,
   `playTimeUp`, `playAnswerLocked`, `playOtherAnswered`, `playPowerUp`, `playRoundLost`,
   `playVictory`, `playAlmost`, `playStar(starIndex)`, `playShieldBlocked` and one per sabotage
   that lands on the player (`playInked`, `playFrozen`, `playScrambled`, `playFogged`,
-  `playShaken`, `playMirrored`), plus the `muted` signal and `toggleMuted` (kept in
-  localStorage). Jingles go through `playNotes`, which schedules the notes with `forEach`. Every
-  sound passes the private `play`, which stays silent when muted, in a hidden tab and before the
-  first user interaction (`navigator.userActivation.hasBeenActive`), so sounds never pile up and
-  burst out later.
+  `playShaken`, `playMirrored`); for the rest of the app `playSelect`, `playDanger`, `playMenu`,
+  `playBlip`, `playToggle`, `playKey(keyIndex)`, `playKeyDelete`, `playModalOpen`,
+  `playModalClose`, `playToastSuccess`, `playToastError`, `playToastInfo` and `playEquip`; plus
+  the `muted` signal and `toggleMuted` (kept in localStorage). Jingles go through `playNotes`,
+  which calls `jingle`. Every sound passes the private `play`, which stays silent when muted, in
+  a hidden tab and before the first user interaction (`navigator.userActivation.hasBeenActive`),
+  so sounds never pile up and burst out later, and remembers when the last sound started. The
+  sounds of buttons, dialogs and toasts go through `playUi` first, which skips them when another
+  sound started less than `UI_SOUND_GAP_MS` ago, so one action is heard once (a click that opens
+  a dialog is heard as the dialog, a purchase as its coins and not its toast).
 - **Triggers in a match** (`features/play/match-sounds.service.ts`): `MatchSoundsService` is
   provided by the match page, like `MatchClockService`. Signal effects play the countdown (3, 2
   and 1 beep, GO! jumps up), the clock (a tick through the last 5 seconds, a higher one through
@@ -645,8 +653,27 @@ Every sound is synthesized with the Web Audio API; there are no audio files.
   timed to the star pop, and after a level-up its jingle). Each decision is a pure function in
   `match-sounds.rules.ts` (`countdownSound`, `timerTick`, `roundSound`, `endingSound`,
   `starPlinkDelays`) with Vitest tests.
-- Outside a match the chest opening dialog plays `playChestOpen` and the payment result page
-  `playCoin`. Sound is switched off in the match header or in the profile settings.
+- **App-wide UI sounds** (`core/sound/ui-sounds.service.ts`): the app is a game, so buttons,
+  links, tabs and toggles click and text fields tick while typing, with no code in any button.
+  `UiSoundsService` is started once by `provideAppInitializer` and uses event delegation: one
+  `fromEvent(document, 'click')` with `map` to a sound name, `filter` out non-controls and
+  `observeOn(animationFrameScheduler)` (so whatever the click opened or played is already heard
+  and `playUi` can skip the click), and one `fromEvent(document, 'input')` with `filter` to text
+  fields and `throttleTime(TYPING_SOUND_GAP_MS)`. The decisions are pure functions in
+  `ui-sounds.rules.ts` with Vitest tests: `clickSound` finds the control with `closest` (a click
+  on the text inside a button counts), stays quiet for disabled controls, and picks `toggle`
+  (switches, `aria-pressed` chips, checkboxes, radios), `select` (`.btn-primary`,
+  `.btn-success`), `danger` (`.btn-danger`), `menu` (links and tabs) or `blip`; `isTextField`
+  and `keySound` (a lower tick for deleting) handle typing. A control whose action has its own
+  sound opts out with `data-sound="none"` on itself or a parent (the answer grid, the boosts bar,
+  the Open button of a chest card); it only silences clicks.
+- Outside a match the chest opening dialog plays `playChestOpen`, the payment result page
+  `playCoin`, `ModalComponent` pops up when created and down when destroyed, `ToastService`
+  plays one tone per toast kind, and `ShopEffects` plays coins for a purchase and a clink when
+  Equip is pressed. Sound is switched off in the match header, with the "Sound effects" switch
+  in the top bar's account menu (`TopBarComponent` takes `muted` and emits `toggleSound`,
+  `ShellComponent` wires them to `SoundService`) or in the profile settings; all three read the
+  same `muted` signal.
 
 ### Design system
 
@@ -701,9 +728,9 @@ Every sound is synthesized with the Web Audio API; there are no audio files.
   `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
 - Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match with its lobby
   invites, paths, leaderboard, match history, match invite, chests), the `clearOnSignOut`
-  meta-reducer and pure helpers (filters, path map, round view, match result, match sounds, party
-  round, arena sides, sabotages, chest reward, shop item state, gate question, profile, pipes,
-  sprite style, quiz form).
+  meta-reducer and pure helpers (filters, path map, round view, match result, match sounds, UI
+  sounds, party round, arena sides, sabotages, chest reward, shop item state, gate question,
+  profile, pipes, sprite style, quiz form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev
