@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { STAR_POP_DELAY_MS } from '../stars';
 import { PixelIconComponent } from './pixel-icon.component';
-
-const STAR_POP_DELAY_MS = 180;
 
 @Component({
   selector: 'app-star-rating',

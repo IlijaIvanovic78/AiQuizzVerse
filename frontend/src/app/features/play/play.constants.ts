@@ -4,9 +4,12 @@ export const MS_PER_SECOND = 1000;
 
 export const TIMER_TICK_MS = 250;
 export const TIMER_WARNING_SECONDS = 5;
+// The clock ticks through the warning seconds, and more urgently through the last ones.
+export const TIMER_URGENT_SECONDS = 3;
 
 // 3, 2, 1 and GO! take 750 ms each, so together they fill the server's 3 s countdown.
-export const COUNTDOWN_LABELS = ['3', '2', '1', 'GO!'];
+export const GO_LABEL = 'GO!';
+export const COUNTDOWN_LABELS = ['3', '2', '1', GO_LABEL];
 export const COUNTDOWN_STEP_MS = 750;
 
 // How long the coins fly from the heroes into the chest; the chest opens when they land.
