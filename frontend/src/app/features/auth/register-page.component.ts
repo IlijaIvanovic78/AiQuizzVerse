@@ -99,8 +99,9 @@ export class RegisterPageComponent {
   private readonly authError = this.store.selectSignal(authFeature.selectError);
   protected readonly error = computed(() => (this.submitted() ? this.authError() : null));
 
+  // The live name check can lag behind typing, so a taken name is left to the server to reject.
   protected submit(): void {
-    if (this.form.invalid || this.usernameStatus() === 'taken') {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -108,7 +109,7 @@ export class RegisterPageComponent {
     this.store.dispatch(AuthActions.register({ request: this.form.getRawValue() }));
   }
 
-  // Waits until the player stops typing, skips repeats and cancels the previous check.
+  // Only the newest name matters, so an older check is cancelled while the player keeps typing.
   private watchUsername(): Observable<UsernameStatus> {
     return this.form.controls.username.valueChanges.pipe(
       debounceTime(USERNAME_CHECK_DEBOUNCE_MS),

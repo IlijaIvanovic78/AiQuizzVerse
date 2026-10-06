@@ -41,7 +41,7 @@
       <button
         type="button"
         class="btn btn-primary btn-lg w-full sm:w-auto"
-        [disabled]="!selectedName() || busy()"
+        [disabled]="!selectedId() || busy()"
         (click)="claim()"
       >
         @if (selectedName(); as name) {

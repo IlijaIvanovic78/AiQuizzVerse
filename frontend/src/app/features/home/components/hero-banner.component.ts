@@ -28,7 +28,7 @@ export class HeroBannerComponent {
   protected readonly heroName = computed(
     () => this.sprites.getSprite(this.user().avatarKey)?.name ?? 'Hero',
   );
-  protected readonly streakDays = computed(() => (this.user().streak === 1 ? 'day' : 'days'));
+  protected readonly streakDayWord = computed(() => (this.user().streak === 1 ? 'day' : 'days'));
   protected readonly streakTip = computed(() => {
     const { streak, streakFreezes } = this.user();
     if (streak === 0) {
