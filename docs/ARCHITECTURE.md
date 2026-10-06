@@ -81,7 +81,7 @@ Auth ──────────┬─> Users
 LearningPaths ─┬─> Quizzes      ├─> Documents
                ├─> Ai           └─> Realtime
                └─> Documents, Realtime, Chests
-Matches ───────> LearningPaths, Review, Progression, Realtime, Chests
+Matches ───────> LearningPaths, Review, Progression, Realtime, Chests, Friends
 Chests ────────┬─> Realtime
                └─> Shop
 Profile ───────┬─> Users, Review
@@ -192,13 +192,17 @@ In `backend/src/modules/matches/`:
 
 - `matches.service.ts`: REST side. Creates matches (own or featured quizzes; path steps only
   SOLO and only when unlocked), invite codes from nanoid's `customAlphabet`, joining by code in
-  a transaction that locks the match row (`SELECT ... FOR UPDATE`), history, invites, rematch.
+  a transaction that locks the match row (`SELECT ... FOR UPDATE`), history, invites (friends
+  only, checked with `FriendsService.findRelation`), rematch.
   `onModuleInit` marks WAITING and IN_PROGRESS matches ABANDONED, since sessions live in memory.
 - `match.gateway.ts`: `match:join`, `match:leave`, `match:start`, `match:answer`, `match:next`,
   `match:boost`, `match:sabotage`; `ws-exception.filter.ts` turns every error into `match:error`.
-- `match-session-registry.service.ts`: the only place that creates a session. It claims the
-  start in the DB first (`updateMany` WAITING -> IN_PROGRESS, go on only when `count === 1`),
-  loads players and questions, then calls `has()` and `set()` with no `await` between them.
+- `match-session-registry.service.ts`: the only place that creates a session. While it works the
+  match id sits in a `starting` set (`isStarting()`), so a second start call returns at once and
+  a player who rejoins in that moment does not abandon the match. It claims the start in the DB
+  first (`updateMany` WAITING -> IN_PROGRESS, go on only when `count === 1`), loads players and
+  questions (a claimed match that cannot be loaded is abandoned), then stores the new session
+  in its `Map` and starts it.
 - `match-session.ts`: a plain class that runs one match; questions with answers stay on the
   server. Helpers: `match-play.service.ts` (small DB steps), `match-results.service.ts` (saving)
   and the pure `scoring.ts`, `option-order.ts`, `party-rules.ts`.
@@ -226,7 +230,7 @@ collectAnswers(i) = answers$                      <- the gateway pushes every ma
 endRound(i):   score the answers, send match:round-result to each player
 waitForNextPresses(i): subscribe(collectNextPresses(i)), then emit match:waiting-next
 collectNextPresses(i) = nextPresses$              <- the gateway pushes every match:next
-  .filter .distinct(userId)
+  .filter(index === i && still waiting)           markReady drops a second press
   .tap(markReady)                                 -> match:waiting-next after every press
   .take(n) .takeUntil(timer(REVEAL_MAX_MS)) .toArray()
       │
@@ -290,7 +294,9 @@ and protects the player who raises it until the question ends: the room sees it 
 `match:<id>` room (`fetchSockets()`). Outside SOLO a gone player gives up the open question and
 the Next press, so nobody waits for them. After a grace time (SOLO 60 s, TEAM 30 s) SOLO and
 TEAM end ABANDONED; a party goes on while two players are connected and ends after 30 s with
-fewer (the last one wins, so in a party for two the player who stayed wins). `match:leave`
+fewer (the last one wins, so in a party for two the player who stayed wins). A player who leaves
+a party keeps the points for their answers, but only the players still connected can win or
+draw, even when the one who left had the most points. `match:leave`
 during play quits at once with the same rules; in the lobby it removes a guest, or abandons the
 match when the host leaves. `match:join` on a running match resends the current question with
 the time left, or the last round result.
@@ -312,6 +318,7 @@ XP on HARD), +10 XP / +5 coins for finishing with a correct answer, party win +3
 draw +10 / +5, team win +20 / +10. Level is `floor(sqrt(xp / 50)) + 1`. The streak updates when
 a match ends with a correct answer; one missed day uses a STREAK_FREEZE (atomic `updateMany`).
 Match coins, including the streak bonus `min(streak * 5, 30)`, are capped at 150 per UTC day.
+An abandoned match never pays the streak bonus.
 
 ### AI generation
 
@@ -338,10 +345,11 @@ AI quizzes per UTC day (429, deleted ones count, a path costs 5). Progress goes 
 
 `learning-paths/path-generation.service.ts` builds five step requests from `PATH_PLAN` (EASY 5,
 EASY 5, MEDIUM 5, MEDIUM 6, HARD 7 questions) and writes them in parallel with `Promise.all`,
-emitting `quiz:progress` as each one finishes. Nothing is saved until all five succeed; then one
+emitting `quiz:progress` as each one finishes. A step with too few usable questions
+(`WeakQuizException`) is written once more. Nothing is saved until all five succeed; then one
 interactive `$transaction` creates the path, five PATH_STEP quizzes (via
 `QuizzesService.saveGeneratedQuiz(input, tx)`) and five steps. Since the steps are written at
-once, each prompt gets the focus of every step and the goals of the earlier ones. A step is
+once, each prompt gets the focus of every step plus its own step number and label. A step is
 unlocked when it is first or the previous one is cleared. Stars are 1 / 2 / 3 at 60 /
 80 / 100% accuracy. Best result and first clear are conditional `updateMany` calls, so the
 first-clear reward (`STEP_REWARDS`: coins outside the daily cap, plus a chest: wooden for steps 1
@@ -380,7 +388,7 @@ row:
 | GOLDEN | 120-200 (35) | 3 + 1 streak freeze (35) | 20 | 10 |
 
 Power-ups are drawn from HINT, FIFTY_FIFTY, EXTRA_TIME and SECOND_CHANCE; the streak freeze only
-comes from golden chests (it has no shop price). `itemPools` builds the two item pools: BASIC is
+comes from golden chests (it has no shop price). `buildItemPools` builds the two item pools: BASIC is
 every non-starter, non-chest-only hero, pet or sabotage that costs at most 150
 (`BASIC_ITEM_MAX_PRICE`, so all six sabotages are in it), CHEST_ONLY the chest-only heroes and
 pets. Starter heroes are never in a chest. An item row whose pool is empty is left out, so the
@@ -443,7 +451,7 @@ recorded on the original questions.
 ### Payments
 
 `payments/providers/payment-provider.ts` defines the `PaymentProvider` interface (`name`,
-`createCheckout`, `isPaid`, `cancel`) and the `PAYMENT_PROVIDER` token. `payments.module.ts`
+`createCheckout`, `isPaid`, `cancelUnlessPaid`) and the `PAYMENT_PROVIDER` token. `payments.module.ts`
 provides it with a factory (`inject: [ConfigService], useFactory: createPaymentProvider`): a
 `STRIPE_SECRET_KEY` starting with `sk_test_` gives `StripePaymentProvider` (Stripe Checkout in
 test mode); any other value logs a warning and, like an empty one, gives `DemoPaymentProvider`,
@@ -455,7 +463,8 @@ last 30 days plus this pack must stay within 1000 cents, else 400 "Monthly spend
 reached. Ask a grown-up." Only then a PENDING purchase is created and the checkout opened.
 Confirm asks the provider if it is paid and pays out in one transaction,
 `purchase.updateMany({ where: { id, status: 'PENDING' }, data: { status: 'PAID' } })` plus the
-coin increment, so confirming twice never pays twice, then emits `coins:updated`. Cancel expires
+coin increment, so confirming twice never pays twice, then emits `coins:updated`. A purchase made
+with another provider (say, demo before a Stripe key was added) is never paid out. Cancel expires
 the Stripe session, or pays out if the payment already went through. The grown-up gate lives in
 the frontend (`features/shop/gate-question.ts`): a random two-digit times one-digit
 multiplication must be answered before checkout is requested.
@@ -469,7 +478,8 @@ token refresh, interceptor, guards, bootstrap), `realtime/` (sockets), `sprites/
 (WebAudio effects, read aloud), `notifications/` (toasts) and `models/` (types mirroring the
 backend). `store/` has one folder per NgRx slice. `features/<area>/` has the routed
 `*-page.component.ts` files, presentational `components/` (inputs and outputs only) and pure
-helpers with specs. `shared/` has reusable components, pipes and form helpers (among them the
+helpers with specs (named `*.rules.ts` where they hold game or screen rules, like
+`play/party-round.rules.ts`). `shared/` has reusable components, pipes and form helpers (among them the
 sabotage icons and `sabotages.ts`, used by both the shop and the match), and `layout/` the
 shell, top bar, mobile bottom tab bar and match invite dialog.
 
@@ -491,7 +501,7 @@ registered in `app.config.ts`:
 | `quizzes` | entity adapter of quiz summaries (newest first), featured, detail, generation progress |
 | `match` | the open match as a phase machine (`lobby`, `countdown`, `question`, `reveal`, `finished`, ...) |
 | `matchInvite` | the team or party invite shown in the dialog |
-| `paths` | path list, open path, path generation |
+| `paths` | path list (loaded again when a new path is ready), open path, path generation |
 | `review` | the mistakes deck |
 | `shop` | entity adapter of items (by price, chest-only last), boosts, coin packs, purchases |
 | `chests` | entity adapter of unopened chests (newest first, `removeOne` after opening), recent rewards, odds, the chest being opened |
@@ -521,7 +531,10 @@ refresh and a reconnect. Socket events reach the UI only through effects:
 `core/auth/auth.interceptor.ts` adds the access token except on public auth paths. On a 401 it
 waits for `TokenRefreshService.refresh()`, which shares one request between all callers
 (`refresh$ ??= ...pipe(finalize(...), shareReplay(1))`), and retries once. If the refresh fails
-but another tab stored newer tokens, those are used; otherwise the user goes to `/login`.
+but another tab stored newer tokens, those are used. A refresh token the server refuses (401)
+ends the session and sends the user to `/login`; a dropped connection or a server error keeps
+the tokens for the next request. Logging out or an ended session resets every slice through the
+`clearOnSignOut` meta-reducer (`store/clear-on-sign-out.ts`).
 
 ### Routing
 
@@ -540,7 +553,9 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   recent rewards, a "Chances" panel from `GET /chests/odds` and the note that chests can't be
   bought. The opening dialog plays the 4-frame chest strip (shake, lid half open, open), then the
   reward pops out with pixel sparkles and a jingle; an item shows its animated sprite, a
-  duplicate says how many coins it became. The `chests` slice keeps the unopened chests in an
+  duplicate says how many coins it became. Until the reward has fully popped out the dialog
+  cannot be closed (no X or Done, Escape and a click next to it do nothing), so the player always
+  sees what they got. The `chests` slice keeps the unopened chests in an
   entity adapter: `chest:earned` adds one (`addOne`), opening removes one (`removeOne`), and the
   `open$` effect uses `exhaustMap`, so a second click is ignored while the first request runs.
   The top bar shows a chest icon with the unopened count (also in the avatar menu on phones),
@@ -556,7 +571,7 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   Owned badge, with the note "Sabotages work in Party matches. You still need charges — win
   rounds to earn them." Buying uses the same confirm dialog as heroes. `sabotageOfItem`
   (`shared/sabotages.ts`) reads the type from the item id, and the `auth` reducer adds a bought
-  sabotage, or one found in a chest, to `user.sabotages` (`withUnlockedSabotage`). The chest
+  sabotage, or one found in a chest, to `user.sabotages` (`withSabotageFrom`). The chest
   dialog and the recent rewards show it with its icon ("New sabotage: Fog!").
 - **Sabotage in a party**: the sabotage bar shows only the attacks the player owns
   (`ownedAttacks(user.sabotages)`: INK, FREEZE, SCRAMBLE, FOG, QUAKE, MIRROR in that order; pick
@@ -611,6 +626,9 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   pure parts (scoring, option order, party rules, levels, stars, streak, coin cap, review
   intervals, AI question checks, payment limits, dates, shuffle, mappers, generation limits,
   chest earning and drop rolls, sabotage item ids and ownership).
+  `match-session-registry.service.spec.ts` checks the start claim with fake services (the match
+  counts as starting until its session is ready, a lost claim does nothing, a claimed match that
+  cannot be loaded is abandoned).
   `match-session.spec.ts` drives the real `MatchSession` with a fake server that records emitted
   events and Jest fake timers: rounds, deadlines, reveals, disconnects, power-ups (second chance
   included), sabotage, shields and the "not owned yet" refusal without a database or sockets.
@@ -618,9 +636,9 @@ hero picker) `authGuard` + `noHeroGuard`, and the shell with all other pages `au
   every roll has a known result.
   `backend/test/app.e2e-spec.ts` boots `AppModule` and checks `GET /health`.
 - Frontend (Vitest, `npx ng test --watch=false`): reducers (auth, quizzes, match, paths,
-  leaderboard, match invite, chests) and pure helpers (filters, path map, round view, match
-  result, party round, sabotages, chest reward, shop item state, gate question, pipes, sprite
-  style, quiz form).
+  leaderboard, match history, match invite, chests), the `clearOnSignOut` meta-reducer and pure
+  helpers (filters, path map, round view, match result, party round, arena sides, sabotages,
+  chest reward, shop item state, gate question, pipes, sprite style, quiz form).
 - Smoke test idea: unit tests miss the wiring between REST, sockets and the database, so during
   development a separate script (not in this repo) ran against the Docker stack. It registers
   throwaway users, connects to both namespaces with `socket.io-client` (a backend dev
