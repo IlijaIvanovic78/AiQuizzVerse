@@ -23,6 +23,8 @@ export interface FriendRequests {
 export interface UserSearchResult {
   user: PublicUser;
   relation: FriendRelation;
+  // A request and the friendship it turns into share one id, so while the request is pending
+  // (REQUEST_SENT or REQUEST_RECEIVED) this is the request id.
   friendshipId: string | null;
 }
 

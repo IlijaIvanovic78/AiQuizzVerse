@@ -6,6 +6,7 @@ import { CurrentUser } from '../../core/models/user.model';
 import { PaymentsActions } from './payments.actions';
 import { ShopActions } from './shop.actions';
 
+// Also holds the coin packages and purchases that PaymentsActions load.
 interface ShopState extends EntityState<ShopItem> {
   itemsLoaded: boolean;
   boosts: BoostOffer[];
