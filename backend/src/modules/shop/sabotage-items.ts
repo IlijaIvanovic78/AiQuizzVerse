@@ -1,7 +1,9 @@
 import { Prisma } from '@prisma/client';
 import { FREE_SABOTAGES, SABOTAGE_TYPES } from '../matches/matches.constants';
 import { SabotageType } from '../matches/matches.types';
-import { SABOTAGE_ITEM_PREFIX } from './shop.constants';
+
+/** Sabotage items are named after their sabotage: FOG is sold as `sabotage-fog`. */
+const SABOTAGE_ITEM_PREFIX = 'sabotage-';
 
 /** The sabotage items a user owns, loaded together with the user as `items`. */
 export const SABOTAGE_ITEMS_SELECT = {

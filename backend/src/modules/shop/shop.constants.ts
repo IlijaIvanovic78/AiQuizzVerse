@@ -1,3 +1,4 @@
+import { EXTRA_TIME_MS, MS_PER_SECOND } from '../matches/matches.constants';
 import { BoostCatalogEntry } from './shop.types';
 
 export const BOOST_CATALOG: BoostCatalogEntry[] = [
@@ -16,7 +17,7 @@ export const BOOST_CATALOG: BoostCatalogEntry[] = [
   {
     type: 'EXTRA_TIME',
     name: 'Extra time',
-    description: 'Adds 15 seconds to the timer.',
+    description: `Adds ${EXTRA_TIME_MS / MS_PER_SECOND} seconds to the timer.`,
     price: 10,
   },
   {
@@ -32,8 +33,3 @@ export const BOOST_CATALOG: BoostCatalogEntry[] = [
     price: null,
   },
 ];
-
-export const NOT_ENOUGH_COINS_MESSAGE = 'Not enough coins. Play quizzes to earn more coins.';
-
-/** Sabotage items are named after their sabotage: FOG is sold as `sabotage-fog`. */
-export const SABOTAGE_ITEM_PREFIX = 'sabotage-';

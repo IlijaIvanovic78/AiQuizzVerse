@@ -5,7 +5,7 @@ import { levelForXp } from '../progression/progression.rules';
 import { UsersService } from '../users/users.service';
 import { CurrentUser } from '../users/users.types';
 import { toShopItem } from './shop-item.mapper';
-import { BOOST_CATALOG, NOT_ENOUGH_COINS_MESSAGE } from './shop.constants';
+import { BOOST_CATALOG } from './shop.constants';
 import { BoostOffer, BoostPurchase, ItemPurchase, ShopCustomer, ShopItem } from './shop.types';
 
 @Injectable()
@@ -43,7 +43,9 @@ export class ShopService {
     }
     const owned = await this.prisma.userItem.count({ where: { userId, itemId } });
     if (owned === 0) {
-      throw new BadRequestException('Get this item in the shop first.');
+      throw new BadRequestException(
+        item.isChestOnly ? 'Find this one in chests first.' : 'Get this item in the shop first.',
+      );
     }
 
     const slot = item.type === 'AVATAR' ? { avatarKey: item.id } : { petKey: item.id };
@@ -142,7 +144,7 @@ export class ShopService {
       data: { coins: { decrement: price } },
     });
     if (count === 0) {
-      throw new BadRequestException(NOT_ENOUGH_COINS_MESSAGE);
+      throw new BadRequestException('Not enough coins. Play quizzes to earn more coins.');
     }
   }
 

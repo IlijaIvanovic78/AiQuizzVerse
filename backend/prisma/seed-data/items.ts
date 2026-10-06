@@ -1,4 +1,6 @@
 import { ItemType } from '@prisma/client';
+import { SabotageType } from '../../src/modules/matches/matches.types';
+import { sabotageItemId } from '../../src/modules/shop/sabotage-items';
 
 interface SeedItem {
   id: string;
@@ -29,16 +31,16 @@ function chestOnly(id: string, name: string, type: ItemType): SeedItem {
   return { id, name, type, price: 0, minLevel: 1, isStarter: false, isChestOnly: true };
 }
 
-/** Bought once and kept for good; the id is `sabotage-` plus the sabotage type. */
+/** Bought once and kept for good. */
 function sabotage(
-  id: string,
+  type: SabotageType,
   name: string,
   description: string,
   price: number,
   minLevel: number,
 ): SeedItem {
   return {
-    id,
+    id: sabotageItemId(type),
     name,
     description,
     type: 'SABOTAGE',
@@ -102,10 +104,10 @@ export const SEED_ITEMS: SeedItem[] = [
   chestOnly('pet-dragon-gold', 'Sun Dragon', 'PET'),
   chestOnly('pet-slime-pink', 'Bubblegum Slime', 'PET'),
   chestOnly('pet-golden-bunny', 'Golden Bunny', 'PET'),
-  sabotage('sabotage-freeze', 'Freeze', "Freeze a rival's answers for 3 seconds.", 80, 2),
-  sabotage('sabotage-scramble', 'Scramble', "Shuffle a rival's answers.", 80, 2),
-  sabotage('sabotage-fog', 'Fog', "Blur a rival's question for 4 seconds.", 100, 3),
-  sabotage('sabotage-mirror', 'Mirror', "Flip a rival's answers backwards for 5 seconds.", 100, 3),
-  sabotage('sabotage-quake', 'Quake', "Shake a rival's answers for 4 seconds.", 120, 4),
-  sabotage('sabotage-shield', 'Shield', 'Block the next sabotage aimed at you.', 150, 4),
+  sabotage('FREEZE', 'Freeze', "Freeze a rival's answers for 3 seconds.", 80, 2),
+  sabotage('SCRAMBLE', 'Scramble', "Shuffle a rival's answers.", 80, 2),
+  sabotage('FOG', 'Fog', "Blur a rival's question for 4 seconds.", 100, 3),
+  sabotage('MIRROR', 'Mirror', "Flip a rival's answers backwards for 5 seconds.", 100, 3),
+  sabotage('QUAKE', 'Quake', "Shake a rival's answers for 4 seconds.", 120, 4),
+  sabotage('SHIELD', 'Shield', 'Block the next sabotage aimed at you.', 150, 4),
 ];
