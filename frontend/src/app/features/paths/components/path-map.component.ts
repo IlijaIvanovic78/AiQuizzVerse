@@ -43,6 +43,7 @@ export class PathMapComponent {
   readonly stepSelected = output<StepView>();
 
   protected readonly stopTop = STOP_TOP_REM;
+  protected readonly narrowStopX = NARROW_STOP_X;
   protected readonly chestIcons = CHEST_ICONS;
   protected readonly heightRem = computed(() => mapHeightRem(this.steps().length));
   protected readonly viewBox = computed(() => `0 0 100 ${this.heightRem()}`);

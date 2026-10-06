@@ -34,7 +34,7 @@
 
 .stop {
   position: absolute;
-  left: 50%;
+  left: var(--narrow-x);
   display: flex;
   flex-direction: column;
   align-items: center;

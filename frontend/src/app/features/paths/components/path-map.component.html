@@ -36,6 +36,7 @@
           class="stop"
           [class.stop-free-right]="stop.freeSideRight"
           [style.top.rem]="stopTop"
+          [style.--narrow-x]="narrowStopX + '%'"
           [style.--wide-x]="stop.wideX + '%'"
         >
           <div class="relative" [class.animate-unlock]="stop.isNext">

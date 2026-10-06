@@ -30,7 +30,7 @@ import { pathsFeature } from '../../store/paths/paths.reducer';
 import { PathMapComponent } from './components/path-map.component';
 import { StepPanelComponent } from './components/step-panel.component';
 import { findNextStep } from './path-map';
-import { MAX_STARS_PER_STEP, SOURCE_LABELS } from './paths.constants';
+import { MAX_STARS_PER_STEP, PATH_SOURCE_LABELS } from './paths.constants';
 
 @Component({
   selector: 'app-path-page',
@@ -53,8 +53,8 @@ import { MAX_STARS_PER_STEP, SOURCE_LABELS } from './paths.constants';
 })
 export class PathPageComponent {
   readonly pathId = input.required<string>();
-  // "Next step" on the results screen links here with ?step=<id> so that step opens right away.
-  readonly step = input<string>();
+  // "Next step" on the results screen links here with ?stepId=<id> so that step opens right away.
+  readonly stepId = input<string>();
 
   private readonly store = inject(Store);
   private readonly readAloud = inject(ReadAloudService);
@@ -89,7 +89,7 @@ export class PathPageComponent {
     () => this.steps().length > 0 && this.stepsCleared() === this.steps().length,
   );
 
-  protected readonly sourceLabels = SOURCE_LABELS;
+  protected readonly sourceLabels = PATH_SOURCE_LABELS;
 
   protected readonly selectedStepId = signal<string | null>(null);
   // Until a stop is picked, the panel shows the next step (or the castle once all are cleared).
@@ -113,12 +113,6 @@ export class PathPageComponent {
     effect(() => {
       const pathId = this.pathId();
       untracked(() => this.load(pathId));
-    });
-    effect(() => {
-      const linkedStep = this.steps().find((step) => step.id === this.step());
-      if (linkedStep) {
-        untracked(() => this.selectStep(linkedStep));
-      }
     });
     inject(DestroyRef).onDestroy(() => this.readAloud.stop());
   }
@@ -157,9 +151,11 @@ export class PathPageComponent {
     this.store.dispatch(PathsActions.delete({ pathId: this.pathId() }));
   }
 
+  // The linked step is picked once per load, so a stop the player chooses afterwards stays.
   private load(pathId: string): void {
-    this.selectedStepId.set(null);
-    this.dialogOpen.set(false);
+    const linkedStepId = this.stepId() ?? null;
+    this.selectedStepId.set(linkedStepId);
+    this.dialogOpen.set(linkedStepId !== null && !this.isWide());
     this.store.dispatch(PathsActions.loadDetail({ pathId }));
   }
 }

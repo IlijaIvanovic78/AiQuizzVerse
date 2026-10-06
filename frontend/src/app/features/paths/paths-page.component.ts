@@ -6,8 +6,9 @@ import { PageHeaderComponent } from '../../shared/components/page-header.compone
 import { SpinnerComponent } from '../../shared/components/spinner.component';
 import { PathsActions } from '../../store/paths/paths.actions';
 import { pathsFeature } from '../../store/paths/paths.reducer';
-import { NEW_PATH_QUERY_PARAMS, PATH_STEP_COUNT } from '../create/create.constants';
+import { NEW_PATH_QUERY_PARAMS } from '../create/create.constants';
 import { PathCardComponent } from './components/path-card.component';
+import { PATH_STEP_COUNT } from './paths.constants';
 
 @Component({
   selector: 'app-paths-page',
@@ -39,7 +40,7 @@ export class PathsPageComponent {
     this.loadPaths();
   }
 
-  // A path made on the create page is not added to the list, so the list is fetched on every visit.
+  // Stars and cleared steps change after every match, so the list is fetched on every visit.
   protected loadPaths(): void {
     this.store.dispatch(PathsActions.load());
   }

@@ -3,8 +3,9 @@ import { RouterLink } from '@angular/router';
 import { PathSummary } from '../../../core/models/path.model';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { SpinnerComponent } from '../../../shared/components/spinner.component';
-import { NEW_PATH_QUERY_PARAMS, PATH_STEP_COUNT } from '../../create/create.constants';
+import { NEW_PATH_QUERY_PARAMS } from '../../create/create.constants';
 import { TrailStepState, trailSteps } from '../../paths/path-map';
+import { PATH_STEP_COUNT } from '../../paths/paths.constants';
 import { SectionStatus } from '../home.types';
 
 const STEP_LOOKS: Record<TrailStepState, { label: string; className: string }> = {
