@@ -16,6 +16,7 @@ import { CheckoutDto } from './dto/checkout.dto';
 import { PaymentsService } from './payments.service';
 import { CheckoutSession, CoinPackage, PurchaseConfirmation, PurchaseView } from './payments.types';
 
+// Guards are per route because GET /payments/packages is public.
 @ApiTags('Payments')
 @Controller('payments')
 export class PaymentsController {

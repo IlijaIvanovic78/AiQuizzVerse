@@ -11,11 +11,7 @@ import { errorStack } from '../../common/utils/errors';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../realtime/notifications.service';
 import { COIN_PACKAGES, findCoinPackage, totalCoins } from './coin-packages';
-import {
-  MONTHLY_LIMIT_MESSAGE,
-  PAYMENTS_UNAVAILABLE_MESSAGE,
-  PURCHASE_HISTORY_LIMIT,
-} from './payments.constants';
+import { PURCHASE_HISTORY_LIMIT } from './payments.constants';
 import { exceedsMonthlyLimit, spendingWindowStart } from './payments.rules';
 import { CheckoutSession, CoinPackage, PurchaseConfirmation, PurchaseView } from './payments.types';
 import { CheckoutLink, PAYMENT_PROVIDER, type PaymentProvider } from './providers/payment-provider';
@@ -67,7 +63,8 @@ export class PaymentsService {
 
   async confirm(userId: string, purchaseId: string): Promise<PurchaseConfirmation> {
     const purchase = await this.findOwnPurchase(userId, purchaseId);
-    if (purchase.status === 'PENDING') {
+    // A purchase opened with another provider cannot be checked here, so it is never paid out.
+    if (purchase.status === 'PENDING' && purchase.provider === this.provider.name) {
       const paid = await this.askProvider(() => this.provider.isPaid(purchase));
       if (paid) {
         await this.payOut(purchase);
@@ -102,8 +99,12 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * Asks the provider to cancel instead of asking isPaid first: the demo isPaid is always
+   * true, so every abandoned demo checkout would be paid out.
+   */
   private async cancelOrPayOut(purchase: Purchase): Promise<void> {
-    const cancelled = await this.askProvider(() => this.provider.cancel(purchase));
+    const cancelled = await this.askProvider(() => this.provider.cancelUnlessPaid(purchase));
     if (!cancelled) {
       await this.payOut(purchase);
       return;
@@ -174,10 +175,14 @@ export class PaymentsService {
       },
     });
     if (exceedsMonthlyLimit(_sum.amountCents ?? 0, priceCents)) {
-      throw new BadRequestException(MONTHLY_LIMIT_MESSAGE);
+      throw new BadRequestException('Monthly spending limit reached. Ask a grown-up.');
     }
   }
 
+  /**
+   * A checkout that could not be opened is cancelled, so it does not count against the
+   * monthly limit. askProvider has already turned the error into a 503 for the client.
+   */
   private async openCheckout(purchase: Purchase, pack: CoinPackage): Promise<CheckoutLink> {
     try {
       return await this.askProvider(() => this.provider.createCheckout(purchase, pack));
@@ -195,7 +200,9 @@ export class PaymentsService {
       return await request();
     } catch (error) {
       this.logger.error(`The ${this.provider.name} payment request failed`, errorStack(error));
-      throw new ServiceUnavailableException(PAYMENTS_UNAVAILABLE_MESSAGE);
+      throw new ServiceUnavailableException(
+        'Payments are not available right now. Try again later.',
+      );
     }
   }
 

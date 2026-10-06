@@ -47,24 +47,19 @@ export class StripePaymentProvider implements PaymentProvider {
     return session.payment_status === 'paid';
   }
 
-  async cancel(purchase: Purchase): Promise<boolean> {
-    if (await this.isPaid(purchase)) {
-      return false;
+  async cancelUnlessPaid(purchase: Purchase): Promise<boolean> {
+    if (!purchase.providerRef) {
+      return true;
     }
-    if (purchase.providerRef) {
-      await this.expireSession(purchase.providerRef);
-    }
-    return true;
-  }
-
-  private async expireSession(sessionId: string): Promise<void> {
     try {
-      await this.stripe.checkout.sessions.expire(sessionId);
+      await this.stripe.checkout.sessions.expire(purchase.providerRef);
+      return true;
     } catch (error) {
-      // Stripe refuses to expire a session that is already closed, which is fine here.
       if (!(error instanceof Stripe.errors.StripeInvalidRequestError)) {
         throw error;
       }
+      // Stripe refuses to expire a closed session: it either expired already or was paid.
+      return !(await this.isPaid(purchase));
     }
   }
 }

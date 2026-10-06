@@ -12,6 +12,6 @@ export interface PaymentProvider {
   readonly name: PaymentProviderName;
   createCheckout(purchase: Purchase, pack: CoinPackage): Promise<CheckoutLink>;
   isPaid(purchase: Purchase): Promise<boolean>;
-  /** False when the payment already went through, so the purchase is paid out instead. */
-  cancel(purchase: Purchase): Promise<boolean>;
+  /** True when the checkout was cancelled, false when it was already paid. */
+  cancelUnlessPaid(purchase: Purchase): Promise<boolean>;
 }
