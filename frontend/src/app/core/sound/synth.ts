@@ -14,6 +14,20 @@ export function tone(
   slide(context, [frequency], start, duration, wave, volume);
 }
 
+// The notes one after another, each ringing until the next one starts.
+export function jingle(
+  context: AudioContext,
+  frequencies: number[],
+  start: number,
+  gapSeconds: number,
+  wave: OscillatorType,
+  volume: number,
+): void {
+  frequencies.forEach((frequency, i) =>
+    tone(context, frequency, start + i * gapSeconds, gapSeconds, wave, volume),
+  );
+}
+
 // One tone whose pitch glides through the frequencies, like [400, 900, 400] for a boing.
 export function slide(
   context: AudioContext,

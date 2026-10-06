@@ -5,6 +5,9 @@ export const MUTED_STORAGE_KEY = 'quizverse.muted';
 export const FULL_VOLUME = 0.07;
 export const SOFT_VOLUME = 0.05;
 export const FAINT_VOLUME = 0.03;
+// Square-wave clicks and typing happen all the time, so they stay under every other sound.
+export const WHISPER_VOLUME = 0.02;
+export const TYPING_VOLUME = 0.015;
 // An exponential fade cannot reach 0, so every sound fades to this instead.
 export const SILENT_VOLUME = 0.0001;
 
@@ -47,3 +50,27 @@ export const SCRAMBLE_BLIPS = { notes: [880, 1175, 988, 1319], gapSeconds: 0.05 
 export const FOG_WHOOSH = { frequency: 1200, seconds: 0.4 };
 export const QUAKE_RUMBLE = { frequencies: [70], seconds: 0.5, wobbles: 12 };
 export const MIRROR_BOING = { frequencies: [400, 900, 400], seconds: 0.3 };
+
+// A sound of a button, dialog or toast is skipped when another sound started this many ms ago,
+// so one action is never heard twice.
+export const UI_SOUND_GAP_MS = 100;
+// Fast typing ticks at most this often.
+export const TYPING_SOUND_GAP_MS = 40;
+
+// Buttons, links, tabs and toggles.
+export const SELECT = { notes: [880, 1319], gapSeconds: 0.045 };
+export const DANGER = { frequency: 220, seconds: 0.09 };
+export const MENU = { frequencies: [600, 900], seconds: 0.05 };
+export const BLIP = { frequency: 880, seconds: 0.035 };
+export const TOGGLE = { frequency: 1568, seconds: 0.025 };
+// The pitch of the key ticks steps through these close notes, over and over.
+export const KEY = { notes: [1397, 1480, 1568, 1480], seconds: 0.018 };
+export const KEY_DELETE = { frequency: 1047, seconds: 0.022 };
+
+export const MODAL_OPEN = { frequencies: [300, 750], seconds: 0.07 };
+export const MODAL_CLOSE = { frequencies: [750, 300], seconds: 0.07 };
+export const TOAST_SUCCESS = { notes: [1047, 1568], gapSeconds: 0.09 };
+export const TOAST_ERROR = { frequencies: [260, 150], seconds: 0.15 };
+export const TOAST_INFO = { frequency: 1319, seconds: 0.06 };
+// Like the shield clang, two clashing notes rung together, only higher and shorter.
+export const EQUIP_CLINK = { notes: [1760, 2637], seconds: 0.08 };

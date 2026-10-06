@@ -2,18 +2,26 @@ import { DOCUMENT, Injectable, inject, signal } from '@angular/core';
 import {
   ALMOST_NOTES,
   ANSWER_CLICK,
+  BLIP,
   CHEST_NOTES,
   COIN_NOTES,
   CORRECT_NOTES,
   COUNTDOWN_BEEP,
+  DANGER,
+  EQUIP_CLINK,
   FAINT_VOLUME,
   FOG_WHOOSH,
   FREEZE_SHIMMER,
   FULL_VOLUME,
   GO,
   INK_SPLAT,
+  KEY,
+  KEY_DELETE,
   LEVEL_UP_NOTES,
+  MENU,
   MIRROR_BOING,
+  MODAL_CLOSE,
+  MODAL_OPEN,
   MUTED_STORAGE_KEY,
   NOTE_GAP_SECONDS,
   OTHER_ANSWERED,
@@ -21,15 +29,23 @@ import {
   QUAKE_RUMBLE,
   ROUND_LOST_NOTES,
   SCRAMBLE_BLIPS,
+  SELECT,
   SHIELD_CLANG,
   SOFT_VOLUME,
   STAR,
   TICK,
   TIME_UP,
+  TOAST_ERROR,
+  TOAST_INFO,
+  TOAST_SUCCESS,
+  TOGGLE,
+  TYPING_VOLUME,
+  UI_SOUND_GAP_MS,
   VICTORY,
+  WHISPER_VOLUME,
   WRONG_NOTES,
 } from './sound.constants';
-import { noise, slide, tone, tremolo } from './synth';
+import { jingle, noise, slide, tone, tremolo } from './synth';
 
 type Sound = (context: AudioContext, start: number) => void;
 
@@ -39,6 +55,8 @@ export class SoundService {
   private readonly document = inject(DOCUMENT);
   readonly muted = signal(localStorage.getItem(MUTED_STORAGE_KEY) === 'true');
   private audioContext: AudioContext | null = null;
+  // performance.now() of the last sound that played.
+  private lastSoundAt = 0;
 
   constructor() {
     // Browsers keep audio suspended until the player interacts with the page.
@@ -187,18 +205,115 @@ export class SoundService {
     );
   }
 
-  // The notes one after another, each ringing until the next one starts.
+  // The buttons, links, tabs and toggles all over the app.
+  playSelect(): void {
+    const { notes, gapSeconds } = SELECT;
+    this.playUi((context, start) =>
+      jingle(context, notes, start, gapSeconds, 'square', WHISPER_VOLUME),
+    );
+  }
+
+  playDanger(): void {
+    const { frequency, seconds } = DANGER;
+    this.playUi((context, start) =>
+      tone(context, frequency, start, seconds, 'square', WHISPER_VOLUME),
+    );
+  }
+
+  playMenu(): void {
+    const { frequencies, seconds } = MENU;
+    this.playUi((context, start) =>
+      slide(context, frequencies, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playBlip(): void {
+    const { frequency, seconds } = BLIP;
+    this.playUi((context, start) =>
+      tone(context, frequency, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playToggle(): void {
+    const { frequency, seconds } = TOGGLE;
+    this.playUi((context, start) =>
+      tone(context, frequency, start, seconds, 'square', WHISPER_VOLUME),
+    );
+  }
+
+  // keyIndex counts the keys typed, so the tick steps through a few close notes.
+  playKey(keyIndex: number): void {
+    const frequency = KEY.notes[keyIndex % KEY.notes.length];
+    this.play((context, start) =>
+      tone(context, frequency, start, KEY.seconds, 'square', TYPING_VOLUME),
+    );
+  }
+
+  playKeyDelete(): void {
+    const { frequency, seconds } = KEY_DELETE;
+    this.play((context, start) =>
+      tone(context, frequency, start, seconds, 'square', TYPING_VOLUME),
+    );
+  }
+
+  playModalOpen(): void {
+    const { frequencies, seconds } = MODAL_OPEN;
+    this.playUi((context, start) =>
+      slide(context, frequencies, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playModalClose(): void {
+    const { frequencies, seconds } = MODAL_CLOSE;
+    this.playUi((context, start) =>
+      slide(context, frequencies, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playToastSuccess(): void {
+    const { notes, gapSeconds } = TOAST_SUCCESS;
+    this.playUi((context, start) =>
+      jingle(context, notes, start, gapSeconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playToastError(): void {
+    const { frequencies, seconds } = TOAST_ERROR;
+    this.playUi((context, start) =>
+      slide(context, frequencies, start, seconds, 'triangle', FAINT_VOLUME),
+    );
+  }
+
+  playToastInfo(): void {
+    const { frequency, seconds } = TOAST_INFO;
+    this.playUi((context, start) => tone(context, frequency, start, seconds, 'sine', FAINT_VOLUME));
+  }
+
+  playEquip(): void {
+    const { notes, seconds } = EQUIP_CLINK;
+    this.play((context, start) =>
+      notes.forEach((frequency) =>
+        tone(context, frequency, start, seconds, 'square', WHISPER_VOLUME),
+      ),
+    );
+  }
+
   private playNotes(
     notes: number[],
     wave: OscillatorType,
     volume: number,
     gapSeconds = NOTE_GAP_SECONDS,
   ): void {
-    this.play((context, start) =>
-      notes.forEach((frequency, i) =>
-        tone(context, frequency, start + i * gapSeconds, gapSeconds, wave, volume),
-      ),
-    );
+    this.play((context, start) => jingle(context, notes, start, gapSeconds, wave, volume));
+  }
+
+  // The sounds of buttons, dialogs and toasts never start right after another sound. A click that
+  // opens a dialog, or a purchase that shows a toast, is heard once: whichever sound came first.
+  private playUi(sound: Sound): void {
+    if (performance.now() - this.lastSoundAt < UI_SOUND_GAP_MS) {
+      return;
+    }
+    this.play(sound);
   }
 
   // Every sound goes through here, so the Sound off button and a hidden tab silence them all.
@@ -210,6 +325,7 @@ export class SoundService {
     }
     const context = this.context();
     sound(context, context.currentTime);
+    this.lastSoundAt = performance.now();
   }
 
   private context(): AudioContext {

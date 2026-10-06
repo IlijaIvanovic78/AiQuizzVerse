@@ -14,6 +14,7 @@ import { AppTitleStrategy } from './app-title.strategy';
 import { routes } from './app.routes';
 import { AuthBootstrapService } from './core/auth/auth-bootstrap.service';
 import { authInterceptor } from './core/auth/auth.interceptor';
+import { UiSoundsService } from './core/sound/ui-sounds.service';
 import { AuthEffects } from './store/auth/auth.effects';
 import { authFeature } from './store/auth/auth.reducer';
 import { ChestsEffects } from './store/chests/chests.effects';
@@ -73,5 +74,6 @@ export const appConfig: ApplicationConfig = {
     ]),
     provideStoreDevtools({ maxAge: 25, logOnly: !isDevMode() }),
     provideAppInitializer(() => inject(AuthBootstrapService).restore()),
+    provideAppInitializer(() => inject(UiSoundsService).start()),
   ],
 };
