@@ -136,7 +136,7 @@ describe('chests from a match', () => {
     mode: 'SOLO',
     finished: true,
     accuracy: 60,
-    isWinner: false,
+    outcome: 'DONE',
     levelsGained: 0,
     newStreak: null,
   };
@@ -154,7 +154,7 @@ describe('chests from a match', () => {
   });
 
   it('gives a wooden chest for a party win, two a day at most', () => {
-    const partyWin = { ...soloRun, mode: 'PARTY' as const, isWinner: true, accuracy: 0 };
+    const partyWin = { ...soloRun, mode: 'PARTY' as const, outcome: 'WIN' as const, accuracy: 0 };
     expect(chestsForMatch(partyWin, nothingYet)).toEqual([{ type: 'WOODEN', source: 'VICTORY' }]);
     expect(chestsForMatch(partyWin, { daily: 0, victories: 1 })).toEqual([
       { type: 'WOODEN', source: 'VICTORY' },
@@ -163,7 +163,7 @@ describe('chests from a match', () => {
   });
 
   it('gives no victory chest for a team win', () => {
-    const teamWin = { ...soloRun, mode: 'TEAM' as const, isWinner: true, accuracy: 0 };
+    const teamWin = { ...soloRun, mode: 'TEAM' as const, outcome: 'WIN' as const, accuracy: 0 };
     expect(chestsForMatch(teamWin, nothingYet)).toEqual([]);
   });
 

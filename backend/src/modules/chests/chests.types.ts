@@ -1,4 +1,4 @@
-import { BoostType, ChestSource, ChestType, Item, MatchMode } from '@prisma/client';
+import { BoostType, ChestSource, ChestType, Item, MatchMode, MatchOutcome } from '@prisma/client';
 import { ShopItem } from '../shop/shop.types';
 
 export type ItemPoolName = 'BASIC' | 'CHEST_ONLY';
@@ -84,7 +84,7 @@ export interface MatchChestFacts {
   mode: MatchMode;
   finished: boolean;
   accuracy: number;
-  isWinner: boolean;
+  outcome: MatchOutcome;
   levelsGained: number;
   /** The streak after this match when the match moved it, otherwise null. */
   newStreak: number | null;

@@ -47,7 +47,8 @@ export interface MatchResultPlayer {
   user: PublicUser;
   score: number;
   correctCount: number;
-  isWinner: boolean;
+  // Decided once by the server when the match ends, like the rewards.
+  outcome: MatchOutcome;
   xpEarned: number;
   coinsEarned: number;
 }

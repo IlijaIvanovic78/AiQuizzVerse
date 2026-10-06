@@ -32,7 +32,6 @@ import {
   PlayerAnswerRecord,
   PlayerSummary,
 } from './matches.types';
-import { playerOutcome } from './scoring';
 
 interface SavedMatch {
   rewardedUserIds: string[];
@@ -106,17 +105,13 @@ export class MatchResultsService {
     summary: MatchSummary,
     player: PlayerSummary,
   ): Promise<PlayerReward> {
-    const { mode } = summary.match;
-    const rankedPlayers = summary.players.filter((other) => other.ranked);
-    // A player who left a party gave up, so they can neither win nor share a draw.
-    const outcome = player.ranked ? playerOutcome(mode, player, rankedPlayers) : 'LOSS';
     return this.progression.rewardMatchPlayer(
       player.userId,
       {
-        mode,
+        mode: summary.match.mode,
         difficulty: summary.match.quiz.difficulty,
         correctCount: player.correctCount,
-        outcome,
+        outcome: player.outcome,
         abandoned: summary.status === 'ABANDONED',
       },
       tx,
@@ -146,7 +141,7 @@ export class MatchResultsService {
         mode: match.mode,
         finished: summary.status === 'FINISHED',
         accuracy: accuracyPercent(player.correctCount, summary.questions.length),
-        isWinner: player.isWinner,
+        outcome: player.outcome,
         levelsGained: reward.levelsGained,
         newStreak: reward.newStreak,
       },
@@ -165,7 +160,7 @@ export class MatchResultsService {
       data: {
         score: player.score,
         correctCount: player.correctCount,
-        isWinner: player.isWinner,
+        outcome: player.outcome,
         answers: player.answers,
         xpEarned: reward?.xpEarned ?? 0,
         coinsEarned: reward?.coinsEarned ?? 0,

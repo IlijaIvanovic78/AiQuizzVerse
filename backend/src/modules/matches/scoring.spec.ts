@@ -1,7 +1,9 @@
+import { MatchMode } from '@prisma/client';
+import { EndStatus } from './matches.types';
 import {
   answerPoints,
-  findWinnerIds,
-  partyWinnerIds,
+  FinalStanding,
+  MatchEnd,
   playerOutcome,
   secondTryPoints,
   teamWon,
@@ -53,8 +55,8 @@ describe('a wrong party answer', () => {
 
 describe('team result', () => {
   const players = (first: number, second: number) => [
-    { userId: 'ana', correctCount: first, score: 0 },
-    { userId: 'marko', correctCount: second, score: 0 },
+    { correctCount: first },
+    { correctCount: second },
   ];
 
   it('wins together at 60% team accuracy', () => {
@@ -65,64 +67,64 @@ describe('team result', () => {
   it('loses together below 60%', () => {
     expect(teamWon(players(3, 2), 5)).toBe(false);
   });
-
-  it('makes both players winners when the team wins', () => {
-    expect(findWinnerIds('TEAM', players(5, 5), 5)).toEqual(['ana', 'marko']);
-    expect(findWinnerIds('TEAM', players(1, 1), 5)).toEqual([]);
-  });
-
-  it('never has winners in solo play', () => {
-    expect(findWinnerIds('SOLO', [{ userId: 'ana', correctCount: 5, score: 750 }], 5)).toEqual([]);
-  });
-});
-
-describe('party winner', () => {
-  it('is the player with the highest score', () => {
-    const winners = partyWinnerIds([
-      { userId: 'ana', correctCount: 2, score: 275 },
-      { userId: 'marko', correctCount: 3, score: 260 },
-      { userId: 'iva', correctCount: 0, score: 0 },
-    ]);
-    expect(winners).toEqual(['ana']);
-  });
-
-  it('is nobody when the top score is shared', () => {
-    const players = [
-      { userId: 'ana', correctCount: 2, score: 275 },
-      { userId: 'marko', correctCount: 2, score: 275 },
-      { userId: 'iva', correctCount: 1, score: 140 },
-    ];
-    expect(partyWinnerIds(players)).toEqual([]);
-    expect(findWinnerIds('PARTY', players, 5)).toEqual([]);
-  });
 });
 
 describe('player outcome', () => {
-  const winner = { score: 300, isWinner: true };
-  const loser = { score: 100, isWinner: false };
+  const QUESTION_COUNT = 5;
+  const stayed = (score: number, correctCount = 0): FinalStanding => ({
+    score,
+    correctCount,
+    connected: true,
+  });
+  const left = (score: number): FinalStanding => ({ score, correctCount: 0, connected: false });
+
+  function outcomes(mode: MatchMode, players: FinalStanding[], status: EndStatus = 'FINISHED') {
+    const end: MatchEnd = { mode, status, questionCount: QUESTION_COUNT, players };
+    return players.map((player) => playerOutcome(end, player));
+  }
 
   it('is DONE for solo play', () => {
-    expect(playerOutcome('SOLO', loser, [loser])).toBe('DONE');
+    expect(outcomes('SOLO', [stayed(750, 5)])).toEqual(['DONE']);
   });
 
-  it('tells a win, loss and draw apart in a party of two', () => {
-    const drawn = { score: 200, isWinner: false };
-    expect(playerOutcome('PARTY', winner, [winner, loser])).toBe('WIN');
-    expect(playerOutcome('PARTY', loser, [winner, loser])).toBe('LOSS');
-    expect(playerOutcome('PARTY', drawn, [drawn, drawn])).toBe('DRAW');
+  it('is a WIN for both when the team reaches 60% and DONE when it does not', () => {
+    expect(outcomes('TEAM', [stayed(450, 3), stayed(450, 3)])).toEqual(['WIN', 'WIN']);
+    expect(outcomes('TEAM', [stayed(300, 2), stayed(450, 3)])).toEqual(['DONE', 'DONE']);
   });
 
-  it('is a draw in a party only for the players who share the top score', () => {
-    const top = { score: 300, isWinner: false };
-    const players = [top, top, loser];
-    expect(playerOutcome('PARTY', top, players)).toBe('DRAW');
-    expect(playerOutcome('PARTY', loser, players)).toBe('LOSS');
-    expect(playerOutcome('PARTY', winner, [winner, loser, loser])).toBe('WIN');
+  it('is DONE for an abandoned team, even with enough right answers', () => {
+    expect(outcomes('TEAM', [stayed(750, 5), left(750)], 'ABANDONED')).toEqual(['DONE', 'DONE']);
   });
 
-  it('is a WIN for a team that reached the goal and DONE for one that did not', () => {
-    const teammate = { score: 100, isWinner: false };
-    expect(playerOutcome('TEAM', winner, [winner, winner])).toBe('WIN');
-    expect(playerOutcome('TEAM', teammate, [teammate, teammate])).toBe('DONE');
+  it('makes the highest score the only party winner', () => {
+    expect(outcomes('PARTY', [stayed(275), stayed(260), stayed(0)])).toEqual([
+      'WIN',
+      'LOSS',
+      'LOSS',
+    ]);
+  });
+
+  it('is a party draw only for the players who share the top score', () => {
+    expect(outcomes('PARTY', [stayed(275), stayed(275), stayed(140)])).toEqual([
+      'DRAW',
+      'DRAW',
+      'LOSS',
+    ]);
+  });
+
+  it('is a LOSS for a leader who left, and a draw for the two who stayed and tie', () => {
+    expect(outcomes('PARTY', [left(300), stayed(100), stayed(100)])).toEqual([
+      'LOSS',
+      'DRAW',
+      'DRAW',
+    ]);
+  });
+
+  it('lets the last player still here win the party', () => {
+    expect(outcomes('PARTY', [left(300), stayed(0), left(150)])).toEqual(['LOSS', 'WIN', 'LOSS']);
+  });
+
+  it('is a LOSS for everyone when nobody stayed', () => {
+    expect(outcomes('PARTY', [left(300), left(300)], 'ABANDONED')).toEqual(['LOSS', 'LOSS']);
   });
 });

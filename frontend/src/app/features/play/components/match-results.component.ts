@@ -131,7 +131,7 @@ export class MatchResultsComponent {
   // The match page only knows that the others are gone. If the player lost before they left,
   // the win is not theirs, so the note stays hidden.
   protected readonly leftNote = computed(() =>
-    this.rivalLeft() && this.me()?.isWinner ? RIVALS_LEFT_NOTE : '',
+    this.rivalLeft() && this.me()?.outcome === 'WIN' ? RIVALS_LEFT_NOTE : '',
   );
   // Coins fly into the chest once when the player earned some treasure.
   protected readonly coinsFlying = computed(() => this.teamCorrect() > 0);
@@ -150,7 +150,7 @@ export class MatchResultsComponent {
     if (this.result().mode === 'SOLO') {
       return this.headline().tone === 'victory';
     }
-    return player.isWinner;
+    return player.outcome === 'WIN';
   }
 
   private countTo(target: () => number): Signal<number> {

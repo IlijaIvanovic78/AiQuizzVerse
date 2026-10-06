@@ -68,6 +68,14 @@ enum MatchStatus {
   ABANDONED
 }
 
+/// SOLO and a TEAM that missed its goal are DONE; only a PARTY has losses and draws.
+enum MatchOutcome {
+  WIN
+  LOSS
+  DRAW
+  DONE
+}
+
 enum ItemType {
   AVATAR
   PET
@@ -275,19 +283,20 @@ model Match {
 }
 
 model MatchPlayer {
-  id             String   @id @default(uuid())
-  matchId        String   @map("match_id")
-  userId         String   @map("user_id")
-  score          Int      @default(0)
-  correctCount   Int      @default(0) @map("correct_count")
-  isWinner       Boolean  @default(false) @map("is_winner")
-  xpEarned       Int      @default(0) @map("xp_earned")
-  coinsEarned    Int      @default(0) @map("coins_earned")
-  coinCapReached Boolean  @default(false) @map("coin_cap_reached")
-  leveledUp      Boolean  @default(false) @map("leveled_up")
+  id             String       @id @default(uuid())
+  matchId        String       @map("match_id")
+  userId         String       @map("user_id")
+  score          Int          @default(0)
+  correctCount   Int          @default(0) @map("correct_count")
+  /// Decided once when the match ends (playerOutcome in scoring.ts).
+  outcome        MatchOutcome @default(DONE)
+  xpEarned       Int          @default(0) @map("xp_earned")
+  coinsEarned    Int          @default(0) @map("coins_earned")
+  coinCapReached Boolean      @default(false) @map("coin_cap_reached")
+  leveledUp      Boolean      @default(false) @map("leveled_up")
   /// PlayerAnswerRecord[] (matches.types.ts); optionIndex is in the stored order.
-  answers        Json     @default("[]")
-  joinedAt       DateTime @default(now()) @map("joined_at")
+  answers        Json         @default("[]")
+  joinedAt       DateTime     @default(now()) @map("joined_at")
 
   match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

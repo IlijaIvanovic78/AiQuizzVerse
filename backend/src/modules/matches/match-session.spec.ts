@@ -291,12 +291,12 @@ describe('the end of a match', () => {
   it('makes both team players winners when the team reaches 60%', () => {
     const { savedSummary } = playOneQuestionTeam('correct', 'correct');
     expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.map((player) => player.isWinner)).toEqual([true, true]);
+    expect(savedSummary().players.map((player) => player.outcome)).toEqual(['WIN', 'WIN']);
   });
 
   it('has no winners when the team stays below 60%', () => {
     const { savedSummary } = playOneQuestionTeam('correct', 'wrong');
-    expect(savedSummary().players.every((player) => !player.isWinner)).toBe(true);
+    expect(savedSummary().players.map((player) => player.outcome)).toEqual(['DONE', 'DONE']);
   });
 
   it('abandons a team match when the partner does not come back', () => {
@@ -786,9 +786,7 @@ describe('the end of a party', () => {
     PARTY.forEach((userId) => session.pressNext(userId, 0));
 
     expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.filter((player) => player.isWinner)).toMatchObject([
-      { userId: 'marko' },
-    ]);
+    expect(savedSummary().players.map((player) => player.outcome)).toEqual(['LOSS', 'WIN', 'LOSS']);
   });
 
   it('is a draw when nobody scored more than the others', () => {
@@ -797,7 +795,7 @@ describe('the end of a party', () => {
     jest.advanceTimersByTime(TIME_LIMIT_MS);
     PARTY.forEach((userId) => session.pressNext(userId, 0));
 
-    expect(savedSummary().players.every((player) => !player.isWinner)).toBe(true);
+    expect(savedSummary().players.every((player) => player.outcome === 'DRAW')).toBe(true);
   });
 
   it('goes on while two players are still here', () => {
@@ -824,9 +822,7 @@ describe('the end of a party', () => {
 
     jest.advanceTimersByTime(1);
     expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.filter((player) => player.isWinner)).toMatchObject([
-      { userId: 'ana' },
-    ]);
+    expect(savedSummary().players.map((player) => player.outcome)).toEqual(['WIN', 'LOSS', 'LOSS']);
   });
 
   it('keeps going when a player comes back in time', () => {
@@ -865,9 +861,27 @@ describe('the end of a party', () => {
 
     expect(savedSummary().status).toBe('FINISHED');
     expect(savedSummary().players).toMatchObject([
-      { userId: 'ana', score: 150, isWinner: false, ranked: false, rewarded: true },
-      { userId: 'marko', score: 125, isWinner: true, ranked: true },
-      { userId: 'iva', score: 0, isWinner: false, ranked: true },
+      { userId: 'ana', score: 150, outcome: 'LOSS', rewarded: true },
+      { userId: 'marko', score: 125, outcome: 'WIN' },
+      { userId: 'iva', score: 0, outcome: 'LOSS' },
+    ]);
+  });
+
+  it('is a draw for the two who stayed and tie when the leader quits', async () => {
+    const { session, savedSummary, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    session.submitAnswer('ana', 0, correctOption());
+    PARTY.forEach((userId) => session.pressNext(userId, 0));
+
+    await session.quit('ana');
+    jest.advanceTimersByTime(TIME_LIMIT_MS);
+    session.pressNext('marko', 1);
+    session.pressNext('iva', 1);
+
+    expect(savedSummary().players).toMatchObject([
+      { userId: 'ana', score: 150, outcome: 'LOSS' },
+      { userId: 'marko', score: 0, outcome: 'DRAW' },
+      { userId: 'iva', score: 0, outcome: 'DRAW' },
     ]);
   });
 
@@ -877,8 +891,6 @@ describe('the end of a party', () => {
 
     await session.quit('marko');
     expect(savedSummary().status).toBe('FINISHED');
-    expect(savedSummary().players.filter((player) => player.isWinner)).toMatchObject([
-      { userId: 'ana' },
-    ]);
+    expect(savedSummary().players.map((player) => player.outcome)).toEqual(['WIN', 'LOSS']);
   });
 });

@@ -59,7 +59,13 @@ import {
   toStoredIndex,
 } from './option-order';
 import { chargesAfterRoundWin, SabotageAttempt, sabotageError } from './party-rules';
-import { answerPoints, findWinnerIds, secondTryPoints, wrongPartyAnswerPoints } from './scoring';
+import {
+  answerPoints,
+  MatchEnd,
+  playerOutcome,
+  secondTryPoints,
+  wrongPartyAnswerPoints,
+} from './scoring';
 import { newPlayer, resetRoundState, SessionPlayer } from './session-player';
 
 export interface MatchSessionDeps {
@@ -416,7 +422,7 @@ export class MatchSession {
       this.playRound(index + 1);
       return;
     }
-    void this.runSafely(() => this.finish('FINISHED', this.winnerIdsByScore()));
+    void this.runSafely(() => this.finish('FINISHED'));
   }
 
   private assertCanUseBoost(player: SessionPlayer, type: MatchBoostType): void {
@@ -579,7 +585,7 @@ export class MatchSession {
       await this.endPartyIfTooSmall();
       return;
     }
-    await this.finish('ABANDONED', []);
+    await this.finish('ABANDONED');
   }
 
   // A party goes on without the players who left while at least two are still here.
@@ -601,11 +607,7 @@ export class MatchSession {
     if (connectedIds.length >= MIN_PARTY_PLAYERS) {
       return;
     }
-    if (connectedIds.length === 1) {
-      await this.finish('FINISHED', connectedIds);
-      return;
-    }
-    await this.finish('ABANDONED', []);
+    await this.finish(connectedIds.length === 1 ? 'FINISHED' : 'ABANDONED');
   }
 
   private sendCurrentState(userId: string): void {
@@ -624,14 +626,14 @@ export class MatchSession {
     }
   }
 
-  private async finish(status: EndStatus, winnerIds: string[]): Promise<void> {
+  private async finish(status: EndStatus): Promise<void> {
     if (this.phase === 'finished') {
       return;
     }
     this.phase = 'finished';
     this.stop();
     try {
-      const finishedPlayers = await this.deps.results.save(this.summarize(status, winnerIds));
+      const finishedPlayers = await this.deps.results.save(this.summarize(status));
       finishedPlayers.forEach((player) => this.announceResult(player));
     } catch (error) {
       this.logger.error(`Could not save match ${this.match.id}`, errorStack(error));
@@ -644,28 +646,24 @@ export class MatchSession {
     }
   }
 
-  private winnerIdsByScore(): string[] {
-    const rankedPlayers = [...this.players.values()].filter((player) => this.isRanked(player));
-    return findWinnerIds(this.match.mode, rankedPlayers, this.questions.length);
-  }
-
-  // Leaving a party counts as giving up: the player keeps the points for their answers,
-  // but only the players still here can win or draw.
-  private isRanked(player: SessionPlayer): boolean {
-    return this.match.mode !== 'PARTY' || player.connected;
-  }
-
-  private summarize(status: EndStatus, winnerIds: string[]): MatchSummary {
+  /** Every player's outcome is decided here, once, and saved with the match. */
+  private summarize(status: EndStatus): MatchSummary {
+    const players = [...this.players.values()];
+    const end: MatchEnd = {
+      mode: this.match.mode,
+      status,
+      questionCount: this.questions.length,
+      players,
+    };
     return {
       match: this.match,
       status,
       questions: this.questions,
-      players: [...this.players.values()].map((player) => ({
+      players: players.map((player) => ({
         userId: player.userId,
         score: player.score,
         correctCount: player.correctCount,
-        isWinner: winnerIds.includes(player.userId),
-        ranked: this.isRanked(player),
+        outcome: playerOutcome(end, player),
         answers: player.answers,
         rewarded: status === 'FINISHED' || player.connected,
       })),

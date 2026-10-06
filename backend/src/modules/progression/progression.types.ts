@@ -1,6 +1,4 @@
-import { Difficulty, MatchMode } from '@prisma/client';
-
-export type MatchOutcome = 'WIN' | 'LOSS' | 'DRAW' | 'DONE';
+import { Difficulty, MatchMode, MatchOutcome } from '@prisma/client';
 
 export interface Reward {
   xp: number;

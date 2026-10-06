@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ProfileRelation, ProfileView } from '../../core/models/profile.model';
-import { failedState, statTilesFor } from './profile.rules';
+import { failedState, outcomeLook, statTilesFor } from './profile.rules';
 
 function profile(relation: ProfileRelation): ProfileView {
   return {
@@ -55,5 +55,22 @@ describe('failedState', () => {
     const serverError = new HttpErrorResponse({ status: 500, error: { message: 'Try later' } });
 
     expect(failedState(serverError)).toEqual({ status: 'failed', message: 'Try later' });
+  });
+});
+
+describe('outcomeLook', () => {
+  it('shows the stored party outcome', () => {
+    expect(outcomeLook('PARTY', 'WIN').label).toBe('Victory');
+    expect(outcomeLook('PARTY', 'DRAW').label).toBe('Draw');
+    expect(outcomeLook('PARTY', 'LOSS').label).toBe('Good fight');
+  });
+
+  it('uses team words for a team match', () => {
+    expect(outcomeLook('TEAM', 'WIN').label).toBe('Team victory');
+    expect(outcomeLook('TEAM', 'DONE').label).toBe('So close');
+  });
+
+  it('calls a solo match finished', () => {
+    expect(outcomeLook('SOLO', 'DONE').label).toBe('Finished');
   });
 });

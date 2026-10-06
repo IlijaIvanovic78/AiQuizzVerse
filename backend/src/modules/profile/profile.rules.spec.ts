@@ -1,9 +1,9 @@
 import { masteryByTheme, matchStats } from './profile.rules';
 import { PlayedMatch } from './profile.types';
 
-const space: PlayedMatch = { theme: 'SPACE', questionCount: 6, correctCount: 6, isWinner: false };
-const nature: PlayedMatch = { theme: 'NATURE', questionCount: 6, correctCount: 3, isWinner: true };
-const moon: PlayedMatch = { theme: 'SPACE', questionCount: 4, correctCount: 1, isWinner: false };
+const space: PlayedMatch = { theme: 'SPACE', questionCount: 6, correctCount: 6, outcome: 'DONE' };
+const nature: PlayedMatch = { theme: 'NATURE', questionCount: 6, correctCount: 3, outcome: 'WIN' };
+const moon: PlayedMatch = { theme: 'SPACE', questionCount: 4, correctCount: 1, outcome: 'LOSS' };
 
 describe('profile stats', () => {
   it('starts empty for a new player', () => {
@@ -23,6 +23,10 @@ describe('profile stats', () => {
       questionsAnswered: 16,
       accuracy: 62,
     });
+  });
+
+  it('counts only won matches as wins, not draws', () => {
+    expect(matchStats([nature, { ...moon, outcome: 'DRAW' }]).wins).toBe(1);
   });
 
   it('shows mastery per theme with the most played theme first', () => {

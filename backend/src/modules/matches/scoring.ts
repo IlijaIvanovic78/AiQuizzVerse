@@ -1,6 +1,5 @@
-import { MatchMode } from '@prisma/client';
+import { MatchMode, MatchOutcome } from '@prisma/client';
 import { accuracyPercent } from '../progression/progression.rules';
-import { MatchOutcome } from '../progression/progression.types';
 import {
   BASE_POINTS,
   PARTY_WRONG_PENALTY,
@@ -8,16 +7,21 @@ import {
   SPEED_BONUS_MAX,
   TEAM_WIN_ACCURACY,
 } from './matches.constants';
+import { EndStatus } from './matches.types';
 
-interface PlayerScore {
-  userId: string;
+/** Where a player stands when the match ends. */
+export interface FinalStanding {
   score: number;
   correctCount: number;
+  /** Still in the match at the end. In a party only these players can win or draw. */
+  connected: boolean;
 }
 
-interface OutcomePlayer {
-  score: number;
-  isWinner: boolean;
+export interface MatchEnd {
+  mode: MatchMode;
+  status: EndStatus;
+  questionCount: number;
+  players: FinalStanding[];
 }
 
 export function answerPoints(correct: boolean, remainingMs: number, timeLimitMs: number): number {
@@ -39,51 +43,33 @@ export function wrongPartyAnswerPoints(score: number): number {
   return score > 0 ? -Math.min(score, PARTY_WRONG_PENALTY) : 0;
 }
 
-export function teamWon(players: PlayerScore[], questionCount: number): boolean {
+export function teamWon(players: { correctCount: number }[], questionCount: number): boolean {
   const teamCorrect = players.reduce((sum, player) => sum + player.correctCount, 0);
   return accuracyPercent(teamCorrect, players.length * questionCount) >= TEAM_WIN_ACCURACY;
 }
 
-/** The highest score wins. A shared top score is a draw with no winner. */
-export function partyWinnerIds(players: PlayerScore[]): string[] {
-  const topScore = highestScore(players);
-  const leaders = players.filter((player) => player.score === topScore);
-  return leaders.length === 1 ? [leaders[0].userId] : [];
+/**
+ * Decided once when the match ends; rewards, chests, results and history all use the stored
+ * value. Solo play is DONE, and a team wins together when it finished with its goal reached.
+ */
+export function playerOutcome(end: MatchEnd, player: FinalStanding): MatchOutcome {
+  if (end.mode === 'PARTY') {
+    return partyOutcome(player, end.players);
+  }
+  const teamWins =
+    end.mode === 'TEAM' && end.status === 'FINISHED' && teamWon(end.players, end.questionCount);
+  return teamWins ? 'WIN' : 'DONE';
 }
 
-export function findWinnerIds(
-  mode: MatchMode,
-  players: PlayerScore[],
-  questionCount: number,
-): string[] {
-  if (mode === 'PARTY') {
-    return partyWinnerIds(players);
+// Leaving a party counts as giving up, even with the most points. Of the players who stayed,
+// the top score wins alone, and a shared top score is a draw.
+function partyOutcome(player: FinalStanding, players: FinalStanding[]): MatchOutcome {
+  const stayed = players.filter((other) => other.connected);
+  if (!player.connected || player.score < highestScore(stayed)) {
+    return 'LOSS';
   }
-  if (mode === 'TEAM' && teamWon(players, questionCount)) {
-    return players.map((player) => player.userId);
-  }
-  return [];
-}
-
-/** Solo play and a team that missed the goal are simply DONE; only a party has losers. */
-export function playerOutcome(
-  mode: MatchMode,
-  player: OutcomePlayer,
-  players: OutcomePlayer[],
-): MatchOutcome {
-  if (player.isWinner) {
-    return 'WIN';
-  }
-  if (mode !== 'PARTY') {
-    return 'DONE';
-  }
-  return isPartyDraw(player, players) ? 'DRAW' : 'LOSS';
-}
-
-/** A party without a winner is a draw for the players who share the top score. */
-function isPartyDraw(player: OutcomePlayer, players: OutcomePlayer[]): boolean {
-  const someoneWon = players.some((candidate) => candidate.isWinner);
-  return !someoneWon && player.score === highestScore(players);
+  const sharesTopScore = stayed.filter((other) => other.score === player.score).length > 1;
+  return sharesTopScore ? 'DRAW' : 'WIN';
 }
 
 function highestScore(players: { score: number }[]): number {

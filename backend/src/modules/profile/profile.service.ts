@@ -81,7 +81,7 @@ export class ProfileService {
       where: { userId, match: { status: 'FINISHED' } },
       select: {
         correctCount: true,
-        isWinner: true,
+        outcome: true,
         match: {
           select: { quiz: { select: { theme: true, _count: { select: { questions: true } } } } },
         },
@@ -91,7 +91,7 @@ export class ProfileService {
       theme: player.match.quiz.theme,
       questionCount: player.match.quiz._count.questions,
       correctCount: player.correctCount,
-      isWinner: player.isWinner,
+      outcome: player.outcome,
     }));
   }
 

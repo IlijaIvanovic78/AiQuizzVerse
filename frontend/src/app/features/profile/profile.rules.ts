@@ -1,8 +1,10 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { readErrorMessage } from '../../core/api/api-error';
+import { MatchMode, MatchOutcome } from '../../core/models/match.model';
 import { ProfileView } from '../../core/models/profile.model';
 import { PixelIconName } from '../../shared/components/pixel-icon.component';
-import { ProfileState } from './profile.types';
+import { OUTCOME_LOOKS, SO_CLOSE_LOOK, TEAM_VICTORY_LOOK } from './profile.constants';
+import { OutcomeLook, ProfileState } from './profile.types';
 
 interface StatTile {
   label: string;
@@ -33,4 +35,13 @@ export function statTilesFor({ stats, user, relation }: ProfileView): StatTile[]
     tiles.push({ label: 'Mistakes to review', value: stats.mistakesToReview, icon: 'cross' });
   }
   return tiles;
+}
+
+// The stored outcome of a match in my history. A team match is won or lost together, so it gets
+// team words.
+export function outcomeLook(mode: MatchMode, outcome: MatchOutcome): OutcomeLook {
+  if (mode === 'TEAM') {
+    return outcome === 'WIN' ? TEAM_VICTORY_LOOK : SO_CLOSE_LOOK;
+  }
+  return OUTCOME_LOOKS[outcome];
 }

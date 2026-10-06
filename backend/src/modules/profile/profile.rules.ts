@@ -10,7 +10,7 @@ export function matchStats(matches: PlayedMatch[]): MatchStats {
   const totals = addUpAnswers(matches);
   return {
     matchesPlayed: matches.length,
-    wins: matches.filter((match) => match.isWinner).length,
+    wins: matches.filter((match) => match.outcome === 'WIN').length,
     questionsAnswered: totals.answered,
     accuracy: accuracyPercent(totals.correct, totals.answered),
   };

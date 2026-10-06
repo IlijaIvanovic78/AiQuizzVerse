@@ -1,13 +1,20 @@
 import 'dotenv/config';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { BoostType, Difficulty, MatchMode, PrismaClient, Question } from '@prisma/client';
+import {
+  BoostType,
+  Difficulty,
+  MatchMode,
+  MatchOutcome,
+  PrismaClient,
+  Question,
+} from '@prisma/client';
 import { hash } from 'bcrypt';
 import { addUtcDays, startOfUtcDay, utcToday } from '../src/common/utils/dates';
 import { BCRYPT_ROUNDS } from '../src/modules/auth/auth.constants';
 import { EarnedChest } from '../src/modules/chests/chests.types';
 import { MS_PER_SECOND } from '../src/modules/matches/matches.constants';
 import { PlayerAnswerRecord, SabotageType } from '../src/modules/matches/matches.types';
-import { answerPoints, findWinnerIds, playerOutcome } from '../src/modules/matches/scoring';
+import { answerPoints, MatchEnd, playerOutcome } from '../src/modules/matches/scoring';
 import { matchReward } from '../src/modules/progression/progression.rules';
 import { toQuizCopy } from '../src/modules/quizzes/quiz.mapper';
 import { STARTER_QUIZ_IDS } from '../src/modules/quizzes/quizzes.constants';
@@ -38,7 +45,7 @@ interface ScoredRun {
 }
 
 interface SeedPlayerRow extends ScoredRun {
-  isWinner: boolean;
+  outcome: MatchOutcome;
   xpEarned: number;
   coinsEarned: number;
 }
@@ -239,17 +246,19 @@ function toPlayerRows(
   runs: ScoredRun[],
   questionCount: number,
 ): SeedPlayerRow[] {
-  const winnerIds = findWinnerIds(mode, runs, questionCount);
-  const players = runs.map((run) => ({ ...run, isWinner: winnerIds.includes(run.userId) }));
-  return players.map((player) => {
+  // Every demo player stays until the end of the match.
+  const standings = runs.map((run) => ({ ...run, connected: true }));
+  const end: MatchEnd = { mode, status: 'FINISHED', questionCount, players: standings };
+  return runs.map((run, index) => {
+    const outcome = playerOutcome(end, standings[index]);
     const reward = matchReward({
       mode,
       difficulty,
-      correctCount: player.correctCount,
-      outcome: playerOutcome(mode, player, players),
+      correctCount: run.correctCount,
+      outcome,
       abandoned: false,
     });
-    return { ...player, xpEarned: reward.xp, coinsEarned: reward.coins };
+    return { ...run, outcome, xpEarned: reward.xp, coinsEarned: reward.coins };
   });
 }
 

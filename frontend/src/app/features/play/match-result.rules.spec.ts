@@ -1,13 +1,13 @@
-import { MatchResult, MatchResultPlayer } from '../../core/models/match.model';
+import { MatchOutcome, MatchResult, MatchResultPlayer } from '../../core/models/match.model';
 import { PathResult } from '../../core/models/path.model';
 import { mainActionFor, missedQuestions, rankPlayers, resultHeadline } from './match-result.rules';
 
-function player(id: string, correctCount: number, isWinner: boolean): MatchResultPlayer {
+function player(id: string, correctCount: number, outcome: MatchOutcome): MatchResultPlayer {
   return {
     user: { id, username: id, avatarKey: null, petKey: null, level: 1 },
     score: correctCount * 100,
     correctCount,
-    isWinner,
+    outcome,
     xpEarned: 0,
     coinsEarned: 0,
   };
@@ -22,7 +22,7 @@ function result(changes: Partial<MatchResult>): MatchResult {
     theme: 'SPACE',
     kind: 'STANDARD',
     questionCount: 5,
-    players: [player('hero', 5, false)],
+    players: [player('hero', 5, 'DONE')],
     questions: [],
     path: null,
     leveledUp: false,
@@ -97,7 +97,7 @@ describe('mainActionFor', () => {
 
 describe('resultHeadline', () => {
   it('never calls a low solo score a defeat', () => {
-    const headline = resultHeadline(result({ players: [player('hero', 2, false)] }), 'hero');
+    const headline = resultHeadline(result({ players: [player('hero', 2, 'DONE')] }), 'hero');
 
     expect(headline.title).toBe('Almost! Try again for a star');
     expect(headline.tone).toBe('almost');
@@ -113,15 +113,31 @@ describe('resultHeadline', () => {
 describe('rankPlayers', () => {
   it('puts the highest score first and lets a tie share a place', () => {
     const ranked = rankPlayers([
-      player('owl', 2, false),
-      player('hero', 4, false),
-      player('fox', 4, false),
+      player('owl', 2, 'LOSS'),
+      player('hero', 4, 'DRAW'),
+      player('fox', 4, 'DRAW'),
     ]);
 
     expect(ranked.map((entry) => [entry.player.user.id, entry.rank])).toEqual([
       ['hero', 1],
       ['fox', 1],
       ['owl', 3],
+    ]);
+  });
+
+  it('puts a leader who left the party below the players who stayed and drew', () => {
+    const ranked = rankPlayers([
+      player('quitter', 5, 'LOSS'),
+      player('hero', 3, 'DRAW'),
+      player('fox', 3, 'DRAW'),
+      player('owl', 1, 'LOSS'),
+    ]);
+
+    expect(ranked.map((entry) => [entry.player.user.id, entry.rank])).toEqual([
+      ['hero', 1],
+      ['fox', 1],
+      ['quitter', 3],
+      ['owl', 4],
     ]);
   });
 });
@@ -131,7 +147,7 @@ describe('party headline', () => {
 
   it('crowns the party winner', () => {
     const headline = resultHeadline(
-      party([player('hero', 4, true), player('fox', 2, false)]),
+      party([player('hero', 4, 'WIN'), player('fox', 2, 'LOSS')]),
       'hero',
     );
 
@@ -139,7 +155,7 @@ describe('party headline', () => {
   });
 
   it('tells the others their place without calling it a defeat', () => {
-    const players = [player('fox', 4, true), player('owl', 3, false), player('hero', 1, false)];
+    const players = [player('fox', 4, 'WIN'), player('owl', 3, 'LOSS'), player('hero', 1, 'LOSS')];
 
     const headline = resultHeadline(party(players), 'hero');
 
@@ -149,7 +165,7 @@ describe('party headline', () => {
 
   it('cheers for the loser of a two-player party too', () => {
     const headline = resultHeadline(
-      party([player('fox', 4, true), player('hero', 2, false)]),
+      party([player('fox', 4, 'WIN'), player('hero', 2, 'LOSS')]),
       'hero',
     );
 
@@ -159,10 +175,33 @@ describe('party headline', () => {
 
   it('calls a shared first place a draw', () => {
     const headline = resultHeadline(
-      party([player('hero', 3, false), player('fox', 3, false)]),
+      party([player('hero', 3, 'DRAW'), player('fox', 3, 'DRAW')]),
       'hero',
     );
 
     expect(headline.title).toBe('Draw!');
+  });
+
+  it('keeps the stored draw when the leader left the party early', () => {
+    const headline = resultHeadline(
+      party([player('quitter', 5, 'LOSS'), player('hero', 3, 'DRAW'), player('fox', 3, 'DRAW')]),
+      'hero',
+    );
+
+    expect(headline.title).toBe('Draw!');
+    expect(headline.subtitle).toBe('You share first place. What a close party!');
+  });
+});
+
+describe('team headline', () => {
+  const team = (outcome: MatchOutcome) =>
+    result({ mode: 'TEAM', players: [player('hero', 4, outcome), player('fox', 3, outcome)] });
+
+  it('celebrates a team win', () => {
+    expect(resultHeadline(team('WIN'), 'hero').title).toBe('Team victory!');
+  });
+
+  it('calls a missed team goal so close', () => {
+    expect(resultHeadline(team('DONE'), 'hero').title).toBe('So close!');
   });
 });

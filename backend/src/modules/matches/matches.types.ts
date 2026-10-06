@@ -2,6 +2,7 @@ import {
   BoostType,
   Difficulty,
   MatchMode,
+  MatchOutcome,
   MatchStatus,
   Question,
   QuizKind,
@@ -11,7 +12,6 @@ import {
 import { Namespace, Socket } from 'socket.io';
 import { ChestView } from '../chests/chests.types';
 import { PathResult } from '../learning-paths/learning-paths.types';
-import { MatchOutcome } from '../progression/progression.types';
 import { PublicUser } from '../users/users.types';
 import { AnswerDto } from './dto/answer.dto';
 import { MatchIdDto } from './dto/match-id.dto';
@@ -88,7 +88,7 @@ export interface ResultPlayer {
   user: PublicUser;
   score: number;
   correctCount: number;
-  isWinner: boolean;
+  outcome: MatchOutcome;
   xpEarned: number;
   coinsEarned: number;
 }
@@ -315,9 +315,7 @@ export interface PlayerSummary {
   userId: string;
   score: number;
   correctCount: number;
-  isWinner: boolean;
-  /** Can win or draw. In a party only the players still here at the end are ranked. */
-  ranked: boolean;
+  outcome: MatchOutcome;
   answers: PlayerAnswerRecord[];
   /** Finished match: everyone gets rewards and review cards. Abandoned: only those still here. */
   rewarded: boolean;

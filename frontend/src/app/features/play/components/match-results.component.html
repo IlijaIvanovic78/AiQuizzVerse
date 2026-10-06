@@ -111,7 +111,7 @@
             @if (result().mode === 'PARTY') {
               <app-rank-badge [rank]="entry.rank" />
             }
-            @if (player.isWinner) {
+            @if (player.outcome === 'WIN') {
               <app-pixel-icon name="trophy" label="Winner" />
             }
             <span class="min-w-0 flex-1 truncate font-semibold">

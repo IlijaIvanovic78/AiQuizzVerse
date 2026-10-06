@@ -18,7 +18,6 @@ import {
 } from './matches.types';
 import { OptionOrder, toShownIndex } from './option-order';
 import { startingCharges } from './party-rules';
-import { playerOutcome } from './scoring';
 
 const PLAYERS_WITH_USERS = {
   orderBy: { joinedAt: 'asc' },
@@ -108,7 +107,7 @@ export function toHistoryEntry(row: HistoryRow): MatchHistoryEntry {
     myScore: row.score,
     correctCount: row.correctCount,
     questionCount: match.quiz._count.questions,
-    result: playerOutcome(match.mode, row, match.players),
+    result: row.outcome,
     opponent: opponent ? toPublicUser(opponent.user) : null,
   };
 }
@@ -212,7 +211,7 @@ function toResultPlayer(player: ResultMatchPlayer): ResultPlayer {
     user: toPublicUser(player.user),
     score: player.score,
     correctCount: player.correctCount,
-    isWinner: player.isWinner,
+    outcome: player.outcome,
     xpEarned: player.xpEarned,
     coinsEarned: player.coinsEarned,
   };

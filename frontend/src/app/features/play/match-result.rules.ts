@@ -58,13 +58,32 @@ export function findPlayer(result: MatchResult, userId: string): MatchResultPlay
   return result.players.find((player) => player.user.id === userId) ?? null;
 }
 
-// Highest score first; players with the same score share a place, like 1, 1, 3.
+// Highest score first; players with the same score share a place, like 1, 1, 3. A player who
+// left a party early lost even with the most points, so whoever won or drew comes first.
 export function rankPlayers(players: MatchResultPlayer[]): RankedPlayer[] {
-  const byScore = [...players].sort((a, b) => b.score - a.score);
-  return byScore.map((player) => ({
-    rank: 1 + byScore.filter((other) => other.score > player.score).length,
+  const ordered = [...players].sort(byStanding);
+  return ordered.map((player) => ({
+    rank: 1 + ordered.filter((other) => isAhead(other, player)).length,
     player,
   }));
+}
+
+function byStanding(a: MatchResultPlayer, b: MatchResultPlayer): number {
+  if (isAhead(a, b)) {
+    return -1;
+  }
+  return isAhead(b, a) ? 1 : 0;
+}
+
+function isAhead(player: MatchResultPlayer, other: MatchResultPlayer): boolean {
+  if (wonOrDrew(player) !== wonOrDrew(other)) {
+    return wonOrDrew(player);
+  }
+  return player.score > other.score;
+}
+
+function wonOrDrew(player: MatchResultPlayer): boolean {
+  return player.outcome === 'WIN' || player.outcome === 'DRAW';
 }
 
 // The big button under the results. A cleared path step leads on to the next step, or back to
@@ -100,13 +119,15 @@ function soloHeadline(result: MatchResult, meId: string): ResultHeadline {
   return { title, subtitle: score, tone: 'victory' };
 }
 
+// The server stored how the party ended for me, so a draw stays a draw even when the leader
+// left early with more points.
 function partyHeadline(result: MatchResult, meId: string): ResultHeadline {
   const ranked = rankPlayers(result.players);
   const mine = ranked.find((entry) => entry.player.user.id === meId);
-  if (mine?.player.isWinner) {
+  if (mine?.player.outcome === 'WIN') {
     return { title: 'Victory!', subtitle: 'You knew the most answers first!', tone: 'victory' };
   }
-  if (mine?.rank === 1) {
+  if (mine?.player.outcome === 'DRAW') {
     return { title: 'Draw!', subtitle: 'You share first place. What a close party!', tone: 'draw' };
   }
   const place = placeName(mine?.rank ?? ranked.length);
@@ -125,7 +146,7 @@ function teamHeadline(result: MatchResult, meId: string): ResultHeadline {
   const teamCorrect = correctAnswers(result);
   const teamTotal = chestSize(result.players.length, result.questionCount);
   const score = `Your team got ${teamCorrect} of ${teamTotal} right.`;
-  if (findPlayer(result, meId)?.isWinner) {
+  if (findPlayer(result, meId)?.outcome === 'WIN') {
     return { title: 'Team victory!', subtitle: score, tone: 'victory' };
   }
   return {

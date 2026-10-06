@@ -1,4 +1,4 @@
-import { QuizTheme } from '@prisma/client';
+import { MatchOutcome, QuizTheme } from '@prisma/client';
 import { FriendRelation } from '../friends/friends.types';
 import { PublicUser } from '../users/users.types';
 
@@ -41,7 +41,7 @@ export interface PlayedMatch {
   theme: QuizTheme;
   questionCount: number;
   correctCount: number;
-  isWinner: boolean;
+  outcome: MatchOutcome;
 }
 
 export type MatchStats = Pick<

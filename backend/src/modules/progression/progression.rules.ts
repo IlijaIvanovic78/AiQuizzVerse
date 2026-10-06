@@ -1,4 +1,4 @@
-import { Difficulty, MatchMode } from '@prisma/client';
+import { Difficulty, MatchMode, MatchOutcome } from '@prisma/client';
 import { daysBetween } from '../../common/utils/dates';
 import {
   COINS_PER_CORRECT,
@@ -18,13 +18,7 @@ import {
   XP_CURVE_FACTOR,
   XP_PER_CORRECT,
 } from './progression.constants';
-import {
-  LevelProgress,
-  MatchOutcome,
-  MatchRewardInput,
-  Reward,
-  StreakState,
-} from './progression.types';
+import { LevelProgress, MatchRewardInput, Reward, StreakState } from './progression.types';
 
 export function xpForLevel(level: number): number {
   return XP_CURVE_FACTOR * (level - 1) ** 2;

@@ -51,7 +51,7 @@ function earnsDailyChest(match: MatchChestFacts, today: ChestsEarnedToday): bool
 function earnsVictoryChest(match: MatchChestFacts, today: ChestsEarnedToday): boolean {
   return (
     match.finished &&
-    match.isWinner &&
+    match.outcome === 'WIN' &&
     match.mode === 'PARTY' &&
     today.victories < MAX_VICTORY_CHESTS_PER_DAY
   );
