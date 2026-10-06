@@ -1,17 +1,12 @@
-/* Tablets get the links on their own row; narrower padding keeps all eight on that one row. */
+/* Tablets get the links on a row of their own, and from xl they share the row with the logo, the
+   coins, the chests and the menu. The narrow padding keeps all eight on one row in both cases,
+   even next to a page scrollbar and a big coin count. */
 .nav-link {
   display: block;
-  padding: 0.375rem 0.5rem;
+  padding: 0.375rem 0.4rem;
   border-bottom: 3px solid transparent;
   color: var(--fog-200);
   font-weight: 600;
-}
-
-/* From xl on the links share the row with the logo, the coins, the chests and the menu. */
-@media (min-width: 1280px) {
-  .nav-link {
-    padding: 0.375rem 0.6rem;
-  }
 }
 
 .nav-link:hover {
