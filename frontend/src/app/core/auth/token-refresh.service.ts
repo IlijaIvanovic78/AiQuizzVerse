@@ -1,7 +1,9 @@
+import { HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { Observable, catchError, finalize, map, of, shareReplay, throwError } from 'rxjs';
 import { AuthActions } from '../../store/auth/auth.actions';
+import { readErrorStatus } from '../api/api-error';
 import { AuthApiService } from '../api/auth-api.service';
 import { AuthResponse } from '../models/auth.model';
 import { TokenStorageService } from './token-storage.service';
@@ -44,11 +46,16 @@ export class TokenRefreshService {
   }
 
   // Another tab may have refreshed first; its new tokens are already in storage.
+  // Only a refresh token the server refused ends the session. A dropped connection or a server
+  // error keeps the tokens, so the next request can try again.
   private recoverFromFailedRefresh(usedRefreshToken: string, error: unknown): Observable<string> {
     const storedRefreshToken = this.tokens.refreshToken();
     const storedAccessToken = this.tokens.accessToken();
     if (storedAccessToken && storedRefreshToken && storedRefreshToken !== usedRefreshToken) {
       return of(storedAccessToken);
+    }
+    if (readErrorStatus(error) !== HttpStatusCode.Unauthorized) {
+      return throwError(() => error);
     }
     return this.endSession(error);
   }
