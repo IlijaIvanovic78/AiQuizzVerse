@@ -25,6 +25,7 @@ const OUTCOME_LOOKS: Record<MatchOutcome, { label: string; badge: string }> = {
 export class MatchHistoryListComponent {
   readonly entries = input.required<MatchHistoryEntry[]>();
   readonly loaded = input.required<boolean>();
+  readonly failed = input(false);
 
   protected readonly rows = computed(() =>
     this.entries()

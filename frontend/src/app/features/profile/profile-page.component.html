@@ -61,7 +61,11 @@
     @if (isMe()) {
       <div class="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-2">
         <app-mastery-list [mastery]="profile.mastery" />
-        <app-match-history-list [entries]="history()" [loaded]="historyLoaded()" />
+        <app-match-history-list
+          [entries]="history()"
+          [loaded]="historyLoaded()"
+          [failed]="historyError() !== null"
+        />
       </div>
 
       @if (me(); as me) {

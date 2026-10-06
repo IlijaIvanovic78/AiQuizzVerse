@@ -81,9 +81,13 @@ export class ProfileSettingsComponent {
   }
 
   protected submitName(): void {
-    const username = this.nameControl.value.trim();
-    if (this.nameControl.invalid || username === this.user().username) {
+    if (this.nameControl.invalid) {
       this.nameControl.markAsTouched();
+      return;
+    }
+    const username = this.nameControl.value.trim();
+    // Nothing changed, so there is nothing to save.
+    if (username === this.user().username) {
       return;
     }
     this.rename.emit(username);

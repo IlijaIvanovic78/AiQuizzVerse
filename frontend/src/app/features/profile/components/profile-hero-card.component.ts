@@ -1,16 +1,14 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { ProfileView } from '../../../core/models/profile.model';
+import { CurrentUser } from '../../../core/models/user.model';
 import { ArenaStageComponent } from '../../../shared/components/arena-stage.component';
 import { LevelBadgeComponent } from '../../../shared/components/level-badge.component';
 import { LevelProgressComponent } from '../../../shared/components/level-progress.component';
 import { PixelIconComponent } from '../../../shared/components/pixel-icon.component';
 import { StreakFlameComponent } from '../../../shared/components/streak-flame.component';
 
-interface LevelProgress {
-  current: number;
-  total: number;
-}
+type LevelProgress = Pick<CurrentUser, 'xpIntoLevel' | 'xpForNextLevel'>;
 
 @Component({
   selector: 'app-profile-hero-card',

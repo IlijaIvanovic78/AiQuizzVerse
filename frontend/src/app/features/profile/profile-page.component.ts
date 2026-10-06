@@ -88,6 +88,7 @@ export class ProfilePageComponent {
   protected readonly friendsBusy = this.store.selectSignal(friendsFeature.selectBusy);
   protected readonly history = this.store.selectSignal(matchHistoryFeature.selectEntries);
   protected readonly historyLoaded = this.store.selectSignal(matchHistoryFeature.selectLoaded);
+  protected readonly historyError = this.store.selectSignal(matchHistoryFeature.selectError);
   protected readonly purchases = this.store.selectSignal(shopFeature.selectPurchases);
   protected readonly purchasesLoading = this.store.selectSignal(shopFeature.selectLoading);
 
@@ -117,13 +118,8 @@ export class ProfilePageComponent {
     const relation = this.profile()?.relation;
     return relation && relation !== 'SELF' ? relation : null;
   });
-  protected readonly levelProgress = computed(() => {
-    const me = this.me();
-    if (!this.isMe() || !me) {
-      return null;
-    }
-    return { current: me.xpIntoLevel, total: me.xpForNextLevel };
-  });
+  // Only the signed-in player knows their own XP towards the next level.
+  protected readonly levelProgress = computed(() => (this.isMe() ? this.me() : null));
   protected readonly statTiles = computed(() => {
     const profile = this.profile();
     return profile ? statTilesFor(profile) : [];

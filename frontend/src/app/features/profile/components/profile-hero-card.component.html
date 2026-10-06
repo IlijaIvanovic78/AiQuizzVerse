@@ -29,8 +29,8 @@
       @if (levelProgress(); as progress) {
         <app-level-progress
           [level]="user().level"
-          [xpIntoLevel]="progress.current"
-          [xpForNextLevel]="progress.total"
+          [xpIntoLevel]="progress.xpIntoLevel"
+          [xpForNextLevel]="progress.xpForNextLevel"
         />
       } @else {
         <p class="text-lg font-semibold text-mana-400">{{ user().xp | number }} XP collected</p>
