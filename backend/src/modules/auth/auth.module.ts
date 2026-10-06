@@ -27,6 +27,8 @@ import { TwoFactorService } from './two-factor.service';
       errorMessage: TOO_MANY_TRIES_MESSAGE,
     }),
     JwtModule.registerAsync({
+      // Global so WsAuthService (RealtimeModule, used by both socket gateways) can verify
+      // access tokens without importing AuthModule.
       global: true,
       inject: [ConfigService],
       useFactory: (config: ConfigService): JwtModuleOptions => ({

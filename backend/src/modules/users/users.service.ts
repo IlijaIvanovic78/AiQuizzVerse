@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
-import { SABOTAGE_ITEMS_SELECT } from '../shop/sabotage-items';
-import { STREAK_FREEZES_SELECT, toCurrentUser } from './user.mapper';
+import { CURRENT_USER_INCLUDE, toCurrentUser } from './user.mapper';
 import { ACCOUNT_NOT_FOUND_MESSAGE, STARTER_BOOSTS } from './users.constants';
 import { CurrentUser, NewUser } from './users.types';
 
@@ -36,7 +35,7 @@ export class UsersService {
   async findCurrentUser(id: string): Promise<CurrentUser> {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { boosts: STREAK_FREEZES_SELECT, items: SABOTAGE_ITEMS_SELECT },
+      include: CURRENT_USER_INCLUDE,
     });
     if (!user) {
       throw new NotFoundException(ACCOUNT_NOT_FOUND_MESSAGE);
@@ -44,8 +43,8 @@ export class UsersService {
     return toCurrentUser(user);
   }
 
-  create(data: NewUser): Promise<User> {
-    return this.prisma.user.create({
+  create(data: NewUser, db: Prisma.TransactionClient = this.prisma): Promise<User> {
+    return db.user.create({
       data: { ...data, boosts: { create: STARTER_BOOSTS } },
     });
   }

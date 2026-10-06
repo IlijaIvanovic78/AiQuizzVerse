@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { compare, hash } from 'bcrypt';
 import { createHash, randomUUID, timingSafeEqual } from 'crypto';
+import { PrismaService } from '../../prisma/prisma.service';
 import { QuizzesService } from '../quizzes/quizzes.service';
 import { USERNAME_PATTERN, USERNAME_TAKEN_MESSAGE } from '../users/users.constants';
 import { UsersService } from '../users/users.service';
@@ -28,6 +29,7 @@ import { TwoFactorService } from './two-factor.service';
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly users: UsersService,
     private readonly quizzes: QuizzesService,
     private readonly twoFactor: TwoFactorService,
@@ -38,12 +40,16 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<AuthResponse> {
     await this.assertCanRegister(dto.email, dto.username);
     const passwordHash = await hash(dto.password, BCRYPT_ROUNDS);
-    const user = await this.users.create({
-      email: dto.email,
-      username: dto.username,
-      passwordHash,
+    // The account and its starter quizzes are saved together, so a failed copy does not leave
+    // a half-made account whose email is already taken.
+    const user = await this.prisma.$transaction(async (tx) => {
+      const created = await this.users.create(
+        { email: dto.email, username: dto.username, passwordHash },
+        tx,
+      );
+      await this.quizzes.copyStarterQuizzes(created.id, tx);
+      return created;
     });
-    await this.quizzes.copyStarterQuizzes(user.id);
     return this.createSession(user.id);
   }
 
@@ -105,6 +111,7 @@ export class AuthService {
   private async createSession(userId: string): Promise<AuthResponse> {
     const accessToken = await this.signAccessToken(userId);
     const refreshToken = await this.signRefreshToken(userId);
+    // One refresh token per user: logging in on another device ends the previous session.
     await this.users.setRefreshTokenHash(userId, sha256(refreshToken));
     const user = await this.users.findCurrentUser(userId);
     return { user, accessToken, refreshToken };

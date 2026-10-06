@@ -34,14 +34,17 @@ import { GeneratedQuizToSave, QuestionView, QuizDetail, QuizSummary } from './qu
 export class QuizzesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async copyStarterQuizzes(userId: string): Promise<void> {
-    const starters = await this.prisma.quiz.findMany({
+  async copyStarterQuizzes(
+    userId: string,
+    db: Prisma.TransactionClient = this.prisma,
+  ): Promise<void> {
+    const starters = await db.quiz.findMany({
       where: { id: { in: STARTER_QUIZ_IDS }, deletedAt: null },
       include: { questions: { orderBy: { position: 'asc' } } },
     });
-    await this.prisma.$transaction(
-      starters.map((quiz) => this.prisma.quiz.create({ data: toQuizCopy(quiz, userId) })),
-    );
+    for (const quiz of starters) {
+      await db.quiz.create({ data: toQuizCopy(quiz, userId) });
+    }
   }
 
   async findMine(userId: string): Promise<QuizSummary[]> {
@@ -93,6 +96,7 @@ export class QuizzesService {
 
   async addQuestion(userId: string, quizId: string, dto: QuestionInputDto): Promise<QuestionView> {
     await this.findEditableQuiz(userId, quizId);
+    await this.assertNotBeingPlayed(quizId);
     const stats = await this.prisma.question.aggregate({
       where: { quizId },
       _count: true,
@@ -115,6 +119,7 @@ export class QuizzesService {
     dto: QuestionInputDto,
   ): Promise<QuestionView> {
     await this.findEditableQuiz(userId, quizId);
+    await this.assertNotBeingPlayed(quizId);
     await this.assertQuestionInQuiz(quizId, questionId);
     const question = await this.prisma.question.update({
       where: { id: questionId },
@@ -175,8 +180,8 @@ export class QuizzesService {
     return quiz;
   }
 
-  // A running match still saves answers to this quiz's questions, so neither the quiz nor
-  // one of its questions can be removed until the match ends.
+  // A running match saves answers to this quiz's questions and builds its results from them,
+  // so questions cannot be added, changed or removed, nor the quiz deleted, until it ends.
   private async assertNotBeingPlayed(quizId: string): Promise<void> {
     const runningMatches = await this.prisma.match.count({
       where: { quizId, status: 'IN_PROGRESS' },

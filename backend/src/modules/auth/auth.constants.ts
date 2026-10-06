@@ -6,6 +6,10 @@ export const PASSWORD_MAX_LENGTH = 64;
 
 export const TWO_FACTOR_TOKEN_EXPIRATION = '5m';
 export const TOTP_ISSUER = 'AI QuizVerse';
+/**
+ * Also accept the code from the 30 s step before and after,
+ * so a phone clock that is slightly off still works.
+ */
 export const TOTP_WINDOW = 1;
 export const TOTP_CODE_PATTERN = /^\d{6}$/;
 
