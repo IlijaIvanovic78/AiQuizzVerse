@@ -98,6 +98,21 @@
                 <a class="menu-item" routerLink="/profile" (click)="closeMenu()">Profile</a>
               </li>
               <li>
+                <button
+                  type="button"
+                  role="switch"
+                  class="menu-item gap-2"
+                  [attr.aria-checked]="!muted()"
+                  (click)="toggleSound.emit()"
+                >
+                  <app-pixel-icon [name]="muted() ? 'sound-off' : 'sound-on'" />
+                  Sound effects
+                  <span class="ml-auto text-sm text-muted" aria-hidden="true">
+                    {{ muted() ? 'Off' : 'On' }}
+                  </span>
+                </button>
+              </li>
+              <li>
                 <button type="button" class="menu-item" (click)="requestLogout()">Log out</button>
               </li>
             </ul>

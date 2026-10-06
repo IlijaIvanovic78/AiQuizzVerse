@@ -17,6 +17,8 @@ export type PixelIconName =
   | 'mirror'
   | 'shield-bubble'
   | 'second-chance'
+  | 'sound-on'
+  | 'sound-off'
   | 'chest-wooden'
   | 'chest-silver'
   | 'chest-golden';

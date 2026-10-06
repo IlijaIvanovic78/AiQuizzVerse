@@ -38,7 +38,9 @@ import { MAIN_LINKS, PHONE_MENU_LINKS } from './layout.constants';
 export class TopBarComponent {
   readonly user = input.required<CurrentUser>();
   readonly chestsToOpen = input(0);
+  readonly muted = input(false);
   readonly logout = output<void>();
+  readonly toggleSound = output<void>();
 
   protected readonly links = MAIN_LINKS;
   protected readonly phoneLinks = PHONE_MENU_LINKS;
