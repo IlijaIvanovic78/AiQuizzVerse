@@ -65,7 +65,9 @@
 @if (friendToRemove(); as friend) {
   <app-confirm-dialog
     title="Remove friend?"
-    [message]="removeMessage()"
+    [message]="
+      friend.user.username + ' will leave your friends list. You can send a new request later.'
+    "
     confirmLabel="Remove"
     cancelLabel="Keep friend"
     (confirmed)="confirmRemove(friend)"

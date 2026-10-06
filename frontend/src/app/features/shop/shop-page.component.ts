@@ -83,12 +83,17 @@ export class ShopPageComponent {
   private readonly soldSabotages = this.store.selectSignal(shopFeature.selectSabotageItems);
   protected readonly sabotages = computed(() => [FREE_INK, ...this.soldSabotages()]);
   protected readonly showsItems = computed(() => ITEM_TABS.includes(this.activeTab()));
-  protected readonly shelfItems = computed(() => {
-    const tab = this.activeTab();
-    if (tab === 'pets') {
-      return this.pets();
+  protected readonly shelfItems = computed((): ShopItem[] => {
+    switch (this.activeTab()) {
+      case 'heroes':
+        return this.heroes();
+      case 'pets':
+        return this.pets();
+      case 'sabotages':
+        return this.sabotages();
+      default:
+        return [];
     }
-    return tab === 'sabotages' ? this.sabotages() : this.heroes();
   });
   protected readonly boosts = this.store.selectSignal(shopFeature.selectBoosts);
   protected readonly packages = this.store.selectSignal(shopFeature.selectPackages);

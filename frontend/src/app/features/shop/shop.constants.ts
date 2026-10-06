@@ -31,7 +31,7 @@ export const FREE_INK: ShopItem = {
   description: "Splash ink over a rival's question for 4 seconds.",
   price: 0,
   minLevel: 1,
-  isStarter: true,
+  isStarter: false,
   isChestOnly: false,
   owned: true,
   equipped: false,

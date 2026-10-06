@@ -53,11 +53,6 @@ export class FriendsPageComponent {
   protected readonly matchBusy = this.store.selectSignal(matchFeature.selectBusy);
 
   protected readonly friendToRemove = signal<Friend | null>(null);
-  protected readonly removeMessage = computed(
-    () =>
-      `${this.friendToRemove()?.user.username} will leave your friends list. ` +
-      'You can send a new request later.',
-  );
   protected readonly invitedFriend = signal<PublicUser | null>(null);
 
   constructor() {

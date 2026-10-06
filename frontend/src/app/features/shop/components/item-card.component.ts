@@ -8,6 +8,7 @@ import { PixelIconComponent } from '../../../shared/components/pixel-icon.compon
 import { SabotageIconComponent } from '../../../shared/components/sabotage-icon.component';
 import { sabotageOfItem } from '../../../shared/sabotages';
 import { itemState } from '../item-state';
+import { FREE_INK } from '../shop.constants';
 
 @Component({
   selector: 'app-item-card',
@@ -37,8 +38,6 @@ export class ItemCardComponent {
   protected readonly isHero = computed(() => this.item().type === 'AVATAR');
   protected readonly sabotageType = computed(() => sabotageOfItem(this.item()));
   // Ink is the one sabotage every player starts with.
-  protected readonly isFreeSabotage = computed(
-    () => this.sabotageType() !== null && this.item().isStarter,
-  );
+  protected readonly isFreeSabotage = computed(() => this.item().id === FREE_INK.id);
   protected readonly coinsMissing = computed(() => this.item().price - this.coins());
 }
