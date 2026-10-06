@@ -3,7 +3,6 @@ import { WsException } from '@nestjs/websockets';
 import { Question } from '@prisma/client';
 import {
   BehaviorSubject,
-  distinct,
   filter,
   Observable,
   Subject,
@@ -45,7 +44,7 @@ import {
   MatchSummary,
   PlayedRound,
   QuestionPayload,
-  SabotageBlockedPayload,
+  SabotagePayload,
   SabotageType,
   ScoredAnswer,
   SessionMatch,
@@ -59,13 +58,8 @@ import {
   showOptions,
   toStoredIndex,
 } from './option-order';
-import {
-  chargesAfterRoundWin,
-  SabotageAttempt,
-  sabotageError,
-  scoreAfterWrongAnswer,
-} from './party-rules';
-import { answerPoints, findWinnerIds, secondTryPoints } from './scoring';
+import { chargesAfterRoundWin, SabotageAttempt, sabotageError } from './party-rules';
+import { answerPoints, findWinnerIds, secondTryPoints, wrongPartyAnswerPoints } from './scoring';
 import { newPlayer, resetRoundState, SessionPlayer } from './session-player';
 
 export interface MatchSessionDeps {
@@ -89,16 +83,7 @@ interface NextPress {
   questionIndex: number;
 }
 
-interface MatchEnding {
-  status: EndStatus;
-  /** Set when leaving players decided the winners; null lets the scores decide. */
-  winnerIds: string[] | null;
-}
-
 type Phase = 'countdown' | 'question' | 'reveal' | 'finished';
-
-const NORMAL_END: MatchEnding = { status: 'FINISHED', winnerIds: null };
-const ABANDONED_END: MatchEnding = { status: 'ABANDONED', winnerIds: [] };
 
 export class MatchSession {
   private readonly logger = new Logger(MatchSession.name);
@@ -197,7 +182,6 @@ export class MatchSession {
     });
   }
 
-  /** A shield takes no target: it always protects the player who raises it. */
   sabotage(userId: string, type: SabotageType, targetUserId?: string): void {
     const player = this.requirePlayer(userId);
     const target = type === 'SHIELD' ? player : this.findPlayer(targetUserId);
@@ -258,6 +242,7 @@ export class MatchSession {
     if (player.connected) {
       this.markGone(player);
     }
+    // A solo or team match ends right below, so only a party has to stop waiting for this player.
     if (this.match.mode === 'PARTY') {
       this.stopWaitingFor(userId);
     }
@@ -333,13 +318,8 @@ export class MatchSession {
     if (!answer || answer.optionIndex === null) {
       return null;
     }
-    const order = this.optionOrderFor(answer.userId, answer.questionIndex);
+    const order = this.optionOrders.forPlayer(answer.userId, answer.questionIndex);
     return toStoredIndex(order, answer.optionIndex);
-  }
-
-  /** The shared shuffled order, or the player's own one after a SCRAMBLE. */
-  private optionOrderFor(userId: string, questionIndex: number): OptionOrder {
-    return this.optionOrders.forPlayer(userId, questionIndex);
   }
 
   private endRound(index: number, answers: PlayerAnswer[]): void {
@@ -387,7 +367,7 @@ export class MatchSession {
   ): number {
     const answered = answer !== undefined && answer.optionIndex !== null;
     if (this.match.mode === 'PARTY' && answered && !correct) {
-      return scoreAfterWrongAnswer(player.score) - player.score;
+      return wrongPartyAnswerPoints(player.score);
     }
     if (player.secondChance === 'spent') {
       return secondTryPoints(correct);
@@ -401,7 +381,7 @@ export class MatchSession {
       return;
     }
     const { index } = this.lastRound;
-    const order = this.optionOrderFor(userId, index);
+    const order = this.optionOrders.forPlayer(userId, index);
     const result = toRoundResult(this.match.id, this.questions[index], order, this.lastRound);
     this.emitToUser(userId, 'match:round-result', result);
   }
@@ -414,10 +394,11 @@ export class MatchSession {
     this.emitToRoom('match:waiting-next', this.waitingNextPayload());
   }
 
+  // The filter also drops a second press from the same player, because markReady() takes
+  // that player out of waitingForNext.
   private collectNextPresses(index: number): Observable<NextPress[]> {
     return this.nextPresses$.pipe(
       filter((press) => press.questionIndex === index && this.waitingForNext.has(press.userId)),
-      distinct((press) => press.userId),
       tap((press) => this.markReady(press.userId)),
       take(this.waitingForNext.size),
       takeUntil(timer(REVEAL_MAX_MS[this.match.mode])),
@@ -435,12 +416,15 @@ export class MatchSession {
       this.playRound(index + 1);
       return;
     }
-    void this.runSafely(() => this.finish(NORMAL_END));
+    void this.runSafely(() => this.finish('FINISHED', this.winnerIdsByScore()));
   }
 
   private assertCanUseBoost(player: SessionPlayer, type: MatchBoostType): void {
     if (this.match.mode === 'PARTY') {
       throw new WsException('Power-ups are off in party matches. Fair fight!');
+    }
+    if (this.phase === 'countdown') {
+      throw new WsException('Wait for the question to start.');
     }
     if (!this.canAnswer(player.userId)) {
       throw new WsException('Power-ups work only before you answer.');
@@ -465,19 +449,20 @@ export class MatchSession {
 
   private applyBoost(player: SessionPlayer, type: MatchBoostType): BoostEffect {
     const question = this.questions[this.index];
-    if (type === 'HINT') {
-      return { hint: question.hint };
+    switch (type) {
+      case 'HINT':
+        return { hint: question.hint };
+      case 'FIFTY_FIFTY': {
+        const order = this.optionOrders.forPlayer(player.userId, this.index);
+        const correct = question.correctIndex;
+        return { eliminatedOptions: pickWrongOptions(order, correct, FIFTY_FIFTY_REMOVED_OPTIONS) };
+      }
+      case 'SECOND_CHANCE':
+        player.secondChance = 'armed';
+        return {};
+      case 'EXTRA_TIME':
+        return { remainingMs: this.extendDeadline() };
     }
-    if (type === 'FIFTY_FIFTY') {
-      const order = this.optionOrderFor(player.userId, this.index);
-      const correct = question.correctIndex;
-      return { eliminatedOptions: pickWrongOptions(order, correct, FIFTY_FIFTY_REMOVED_OPTIONS) };
-    }
-    if (type === 'SECOND_CHANCE') {
-      player.secondChance = 'armed';
-      return {};
-    }
-    return { remainingMs: this.extendDeadline() };
   }
 
   private extendDeadline(): number {
@@ -533,7 +518,7 @@ export class MatchSession {
     from: SessionPlayer,
     target: SessionPlayer,
     type: SabotageType,
-  ): SabotageBlockedPayload {
+  ): SabotagePayload {
     return {
       matchId: this.match.id,
       index: this.index,
@@ -594,7 +579,7 @@ export class MatchSession {
       await this.endPartyIfTooSmall();
       return;
     }
-    await this.finish(ABANDONED_END);
+    await this.finish('ABANDONED', []);
   }
 
   // A party goes on without the players who left while at least two are still here.
@@ -616,19 +601,37 @@ export class MatchSession {
     if (connectedIds.length >= MIN_PARTY_PLAYERS) {
       return;
     }
-    const ending: MatchEnding =
-      connectedIds.length === 1 ? { status: 'FINISHED', winnerIds: connectedIds } : ABANDONED_END;
-    await this.finish(ending);
+    if (connectedIds.length === 1) {
+      await this.finish('FINISHED', connectedIds);
+      return;
+    }
+    await this.finish('ABANDONED', []);
   }
 
-  private async finish(ending: MatchEnding): Promise<void> {
+  private sendCurrentState(userId: string): void {
+    if (this.phase === 'question') {
+      const order = this.optionOrders.forPlayer(userId, this.index);
+      this.emitToUser(userId, 'match:question', this.questionPayload(this.index, order));
+      // Leaving gave up this question, so the page waits for the next one instead of
+      // taking an answer that would not count.
+      if (!this.canAnswer(userId)) {
+        this.emitToUser(userId, 'match:answered', { matchId: this.match.id, userId });
+      }
+    }
+    if (this.phase === 'reveal') {
+      this.sendRoundResult(userId);
+      this.emitToUser(userId, 'match:waiting-next', this.waitingNextPayload());
+    }
+  }
+
+  private async finish(status: EndStatus, winnerIds: string[]): Promise<void> {
     if (this.phase === 'finished') {
       return;
     }
     this.phase = 'finished';
     this.stop();
     try {
-      const finishedPlayers = await this.deps.results.save(this.summarize(ending));
+      const finishedPlayers = await this.deps.results.save(this.summarize(status, winnerIds));
       finishedPlayers.forEach((player) => this.announceResult(player));
     } catch (error) {
       this.logger.error(`Could not save match ${this.match.id}`, errorStack(error));
@@ -641,21 +644,30 @@ export class MatchSession {
     }
   }
 
-  private summarize(ending: MatchEnding): MatchSummary {
-    const players = [...this.players.values()];
-    const winnerIds =
-      ending.winnerIds ?? findWinnerIds(this.match.mode, players, this.questions.length);
+  private winnerIdsByScore(): string[] {
+    const rankedPlayers = [...this.players.values()].filter((player) => this.isRanked(player));
+    return findWinnerIds(this.match.mode, rankedPlayers, this.questions.length);
+  }
+
+  // Leaving a party counts as giving up: the player keeps the points for their answers,
+  // but only the players still here can win or draw.
+  private isRanked(player: SessionPlayer): boolean {
+    return this.match.mode !== 'PARTY' || player.connected;
+  }
+
+  private summarize(status: EndStatus, winnerIds: string[]): MatchSummary {
     return {
       match: this.match,
-      status: ending.status,
+      status,
       questions: this.questions,
-      players: players.map((player) => ({
+      players: [...this.players.values()].map((player) => ({
         userId: player.userId,
         score: player.score,
         correctCount: player.correctCount,
         isWinner: winnerIds.includes(player.userId),
+        ranked: this.isRanked(player),
         answers: player.answers,
-        rewarded: ending.status === 'FINISHED' || player.connected,
+        rewarded: status === 'FINISHED' || player.connected,
       })),
     };
   }
@@ -666,22 +678,6 @@ export class MatchSession {
     result.chestsEarned.forEach((chest) => {
       this.deps.notifications.emitToUser(userId, 'chest:earned', { chest });
     });
-  }
-
-  private sendCurrentState(userId: string): void {
-    if (this.phase === 'question') {
-      const order = this.optionOrderFor(userId, this.index);
-      this.emitToUser(userId, 'match:question', this.questionPayload(this.index, order));
-      // Leaving gave up this question, so the page waits for the next one instead of
-      // taking an answer that would not count.
-      if (!this.canAnswer(userId)) {
-        this.emitToUser(userId, 'match:answered', { matchId: this.match.id, userId });
-      }
-    }
-    if (this.phase === 'reveal') {
-      this.sendRoundResult(userId);
-      this.emitToUser(userId, 'match:waiting-next', this.waitingNextPayload());
-    }
   }
 
   private connectedPlayerIds(): string[] {
@@ -750,6 +746,8 @@ export class MatchSession {
     }
   }
 
+  // In both emit helpers the payload type follows the event name, so a wrong payload does not
+  // compile.
   private emitToRoom<E extends keyof GameServerToClientEvents>(
     event: E,
     ...payload: Parameters<GameServerToClientEvents[E]>

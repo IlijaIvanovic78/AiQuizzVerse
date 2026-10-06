@@ -3,7 +3,9 @@ import { LearningPath, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { specificStepTitle } from '../ai/ai.rules';
 import { GeneratedPathStep } from '../ai/ai.schemas';
+import { PathStepRequest } from '../ai/ai.types';
 import { QuizWriterService } from '../ai/quiz-writer.service';
+import { WeakQuizException } from '../ai/weak-quiz.exception';
 import { DocumentsService } from '../documents/documents.service';
 import { GenerationLimitsService } from '../quizzes/generation-limits.service';
 import { TOPIC_OR_DOCUMENT_MESSAGE } from '../quizzes/quizzes.constants';
@@ -15,7 +17,7 @@ import {
   PATH_PLAN,
   STEP_TIME_PER_QUESTION,
 } from './learning-paths.constants';
-import { buildStepRequests, earlierStepGoals } from './learning-paths.rules';
+import { buildStepRequests } from './learning-paths.rules';
 import { LearningPathsService } from './learning-paths.service';
 import { PathDetail, PlannedStep } from './learning-paths.types';
 
@@ -55,9 +57,9 @@ export class PathGenerationService {
     return this.paths.findDetail(userId, pathId);
   }
 
-  // All steps are written in parallel. If one fails, Promise.all rejects at once and nothing
-  // is saved. The other OpenAI calls still run to the end in the background, even though
-  // the user's generation lock is already released.
+  // All steps are written in parallel and Promise.all returns them in plan order. If a step
+  // fails (a weak one only after its retry), Promise.all rejects at once and nothing is saved.
+  // The other OpenAI calls still run to the end in the background, but their steps are dropped.
   private writeSteps(
     userId: string,
     dto: CreatePathDto,
@@ -74,13 +76,27 @@ export class PathGenerationService {
 
     return Promise.all(
       requests.map(async (request) => {
-        const goals = earlierStepGoals(request.position);
-        const step = await this.quizWriter.writePathStep(request, context, goals);
+        const step = await this.writeStepWithRetry(request, context);
         done += 1;
         this.reportProgress(userId, done);
-        return { ...step, title: specificStepTitle(step.title, request.goal, subject) };
+        return { ...step, title: specificStepTitle(step.title, request.label, subject) };
       }),
     );
+  }
+
+  /** Too few good questions is often bad luck, so a weak step is written once more. */
+  private async writeStepWithRetry(
+    request: PathStepRequest,
+    context: string | null,
+  ): Promise<GeneratedPathStep> {
+    try {
+      return await this.quizWriter.writePathStep(request, context);
+    } catch (error) {
+      if (!(error instanceof WeakQuizException)) {
+        throw error;
+      }
+      return this.quizWriter.writePathStep(request, context);
+    }
   }
 
   private savePath(

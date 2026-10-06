@@ -1,4 +1,4 @@
-import { buildStepRequests, earlierStepGoals, isStepUnlocked } from './learning-paths.rules';
+import { buildStepRequests, isStepUnlocked } from './learning-paths.rules';
 
 describe('learning path rules', () => {
   const path = { topic: 'Volcanoes', audience: 'KIDS', language: 'EN' } as const;
@@ -23,12 +23,6 @@ describe('learning path rules', () => {
     for (const request of requests) {
       expect(request).toMatchObject({ topic: null, audience: 'TEENS', language: 'SR' });
     }
-  });
-
-  it('tells each step only the goals of the steps before it', () => {
-    expect(earlierStepGoals(1)).toEqual([]);
-    expect(earlierStepGoals(3)).toEqual(['First steps', 'Key facts']);
-    expect(earlierStepGoals(5)).toHaveLength(4);
   });
 
   it('unlocks the first step and every step after a cleared one', () => {

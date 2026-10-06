@@ -10,12 +10,12 @@ import { errorStack } from '../../common/utils/errors';
 import { PrismaService } from '../../prisma/prisma.service';
 import { acceptedFriendshipsOf, otherUserId } from '../friends/friend.mapper';
 import { PresenceService } from './presence.service';
-import { DEFAULT_FRONTEND_URL, userRoom } from './realtime.constants';
+import { userRoom } from './realtime.constants';
 import type { RealtimeServer, RealtimeSocket } from './realtime.types';
 import { WsAuthService } from './ws-auth.service';
 
 @WebSocketGateway({
-  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL },
+  cors: { origin: process.env.FRONTEND_URL },
 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

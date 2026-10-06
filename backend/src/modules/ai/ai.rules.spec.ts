@@ -1,11 +1,11 @@
 import { GeneratedQuestion } from './ai.schemas';
 import {
   cleanKeyPoints,
+  cleanQuestions,
   hasEnoughQuestions,
   hintRevealsAnswer,
   specificStepTitle,
   spreadCorrectAnswers,
-  usableQuestions,
 } from './ai.rules';
 
 function makeQuestion(changes: Partial<GeneratedQuestion> = {}): GeneratedQuestion {
@@ -23,7 +23,7 @@ function correctAnswer(question: GeneratedQuestion): string {
   return question.options[question.correctIndex];
 }
 
-describe('usableQuestions', () => {
+describe('cleanQuestions', () => {
   it('trims the text of every field', () => {
     const question = makeQuestion({
       text: '  Which planet is closest to the Sun?  ',
@@ -31,7 +31,7 @@ describe('usableQuestions', () => {
       hint: ' It is the smallest planet. ',
     });
 
-    const [result] = usableQuestions([question], 1);
+    const [result] = cleanQuestions([question], 1);
 
     expect(result.text).toBe('Which planet is closest to the Sun?');
     expect(result.hint).toBe('It is the smallest planet.');
@@ -48,13 +48,13 @@ describe('usableQuestions', () => {
     ];
     const good = [makeQuestion(), makeQuestion(), makeQuestion()];
 
-    expect(usableQuestions([...broken, ...good], 5)).toHaveLength(3);
+    expect(cleanQuestions([...broken, ...good], 5)).toHaveLength(3);
   });
 
   it('cuts extra questions down to the requested count', () => {
     const questions = Array.from({ length: 7 }, () => makeQuestion());
 
-    expect(usableQuestions(questions, 5)).toHaveLength(5);
+    expect(cleanQuestions(questions, 5)).toHaveLength(5);
   });
 });
 
@@ -122,7 +122,7 @@ describe('specificStepTitle', () => {
     );
   });
 
-  it('adds the topic to a title that only repeats the step goal', () => {
+  it('adds the topic to a title that only repeats the step label', () => {
     expect(specificStepTitle('First steps', 'First steps', 'Dinosaurs')).toBe(
       'First steps: Dinosaurs',
     );
@@ -131,7 +131,7 @@ describe('specificStepTitle', () => {
     );
   });
 
-  it('uses the goal and the topic when the title is empty', () => {
+  it('uses the label and the topic when the title is empty', () => {
     expect(specificStepTitle('  ', 'Key facts', 'Volcanoes')).toBe('Key facts: Volcanoes');
   });
 });

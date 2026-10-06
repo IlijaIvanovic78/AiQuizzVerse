@@ -10,11 +10,14 @@ export const MAX_PLAYERS_BY_MODE: Record<MatchMode, number> = {
   PARTY: 4,
 };
 
+/** A party needs this many connected players to start, and keeps going while they stay. */
+export const MIN_PARTY_PLAYERS = 2;
+
 /** Connected players the host needs before the match can start. */
 export const MIN_PLAYERS_TO_START: Record<MatchMode, number> = {
   SOLO: 1,
   TEAM: 2,
-  PARTY: 2,
+  PARTY: MIN_PARTY_PLAYERS,
 };
 
 export const INVITE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -39,8 +42,6 @@ export const EXTRA_TIME_MS = 15_000;
 /** A correct answer on the second try earns half the base points and no speed bonus. */
 export const SECOND_CHANCE_POINTS = BASE_POINTS / 2;
 
-/** A party keeps going while this many players are connected. */
-export const MIN_PARTY_PLAYERS = 2;
 export const PARTY_START_CHARGES = 1;
 export const PARTY_MAX_CHARGES = 2;
 export const PARTY_WRONG_PENALTY = 25;

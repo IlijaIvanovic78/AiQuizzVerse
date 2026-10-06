@@ -3,18 +3,19 @@ import { accuracyPercent } from '../progression/progression.rules';
 import { MatchOutcome } from '../progression/progression.types';
 import {
   BASE_POINTS,
+  PARTY_WRONG_PENALTY,
   SECOND_CHANCE_POINTS,
   SPEED_BONUS_MAX,
   TEAM_WIN_ACCURACY,
 } from './matches.constants';
 
-export interface PlayerScore {
+interface PlayerScore {
   userId: string;
   score: number;
   correctCount: number;
 }
 
-export interface OutcomePlayer {
+interface OutcomePlayer {
   score: number;
   isWinner: boolean;
 }
@@ -30,6 +31,12 @@ export function answerPoints(correct: boolean, remainingMs: number, timeLimitMs:
 /** The answer after a second chance: no speed bonus, because the player already had a try. */
 export function secondTryPoints(correct: boolean): number {
   return correct ? SECOND_CHANCE_POINTS : 0;
+}
+
+// A wrong party answer costs PARTY_WRONG_PENALTY points, but never more than the player has,
+// so the score never drops below 0.
+export function wrongPartyAnswerPoints(score: number): number {
+  return score > 0 ? -Math.min(score, PARTY_WRONG_PENALTY) : 0;
 }
 
 export function teamWon(players: PlayerScore[], questionCount: number): boolean {

@@ -1,5 +1,5 @@
 import { MatchMode } from '@prisma/client';
-import { PARTY_MAX_CHARGES, PARTY_START_CHARGES, PARTY_WRONG_PENALTY } from './matches.constants';
+import { PARTY_MAX_CHARGES, PARTY_START_CHARGES } from './matches.constants';
 import { SabotageType } from './matches.types';
 
 export interface SabotageAttempt {
@@ -21,11 +21,6 @@ export function startingCharges(mode: MatchMode): number {
 
 export function chargesAfterRoundWin(charges: number): number {
   return Math.min(PARTY_MAX_CHARGES, charges + 1);
-}
-
-/** A wrong party answer costs points, but the score never drops below 0. */
-export function scoreAfterWrongAnswer(score: number): number {
-  return Math.max(0, score - PARTY_WRONG_PENALTY);
 }
 
 /** Why a sabotage (or a shield) is not allowed right now, or null when it is. */

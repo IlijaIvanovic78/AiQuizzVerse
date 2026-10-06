@@ -7,16 +7,15 @@ import {
   AI_MAX_RETRIES,
   AI_RESTING_MESSAGE,
   AI_TIMEOUT_MS,
-  AI_WEAK_QUIZ_MESSAGE,
   QUIZ_MODEL,
   REVIEWER_TEMPERATURE,
   WRITER_TEMPERATURE,
 } from './ai.constants';
 import {
   cleanKeyPoints,
+  cleanQuestions,
   hasEnoughQuestions,
   spreadCorrectAnswers,
-  usableQuestions,
 } from './ai.rules';
 import {
   GeneratedPathStep,
@@ -31,6 +30,7 @@ import { PathStepRequest, QuizRequest, WriterStep } from './ai.types';
 import { DraftToReview, reviewQuizMessages } from './prompts/review-quiz.prompt';
 import { revisePathStepMessages, writePathStepMessages } from './prompts/write-path.prompt';
 import { reviseQuizMessages, writeQuizMessages } from './prompts/write-quiz.prompt';
+import { WeakQuizException } from './weak-quiz.exception';
 
 @Injectable()
 export class QuizWriterService {
@@ -50,37 +50,38 @@ export class QuizWriterService {
     if (review.problems.length > 0) {
       quiz = await this.draftQuiz(reviseQuizMessages(request, context, quiz, review.problems));
     }
-    return { ...quiz, questions: this.playableQuestions(quiz.questions, request.questionCount) };
+    return { ...quiz, questions: this.finalizeQuestions(quiz.questions, request.questionCount) };
   }
 
   async writePathStep(
     request: PathStepRequest,
     context: string | null,
-    earlierGoals: string[],
   ): Promise<GeneratedPathStep> {
-    let step = await this.draftPathStep(writePathStepMessages(request, context, earlierGoals));
+    let step = await this.draftPathStep(writePathStepMessages(request, context));
     const review = await this.reviewDraft(request, step, context);
     if (review.problems.length > 0) {
       step = await this.draftPathStep(
-        revisePathStepMessages(request, context, earlierGoals, step, review.problems),
+        revisePathStepMessages(request, context, step, review.problems),
       );
     }
     return {
       ...step,
       keyPoints: cleanKeyPoints(step.keyPoints),
-      questions: this.playableQuestions(step.questions, request.questionCount),
+      questions: this.finalizeQuestions(step.questions, request.questionCount),
     };
   }
 
-  private playableQuestions(
+  /** Cleans the questions, checks that enough are left and spreads the correct answers. */
+  private finalizeQuestions(
     questions: GeneratedQuestion[],
     requestedCount: number,
   ): GeneratedQuestion[] {
-    const usable = usableQuestions(questions, requestedCount);
-    if (!hasEnoughQuestions(usable.length, requestedCount)) {
-      throw new ServiceUnavailableException(AI_WEAK_QUIZ_MESSAGE);
+    const cleaned = cleanQuestions(questions, requestedCount);
+    if (!hasEnoughQuestions(cleaned.length, requestedCount)) {
+      this.logger.warn(`Only ${cleaned.length} of ${requestedCount} questions were usable`);
+      throw new WeakQuizException();
     }
-    return spreadCorrectAnswers(usable);
+    return spreadCorrectAnswers(cleaned);
   }
 
   private draftQuiz(messages: BaseMessage[]): Promise<GeneratedQuiz> {

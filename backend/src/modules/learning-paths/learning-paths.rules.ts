@@ -11,14 +11,9 @@ export function buildStepRequests(path: PathRequest): PathStepRequest[] {
     difficulty: step.difficulty,
     questionCount: step.questionCount,
     position: step.position,
-    goal: step.goal,
+    label: step.label,
     stepFocuses,
   }));
-}
-
-/** Steps are written at the same time, so a step only knows the goals of earlier steps. */
-export function earlierStepGoals(position: number): string[] {
-  return PATH_PLAN.filter((step) => step.position < position).map((step) => step.goal);
 }
 
 export function isStepUnlocked(position: number, previousStepCleared: boolean): boolean {

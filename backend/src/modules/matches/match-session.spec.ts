@@ -23,7 +23,7 @@ import {
   PlayerEventPayload,
   QuestionPayload,
   RoundResultPayload,
-  SabotageBlockedPayload,
+  SabotagePayload,
   SabotagedPayload,
   SabotageType,
   SecondChancePayload,
@@ -345,6 +345,12 @@ describe('power-ups', () => {
     );
   });
 
+  it('wait for the question to start', async () => {
+    const { session } = setUp('SOLO', ['ana']);
+    session.start(['ana']);
+    await expect(session.useBoost('ana', 'HINT')).rejects.toThrow('Wait for the question');
+  });
+
   it('use the free hints before the owned ones', async () => {
     const { session, payloads, play, startFirstRound } = setUp('SOLO', ['ana']);
     startFirstRound();
@@ -654,7 +660,7 @@ describe('party sabotage', () => {
     session.sabotage('ana', 'SHIELD');
 
     session.sabotage('marko', 'FREEZE', 'ana');
-    expect(payloads<SabotageBlockedPayload>('match:sabotage-blocked')).toEqual([
+    expect(payloads<SabotagePayload>('match:sabotage-blocked')).toEqual([
       {
         matchId: 'match-1',
         index: 0,
@@ -740,6 +746,12 @@ describe('party sabotage', () => {
 
     session.playerReturned('iva');
     expect(() => session.sabotage('ana', 'FREEZE', 'iva')).toThrow('already answered');
+  });
+
+  it('needs a target who plays in this match', () => {
+    const { session, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    expect(() => session.sabotage('ana', 'INK', 'nobody')).toThrow('not in this match');
   });
 
   it('is only for party matches', () => {
@@ -837,6 +849,26 @@ describe('the end of a party', () => {
     session.submitAnswer('marko', 0, wrongOption());
     expect(received('ana', 'match:round-result')).toHaveLength(1);
     expect(results.save).not.toHaveBeenCalled();
+  });
+
+  it('lets only the players who stayed win, even when the leader quits', async () => {
+    const { session, savedSummary, correctOption, startFirstRound } = setUp('PARTY', PARTY);
+    startFirstRound();
+    session.submitAnswer('ana', 0, correctOption());
+    PARTY.forEach((userId) => session.pressNext(userId, 0));
+
+    await session.quit('ana');
+    jest.advanceTimersByTime(TIME_LIMIT_MS / 2);
+    session.submitAnswer('marko', 1, correctOption());
+    session.pressNext('marko', 1);
+    session.pressNext('iva', 1);
+
+    expect(savedSummary().status).toBe('FINISHED');
+    expect(savedSummary().players).toMatchObject([
+      { userId: 'ana', score: 150, isWinner: false, ranked: false, rewarded: true },
+      { userId: 'marko', score: 125, isWinner: true, ranked: true },
+      { userId: 'iva', score: 0, isWinner: false, ranked: true },
+    ]);
   });
 
   it('ends at once when a player quits and only one is left', async () => {

@@ -21,7 +21,6 @@ import { UseBoostDto } from './dto/use-boost.dto';
 
 export type MatchBoostType = Exclude<BoostType, 'STREAK_FREEZE'>;
 
-/** SHIELD is the one defensive move: it protects the player who raises it. */
 export type SabotageType = 'INK' | 'FREEZE' | 'SCRAMBLE' | 'FOG' | 'QUAKE' | 'MIRROR' | 'SHIELD';
 
 /**
@@ -180,8 +179,7 @@ export interface OptionsPayload {
   options: string[];
 }
 
-/** A sabotage that hit a shield; the attacker still spent the charge. */
-export interface SabotageBlockedPayload {
+export interface SabotagePayload {
   matchId: string;
   index: number;
   type: SabotageType;
@@ -190,7 +188,7 @@ export interface SabotageBlockedPayload {
   fromCharges: number;
 }
 
-export interface SabotagedPayload extends SabotageBlockedPayload {
+export interface SabotagedPayload extends SabotagePayload {
   /** How long the effect lasts; 0 for SCRAMBLE and SHIELD, which last until the question ends. */
   durationMs: number;
 }
@@ -254,7 +252,8 @@ export interface GameServerToClientEvents {
   'match:locked-out': (payload: LockedOutPayload) => void;
   'match:options': (payload: OptionsPayload) => void;
   'match:sabotaged': (payload: SabotagedPayload) => void;
-  'match:sabotage-blocked': (payload: SabotageBlockedPayload) => void;
+  /** The sabotage hit a shield; the attacker still spent the charge. */
+  'match:sabotage-blocked': (payload: SabotagePayload) => void;
   'match:second-chance': (payload: SecondChancePayload) => void;
   'match:finished': (payload: MatchResult) => void;
   'match:player-left': (payload: PlayerEventPayload) => void;
@@ -317,6 +316,8 @@ export interface PlayerSummary {
   score: number;
   correctCount: number;
   isWinner: boolean;
+  /** Can win or draw. In a party only the players still here at the end are ranked. */
+  ranked: boolean;
   answers: PlayerAnswerRecord[];
   /** Finished match: everyone gets rewards and review cards. Abandoned: only those still here. */
   rewarded: boolean;

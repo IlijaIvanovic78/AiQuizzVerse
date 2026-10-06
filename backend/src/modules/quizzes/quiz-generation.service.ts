@@ -31,7 +31,8 @@ export class QuizGenerationService {
 
   private async writeAndSave(userId: string, dto: GenerateQuizDto): Promise<QuizDetail> {
     this.reportProgress(userId, 'reading');
-    const context = dto.documentId ? await this.documents.getContext(userId, dto.documentId) : null;
+    const lesson = dto.documentId ? await this.documents.getLesson(userId, dto.documentId) : null;
+    const context = lesson?.context ?? null;
     const quiz = await this.quizWriter.writeQuiz(toQuizRequest(dto), context, (step) =>
       this.reportProgress(userId, step),
     );

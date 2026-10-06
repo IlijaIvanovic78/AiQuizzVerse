@@ -7,6 +7,7 @@ import { ServerToClientEvents } from './realtime.types';
 export class NotificationsService {
   constructor(private readonly gateway: RealtimeGateway) {}
 
+  /** The payload type follows the event name, so a wrong payload for an event does not compile. */
   emitToUser<E extends keyof ServerToClientEvents>(
     userId: string,
     event: E,

@@ -3,7 +3,8 @@ import { shuffle } from '../../common/utils/shuffle';
 import { MAX_DROPPED_QUESTIONS, MIN_GENERATED_QUESTIONS } from './ai.constants';
 import { GeneratedQuestion } from './ai.schemas';
 
-export function usableQuestions(
+/** Trims every question, drops the broken ones and keeps at most the requested count. */
+export function cleanQuestions(
   questions: GeneratedQuestion[],
   requestedCount: number,
 ): GeneratedQuestion[] {
@@ -26,19 +27,22 @@ export function cleanKeyPoints(keyPoints: string[]): string[] {
   return keyPoints.map((point) => point.trim()).filter((point) => point.length > 0);
 }
 
-/** A step title that only repeats the step goal ("First steps") gets the topic added to it. */
-export function specificStepTitle(title: string, goal: string, topic: string): string {
+/** A step title that only repeats the step label ("First steps") gets the topic added to it. */
+export function specificStepTitle(title: string, label: string, topic: string): string {
   const trimmed = title.trim();
-  if (trimmed.length > 0 && toWordString(trimmed) !== toWordString(goal)) {
+  if (trimmed.length > 0 && !haveSameWords(trimmed, label)) {
     return trimmed;
   }
-  return `${goal}: ${topic}`;
+  return `${label}: ${topic}`;
 }
 
 /** True when the hint contains the whole correct answer as separate words. */
 export function hintRevealsAnswer(hint: string, answer: string): boolean {
-  const answerWords = toWordString(answer);
-  return answerWords.trim().length > 0 && toWordString(hint).includes(answerWords);
+  const answerWords = words(answer);
+  if (answerWords.length === 0) {
+    return false;
+  }
+  return containsWholePhrase(words(hint), answerWords);
 }
 
 function trimQuestion(question: GeneratedQuestion): GeneratedQuestion {
@@ -78,12 +82,19 @@ function moveCorrectOption(question: GeneratedQuestion, slot: number): Generated
   };
 }
 
-// The words are padded with spaces so that includes() only matches whole words.
-// That is also why hintRevealsAnswer trims the answer before checking that it is not empty.
-function toWordString(text: string): string {
-  const words = text
+/** Lowercase words without punctuation: "The RED planet!" becomes ["the", "red", "planet"]. */
+function words(text: string): string[] {
+  return text
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
     .filter((word) => word.length > 0);
-  return ` ${words.join(' ')} `;
+}
+
+function haveSameWords(first: string, second: string): boolean {
+  return words(first).join(' ') === words(second).join(' ');
+}
+
+// The spaces around both sides stop "red" from matching inside "reddish".
+function containsWholePhrase(textWords: string[], phraseWords: string[]): boolean {
+  return ` ${textWords.join(' ')} `.includes(` ${phraseWords.join(' ')} `);
 }

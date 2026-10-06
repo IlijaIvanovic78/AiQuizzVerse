@@ -5,6 +5,7 @@ import {
   playerOutcome,
   secondTryPoints,
   teamWon,
+  wrongPartyAnswerPoints,
 } from './scoring';
 
 const TIME_LIMIT_MS = 30_000;
@@ -36,6 +37,17 @@ describe('second try points', () => {
 
   it('gives nothing when the second try is wrong too', () => {
     expect(secondTryPoints(false)).toBe(0);
+  });
+});
+
+describe('a wrong party answer', () => {
+  it('costs 25 points', () => {
+    expect(wrongPartyAnswerPoints(140)).toBe(-25);
+  });
+
+  it('never takes the score below zero', () => {
+    expect(wrongPartyAnswerPoints(10)).toBe(-10);
+    expect(wrongPartyAnswerPoints(0)).toBe(0);
   });
 });
 

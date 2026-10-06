@@ -11,6 +11,7 @@ import { MatchMode, Prisma, Quiz } from '@prisma/client';
 import { customAlphabet } from 'nanoid';
 import { UNIQUE_VIOLATION } from '../../prisma/prisma.constants';
 import { PrismaService } from '../../prisma/prisma.service';
+import { FriendsService } from '../friends/friends.service';
 import { LearningPathsService } from '../learning-paths/learning-paths.service';
 import { FEATURED_QUIZ_IDS, QUIZ_NOT_FOUND_MESSAGE } from '../quizzes/quizzes.constants';
 import { NotificationsService } from '../realtime/notifications.service';
@@ -43,11 +44,14 @@ export class MatchesService implements OnModuleInit {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly friends: FriendsService,
     private readonly learningPaths: LearningPathsService,
     private readonly notifications: NotificationsService,
   ) {}
 
-  /** Sessions live in memory, so a match that was open before a restart cannot go on. */
+  // Sessions live in memory, so a match that was running before a restart cannot go on.
+  // Lobbies are closed too: only match:leave closes one, so a lobby whose host closed the tab
+  // would otherwise stay open forever with a working invite code.
   async onModuleInit(): Promise<void> {
     const { count } = await this.prisma.match.updateMany({
       where: { status: { in: ['WAITING', 'IN_PROGRESS'] } },
@@ -60,7 +64,7 @@ export class MatchesService implements OnModuleInit {
 
   async create(userId: string, dto: CreateMatchDto): Promise<MatchView> {
     const quiz = await this.findPlayableQuiz(userId, dto.quizId);
-    await this.assertModeAllowed(userId, quiz, dto.mode);
+    await this.assertModeAllowed(quiz, dto.mode);
     if (dto.inviteFriendId) {
       await this.assertCanInvite(dto.mode, userId, dto.inviteFriendId);
     }
@@ -126,6 +130,8 @@ export class MatchesService implements OnModuleInit {
     this.sendInvite(match, friendId);
   }
 
+  // A rematch replays the same quiz with the same players, so it skips the quiz owner and
+  // friendship checks of create() and invite().
   async rematch(matchId: string, userId: string): Promise<MatchView> {
     const previous = await this.findForPlayer(matchId, userId);
     if (previous.status !== 'FINISHED' || previous.mode === 'SOLO') {
@@ -174,7 +180,7 @@ export class MatchesService implements OnModuleInit {
     return quiz;
   }
 
-  private async assertModeAllowed(userId: string, quiz: Quiz, mode: MatchMode): Promise<void> {
+  private async assertModeAllowed(quiz: Quiz, mode: MatchMode): Promise<void> {
     if (quiz.kind !== 'PATH_STEP') {
       return;
     }
@@ -185,24 +191,15 @@ export class MatchesService implements OnModuleInit {
     if (!step) {
       throw new NotFoundException('We could not find this learning path step.');
     }
-    await this.learningPaths.assertStepUnlocked(userId, step);
+    await this.learningPaths.assertStepUnlocked(step);
   }
 
   private async assertCanInvite(mode: MatchMode, userId: string, friendId: string): Promise<void> {
     if (mode === 'SOLO') {
       throw new BadRequestException('Solo matches are just for you. Pick a team or party match.');
     }
-    const friendship = await this.prisma.friendship.findFirst({
-      where: {
-        status: 'ACCEPTED',
-        OR: [
-          { senderId: userId, receiverId: friendId },
-          { senderId: friendId, receiverId: userId },
-        ],
-      },
-      select: { id: true },
-    });
-    if (!friendship) {
+    const { relation } = await this.friends.findRelation(userId, friendId);
+    if (relation !== 'FRIEND') {
       throw new BadRequestException('You can only invite your friends.');
     }
   }

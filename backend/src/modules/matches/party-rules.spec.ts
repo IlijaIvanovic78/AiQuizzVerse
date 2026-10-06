@@ -2,7 +2,6 @@ import {
   chargesAfterRoundWin,
   SabotageAttempt,
   sabotageError,
-  scoreAfterWrongAnswer,
   startingCharges,
 } from './party-rules';
 
@@ -17,17 +16,6 @@ describe('sabotage charges', () => {
     expect(chargesAfterRoundWin(0)).toBe(1);
     expect(chargesAfterRoundWin(1)).toBe(2);
     expect(chargesAfterRoundWin(2)).toBe(2);
-  });
-});
-
-describe('a wrong party answer', () => {
-  it('costs 25 points', () => {
-    expect(scoreAfterWrongAnswer(140)).toBe(115);
-  });
-
-  it('never takes the score below zero', () => {
-    expect(scoreAfterWrongAnswer(10)).toBe(0);
-    expect(scoreAfterWrongAnswer(0)).toBe(0);
   });
 });
 

@@ -11,7 +11,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { errorStack } from '../../common/utils/errors';
-import { DEFAULT_FRONTEND_URL, userRoom } from '../realtime/realtime.constants';
+import { userRoom } from '../realtime/realtime.constants';
 import { WsAuthService } from '../realtime/ws-auth.service';
 import { AnswerDto } from './dto/answer.dto';
 import { MatchIdDto } from './dto/match-id.dto';
@@ -37,7 +37,7 @@ import { WsExceptionFilter } from './ws-exception.filter';
 @UseFilters(WsExceptionFilter)
 @WebSocketGateway({
   namespace: GAME_NAMESPACE,
-  cors: { origin: process.env.FRONTEND_URL ?? DEFAULT_FRONTEND_URL },
+  cors: { origin: process.env.FRONTEND_URL },
 })
 export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -179,15 +179,16 @@ export class MatchGateway implements OnGatewayInit, OnGatewayConnection, OnGatew
     throw new WsException(message);
   }
 
-  /** The room gets the lobby view again, so the others see that the player is back. */
+  // A match that is still starting has no session yet, but its countdown is on the way.
+  // The room gets the lobby view again, so the others see that the player is back.
   private async rejoin(matchId: string, userId: string): Promise<void> {
     const session = this.registry.get(matchId);
-    if (!session) {
+    if (!session && !this.registry.isStarting(matchId)) {
       await this.play.abandon(matchId);
       await this.broadcastLobby(matchId);
       throw new WsException('This match was interrupted');
     }
-    session.playerReturned(userId);
+    session?.playerReturned(userId);
     await this.broadcastLobby(matchId);
   }
 

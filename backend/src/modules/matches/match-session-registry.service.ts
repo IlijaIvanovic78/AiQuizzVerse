@@ -3,11 +3,13 @@ import { NotificationsService } from '../realtime/notifications.service';
 import { MatchPlayService } from './match-play.service';
 import { MatchResultsService } from './match-results.service';
 import { MatchSession, MatchSessionDeps } from './match-session';
-import { GameServer } from './matches.types';
+import { GameServer, SessionSetup } from './matches.types';
 
 @Injectable()
 export class MatchSessionRegistry implements OnModuleDestroy {
   private readonly sessions = new Map<string, MatchSession>();
+  /** Matches that start() is still working on, so they have no session yet. */
+  private readonly starting = new Set<string>();
 
   constructor(
     private readonly play: MatchPlayService,
@@ -19,25 +21,42 @@ export class MatchSessionRegistry implements OnModuleDestroy {
     return this.sessions.get(matchId);
   }
 
-  // The database claim decides who starts the match. It comes before loading the
-  // players, because join and removeGuest only change a WAITING match, so the list
-  // cannot change after the claim. has() and set() run without an await between them.
+  isStarting(matchId: string): boolean {
+    return this.starting.has(matchId);
+  }
+
+  // Players can only join a WAITING match, so the player list is fixed once the claim succeeds.
   async start(matchId: string, server: GameServer, connectedUserIds: string[]): Promise<void> {
-    const claimed = await this.play.claimStart(matchId);
-    if (!claimed) {
+    if (this.starting.has(matchId)) {
       return;
     }
-    const { match, questions } = await this.play.loadSessionSetup(matchId);
-    if (this.sessions.has(matchId)) {
-      return;
+    this.starting.add(matchId);
+    try {
+      const claimed = await this.play.claimStart(matchId);
+      if (!claimed) {
+        return;
+      }
+      const { match, questions } = await this.loadClaimedMatch(matchId);
+      const session = new MatchSession(this.sessionDeps(server), match, questions);
+      this.sessions.set(matchId, session);
+      session.start(connectedUserIds);
+    } finally {
+      this.starting.delete(matchId);
     }
-    const session = new MatchSession(this.sessionDeps(server), match, questions);
-    this.sessions.set(matchId, session);
-    session.start(connectedUserIds);
   }
 
   onModuleDestroy(): void {
     this.sessions.forEach((session) => session.stop());
+  }
+
+  /** A claimed match that cannot be loaded is abandoned, so it does not stay IN_PROGRESS. */
+  private async loadClaimedMatch(matchId: string): Promise<SessionSetup> {
+    try {
+      return await this.play.loadSessionSetup(matchId);
+    } catch (error) {
+      await this.play.abandon(matchId);
+      throw error;
+    }
   }
 
   private sessionDeps(server: GameServer): MatchSessionDeps {

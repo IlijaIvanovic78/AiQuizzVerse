@@ -107,13 +107,16 @@ export class MatchResultsService {
     player: PlayerSummary,
   ): Promise<PlayerReward> {
     const { mode } = summary.match;
+    const rankedPlayers = summary.players.filter((other) => other.ranked);
+    // A player who left a party gave up, so they can neither win nor share a draw.
+    const outcome = player.ranked ? playerOutcome(mode, player, rankedPlayers) : 'LOSS';
     return this.progression.rewardMatchPlayer(
       player.userId,
       {
         mode,
         difficulty: summary.match.quiz.difficulty,
         correctCount: player.correctCount,
-        outcome: playerOutcome(mode, player, summary.players),
+        outcome,
         abandoned: summary.status === 'ABANDONED',
       },
       tx,

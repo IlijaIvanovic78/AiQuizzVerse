@@ -10,16 +10,9 @@ import {
   toPathDetail,
   toPathSummary,
 } from './learning-path.mapper';
-import { NOT_YOUR_PATH_MESSAGE, STEP_REWARDS } from './learning-paths.constants';
+import { STEP_REWARDS } from './learning-paths.constants';
 import { isStepUnlocked } from './learning-paths.rules';
-import {
-  PathDetail,
-  PathResult,
-  PathSummary,
-  StepReward,
-  StepRun,
-  StepWithOwner,
-} from './learning-paths.types';
+import { PathDetail, PathResult, PathSummary, StepReward, StepRun } from './learning-paths.types';
 
 @Injectable()
 export class LearningPathsService {
@@ -58,18 +51,12 @@ export class LearningPathsService {
   findStepByQuiz(
     quizId: string,
     db: Prisma.TransactionClient = this.prisma,
-  ): Promise<StepWithOwner | null> {
-    return db.pathStep.findUnique({
-      where: { quizId },
-      include: { path: { select: { ownerId: true } } },
-    });
+  ): Promise<PathStep | null> {
+    return db.pathStep.findUnique({ where: { quizId } });
   }
 
-  async assertStepUnlocked(userId: string, step: StepWithOwner): Promise<void> {
-    if (step.path.ownerId !== userId) {
-      throw new ForbiddenException(NOT_YOUR_PATH_MESSAGE);
-    }
-
+  // The caller has already checked that the step quiz belongs to the player.
+  async assertStepUnlocked(step: PathStep): Promise<void> {
     const previous = await this.prisma.pathStep.findUnique({
       where: { pathId_position: { pathId: step.pathId, position: step.position - 1 } },
       select: { completedAt: true },
@@ -138,7 +125,7 @@ export class LearningPathsService {
       throw new NotFoundException('We could not find that learning path.');
     }
     if (path.ownerId !== userId) {
-      throw new ForbiddenException(NOT_YOUR_PATH_MESSAGE);
+      throw new ForbiddenException('This learning path belongs to someone else.');
     }
     return path;
   }

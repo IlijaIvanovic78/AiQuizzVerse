@@ -1,4 +1,4 @@
-import { Audience, ChestType, Difficulty, PathStep, QuizLanguage } from '@prisma/client';
+import { Audience, ChestType, Difficulty, QuizLanguage } from '@prisma/client';
 
 export type PathSource = 'TOPIC' | 'DOCUMENT';
 
@@ -23,12 +23,11 @@ export interface PathResult {
   reward: StepReward | null;
 }
 
-export type StepWithOwner = PathStep & { path: { ownerId: string } };
-
 /** One row of PATH_PLAN: what a step teaches and how hard its quiz is. */
 export interface PlannedStep {
   position: number;
-  goal: string;
+  /** General name of the step, used only when the AI title just repeats it. */
+  label: string;
   /** The lane of the step, so steps written at the same time do not repeat each other. */
   focus: string;
   difficulty: Difficulty;

@@ -12,8 +12,8 @@ export interface QuizRequest {
 export interface PathStepRequest extends QuizRequest {
   /** 1-based position of the step in its learning path. */
   position: number;
-  /** What this step is for, e.g. "How and why". */
-  goal: string;
+  /** General name of the step, e.g. "How and why". The AI writes a title about the topic. */
+  label: string;
   /** What each step of the path covers, in step order, so every step stays in its own lane. */
   stepFocuses: string[];
 }

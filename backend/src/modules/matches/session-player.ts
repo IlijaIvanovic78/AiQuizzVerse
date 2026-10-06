@@ -10,7 +10,7 @@ import {
 import { startingCharges } from './party-rules';
 
 /** armed: the power-up is on for this question; spent: a wrong answer used it up. */
-export type SecondChanceState = 'unused' | 'armed' | 'spent';
+type SecondChanceState = 'unused' | 'armed' | 'spent';
 
 /** What a running match remembers about one player; the database gets it when the match ends. */
 export interface SessionPlayer {

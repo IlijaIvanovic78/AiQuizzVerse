@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ChestsModule } from '../chests/chests.module';
+import { FriendsModule } from '../friends/friends.module';
 import { LearningPathsModule } from '../learning-paths/learning-paths.module';
 import { ProgressionModule } from '../progression/progression.module';
 import { RealtimeModule } from '../realtime/realtime.module';
@@ -12,7 +13,14 @@ import { MatchesController } from './matches.controller';
 import { MatchesService } from './matches.service';
 
 @Module({
-  imports: [RealtimeModule, LearningPathsModule, ReviewModule, ProgressionModule, ChestsModule],
+  imports: [
+    RealtimeModule,
+    FriendsModule,
+    LearningPathsModule,
+    ReviewModule,
+    ProgressionModule,
+    ChestsModule,
+  ],
   controllers: [MatchesController],
   providers: [
     MatchesService,

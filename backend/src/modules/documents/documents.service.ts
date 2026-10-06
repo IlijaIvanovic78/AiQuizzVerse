@@ -61,11 +61,6 @@ export class DocumentsService {
     }
   }
 
-  async getContext(ownerId: string, documentId: string): Promise<string> {
-    const lesson = await this.getLesson(ownerId, documentId);
-    return lesson.context;
-  }
-
   async getLesson(ownerId: string, documentId: string): Promise<Lesson> {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, ownerId },
