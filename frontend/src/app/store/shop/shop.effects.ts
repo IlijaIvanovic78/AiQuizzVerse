@@ -7,6 +7,7 @@ import { readErrorMessage } from '../../core/api/api-error';
 import { ShopApiService } from '../../core/api/shop-api.service';
 import { readReturnUrl } from '../../core/auth/return-url';
 import { ToastService } from '../../core/notifications/toast.service';
+import { SoundService } from '../../core/sound/sound.service';
 import { ShopActions } from './shop.actions';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ShopEffects {
   private readonly actions$ = inject(Actions);
   private readonly shopApi = inject(ShopApiService);
   private readonly toast = inject(ToastService);
+  private readonly sound = inject(SoundService);
   private readonly router = inject(Router);
 
   readonly loadItems$ = createEffect(() =>
@@ -100,16 +102,19 @@ export class ShopEffects {
     ),
   );
 
+  // The coins are the sound of a purchase. The toast right after them stays quiet, so the
+  // purchase is heard once.
   readonly announceItem$ = createEffect(
     () =>
       this.actions$.pipe(
         ofType(ShopActions.itemBought),
-        tap(({ item }) =>
+        tap(({ item }) => {
+          this.sound.playCoin();
           this.toast.success(`${item.name} joined your team!`, {
             label: 'Equip',
             action: ShopActions.equipItem({ itemId: item.id }),
-          }),
-        ),
+          });
+        }),
       ),
     { dispatch: false },
   );
@@ -118,7 +123,21 @@ export class ShopEffects {
     () =>
       this.actions$.pipe(
         ofType(ShopActions.boostBought),
-        tap(({ boost }) => this.toast.success(`+1 ${boost.name}`)),
+        tap(({ boost }) => {
+          this.sound.playCoin();
+          this.toast.success(`+1 ${boost.name}`);
+        }),
+      ),
+    { dispatch: false },
+  );
+
+  // The clink plays the moment Equip is pressed, in the shop, a chest or a toast, so the click
+  // sound of that button stays quiet.
+  readonly clinkEquip$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(ShopActions.equipItem),
+        tap(() => this.sound.playEquip()),
       ),
     { dispatch: false },
   );
