@@ -64,12 +64,35 @@ export class PathsEffects {
     ),
   );
 
+  // Writing a path takes a while and the player may wait on /paths or Home, so the list
+  // loads again and shows the new path right away.
+  readonly reloadAfterCreated$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(PathsActions.created),
+      map(() => PathsActions.load()),
+    ),
+  );
+
   readonly announceCreated$ = createEffect(
     () =>
       this.actions$.pipe(
         ofType(PathsActions.created),
         filter(() => !isOnCreatePage(this.router)),
-        tap(({ path }) => this.toast.success(`Your path about "${path.topic}" is ready!`)),
+        tap(({ path }) =>
+          this.toast.success(`Your path about "${path.topic}" is ready!`, {
+            label: 'Open',
+            action: PathsActions.visitPath({ pathId: path.id }),
+          }),
+        ),
+      ),
+    { dispatch: false },
+  );
+
+  readonly visitPath$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(PathsActions.visitPath),
+        tap(({ pathId }) => void this.router.navigate(['/paths', pathId])),
       ),
     { dispatch: false },
   );

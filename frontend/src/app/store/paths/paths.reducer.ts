@@ -34,14 +34,10 @@ export const pathsFeature = createFeature({
       PathsActions.loaded,
       (state, { paths }): PathsState => ({ ...state, paths, loaded: true, loading: false }),
     ),
+    // Stars and locked steps change after every match, so an old copy of the path is never shown.
     on(
       PathsActions.loadDetail,
-      (state, { pathId }): PathsState => ({
-        ...state,
-        detail: state.detail?.id === pathId ? state.detail : null,
-        loading: true,
-        error: null,
-      }),
+      (state): PathsState => ({ ...state, detail: null, loading: true, error: null }),
     ),
     on(
       PathsActions.detailLoaded,

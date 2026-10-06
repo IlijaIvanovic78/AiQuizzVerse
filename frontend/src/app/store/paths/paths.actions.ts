@@ -14,6 +14,7 @@ export const PathsActions = createActionGroup({
     'Creation Reset': emptyProps(),
     Delete: props<{ pathId: string }>(),
     Deleted: props<{ pathId: string }>(),
+    'Visit Path': props<{ pathId: string }>(),
     Failed: props<{ error: string }>(),
   },
 });
